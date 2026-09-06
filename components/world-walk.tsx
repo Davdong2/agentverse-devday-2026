@@ -1,6 +1,11 @@
 'use client';
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
+import {
+  createCryptoProps,
+  createAgentEquipment,
+} from '@/components/crypto-props';
+import { loadoutIndex, cryptoTaskState } from '@/lib/crypto-world';
 import { ArrowUp, Globe2, MapPin, Navigation, RotateCcw } from 'lucide-react';
 import {
   regions,
@@ -184,6 +189,8 @@ export default function WorldWalk(props: Props) {
     geometries.push(bodyGeo, coreGeo, eyeGeo);
     const ink = new THREE.MeshBasicMaterial({ color: '#4e686e' });
     materials.push(ink);
+    const cryptoProps = createCryptoProps(scene, pickable);
+    const equipment = createAgentEquipment();
     const actors = Array.from({ length: 50 }, (_, i) => {
       const g = new THREE.Group();
       const body = new THREE.Mesh(bodyGeo, white);
@@ -200,7 +207,7 @@ export default function WorldWalk(props: Props) {
       g.userData.instance = i;
       scene.add(g);
       pickable.push(body, core);
-      return { g, core };
+      return { g, body, core, positioned: false, gear: equipment.attach(g) };
     });
     const links = Array.from({ length: 4 }, (_, i) => {
       const mat = new THREE.MeshBasicMaterial({
@@ -289,7 +296,10 @@ export default function WorldWalk(props: Props) {
       ray.setFromCamera(pointer, camera);
       const hit = ray
         .intersectObjects(pickable, false)
-        .find((h) => h.distance < 30);
+        .find(
+          (h) =>
+            h.distance < 30 && h.object.visible && h.object.parent?.visible,
+        );
       if (hit) {
         const obj = hit.object;
         const instance = obj.userData.instance ?? obj.parent?.userData.instance;
@@ -386,11 +396,26 @@ export default function WorldWalk(props: Props) {
         phase = stageAt(time),
         progress = phaseProgress(time),
         center = regions[0];
+      cryptoProps.update(time, level);
       states.forEach((a, i) => {
         const actor = actors[i];
+        const moveX = a.x * 100 - actor.g.position.x,
+          moveZ = a.y * 100 - actor.g.position.z;
+        const moving = actor.positioned && Math.hypot(moveX, moveZ) > 0.002;
+        if (moving) actor.g.rotation.y = Math.atan2(-moveX, -moveZ);
+        else if (!actor.positioned) actor.g.rotation.y = i * 0.8;
+        actor.positioned = true;
         actor.g.position.set(a.x * 100, 0, a.y * 100);
+        actor.body.position.y =
+          0.62 + Math.sin(time * (moving ? 5 : 2) + i) * 0.025;
         actor.core.material = mats[a.role % 6];
-        actor.g.rotation.y = Math.sin(i + time * 0.2) * 0.5;
+        actor.gear.update(
+          loadoutIndex(a.role, i),
+          time,
+          a.collaborator
+            ? phase === 4 && Math.floor(progress * 4) === i
+            : a.activity === '工作中',
+        );
         actor.g.visible =
           i < 4 ||
           level < 2 ||
@@ -468,6 +493,8 @@ export default function WorldWalk(props: Props) {
       canvas.removeEventListener('webglcontextlost', onLost);
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
+      cryptoProps.dispose();
+      equipment.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();
@@ -500,6 +527,9 @@ export default function WorldWalk(props: Props) {
           <div className="walk-location">
             <MapPin size={15} />
             {regions[area].name}
+            <span className="walk-task-action">
+              {cryptoTaskState(area, props.time).label} · Demo
+            </span>
             <small>文明观察者 · {quality}画质</small>
           </div>
           {hint && (

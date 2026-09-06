@@ -1,6 +1,11 @@
 'use client';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Agent, Detail } from '@/lib/marketplace';
+import {
+  cryptoTaskState,
+  cryptoLoadouts,
+  loadoutIndex,
+} from '@/lib/crypto-world';
 import { appearance } from '@/lib/world-model';
 import {
   cycleDuration,
@@ -116,6 +121,38 @@ export default function CivilizationCanvas(props: Props) {
       ctx.font = `${size}px Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(str, x, y);
+    };
+    const equipment = (
+      x: number,
+      y: number,
+      role: number,
+      instance: number,
+      time: number,
+      size: number,
+    ) => {
+      const outfit = cryptoLoadouts[loadoutIndex(role, instance)];
+      ctx.save();
+      ctx.strokeStyle = outfit.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(
+        x,
+        y - size * 0.28,
+        size * 0.45,
+        size * 0.15,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.stroke();
+      ctx.fillStyle = outfit.color;
+      ctx.fillRect(
+        x + size * 0.38,
+        y - size * 0.6 + Math.sin(time * 3 + instance) * 2,
+        size * 0.19,
+        size * 0.19,
+      );
+      ctx.restore();
     };
     const frame = (stamp: number) => {
       raf = requestAnimationFrame(frame);
@@ -315,6 +352,44 @@ export default function CivilizationCanvas(props: Props) {
             color + '66',
           );
       });
+      // Close views reveal shared crypto workflow props; the overview stays quiet.
+      regions.forEach((r, n) => {
+        if (p.zoom < 1.7 && n !== 5 && n !== 6) return;
+        const task = cryptoTaskState(n, t),
+          x = r.x * 1600 + (n === 0 ? 122 : 43),
+          y = r.y * 900 + 22;
+        ctx.save();
+        ctx.strokeStyle = task.color + '77';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 27, 10, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let j = 0; j < 2; j++) {
+          const px = x + (j === 0 ? task.left : task.right) * 18,
+            py = y - 10 - task.lift * 5;
+          ctx.globalAlpha = task.visibility;
+          ctx.fillStyle = j === 0 ? task.color : '#f5edd8';
+          ctx.strokeStyle = task.color;
+          ctx.beginPath();
+          ctx.roundRect(px - 5, py - 5, 10, 10, 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        if (task.receipt > 0.02) {
+          ctx.fillStyle = '#e5d7a9';
+          ctx.fillRect(x - 4, y - 18 - task.receipt * 12, 8, 5);
+        }
+        if (p.zoom > 1.7) {
+          text(task.asset, x, y - 29, task.color, 12);
+          for (let j = 0; j < 3; j++) {
+            ctx.fillStyle = j === task.step ? task.color : task.color + '44';
+            ctx.fillRect(x - 16 + j * 12, y + 17, 8, j === task.step ? 4 : 2);
+          }
+          text(task.label + ' · Demo', x, y + 38, '#4e7278', 12);
+        }
+        ctx.restore();
+      });
       const states = sampleAgents(
         p.agents,
         p.details,
@@ -327,6 +402,8 @@ export default function CivilizationCanvas(props: Props) {
           y = a.y * 900,
           chosen = p.selected === a.instance;
         actor(x, y, a.role, chosen ? 27 : p.zoom > 2 ? 24 : 20);
+        if (p.zoom > 1.7)
+          equipment(x, y, a.role, a.instance, t, chosen ? 27 : 24);
         if (chosen) {
           ctx.strokeStyle = '#aa8241';
           ctx.lineWidth = 1.5;
@@ -361,6 +438,7 @@ export default function CivilizationCanvas(props: Props) {
           glow(x, y, working ? 45 : 25, skillColors[i], working ? 0.6 : 0.2);
         }
         actor(x, y, role, phase >= 3 && phase <= 6 ? 40 : 32);
+        equipment(x, y, role, i, t, 32);
         ctx.fillStyle = skillColors[i];
         ctx.shadowColor = skillColors[i];
         ctx.shadowBlur = working ? 18 : 0;

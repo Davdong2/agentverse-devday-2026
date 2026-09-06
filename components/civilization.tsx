@@ -50,6 +50,11 @@ import { AgentSprite } from '@/components/world-scene';
 import CivilizationCanvas, { type Hit } from '@/components/civilization-canvas';
 import snapshot from '@/lib/agents.json';
 import detailsSnapshot from '@/lib/details.json';
+import {
+  cryptoTaskState,
+  cryptoLoadouts,
+  loadoutIndex,
+} from '@/lib/crypto-world';
 import { appearance } from '@/lib/world-model';
 import type { Agent, AgentData, Detail } from '@/lib/marketplace';
 import {
@@ -174,6 +179,12 @@ export default function Civilization({
       data.agents[i % data.agents.length],
   );
   const appearanceData = appearance(agent, service ?? undefined);
+  const teamIndex = team.findIndex((a) => a.agentId === agent.agentId);
+  const loadout =
+    cryptoLoadouts[
+      loadoutIndex(appearanceData.role, teamIndex < 0 ? 4 : teamIndex)
+    ];
+  const regionTask = cryptoTaskState(region, time);
   const memories = history.filter((h) => h.agentIds.includes(agent.agentId));
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -1021,6 +1032,24 @@ export default function Civilization({
             <>
               <SheetTitle>{regions[region].name}</SheetTitle>
               <SheetDescription>{regions[region].description}</SheetDescription>
+              <div className="crypto-workflow">
+                <small>加密任务场景 · Demo</small>
+                <h3>{regionTask.name}</h3>
+                <p>{regionTask.prop}</p>
+                <div>
+                  {regionTask.steps.map((step, i) => (
+                    <span
+                      key={step}
+                      className={i === regionTask.step ? 'active' : ''}
+                    >
+                      {step}
+                    </span>
+                  ))}
+                </div>
+                <p className="subtle">
+                  资产块与任务动作是概念演示，没有提交链上交易。
+                </p>
+              </div>
               <div className="region-profile-label">{regions[region].en}</div>
               {region === 0 ? (
                 <>
@@ -1176,6 +1205,15 @@ export default function Civilization({
                     {memories.length} 次
                   </small>
                 </span>
+              </div>
+              <div className="crypto-loadout">
+                <small>场景功能装 · Demo</small>
+                <strong>{loadout.name}</strong>
+                <p>{loadout.gear}</p>
+                <p>{loadout.action}</p>
+                <p className="subtle">
+                  为观察工作分工而设计，不是实际装备或技能认证。
+                </p>
               </div>
               <Tabs defaultValue="identity" className="profile-tabs">
                 <TabsList>

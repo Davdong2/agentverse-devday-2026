@@ -34,3 +34,11 @@ The photography dialog pauses the scene and exports a structured description. Th
 ## Runtime
 
 Vinext / React / Cloudflare Workers, Shadcn Sheet/Dialog/Tabs, Canvas and lazily loaded Three.js. The existing private Sites project is preserved. Public external descriptions are untrusted inert text. Optional WebMCP selection validates known IDs and only opens profiles.
+
+## Crypto task refinement
+
+Ten small interactive workstations now show crypto concepts inside the world: collaboration settlement, BTC research, Agent identity, hash/receipt archives, execution queues, ETH/USDC asset exchange, authorization checks, oracle-style signal packaging, Gas supply and cross-domain discovery. These are labeled Demo; no transaction is submitted. Both Canvas and Three.js use `cryptoTaskState` for matching step, token positions, lift, visibility and receipt timing. Overview annotations appear at closer zoom, with only restrained market/security activity at world scale.
+
+Six functional loadouts add scanning visors, colored waist rings, interface blocks, message/metadata crystals and permission shields to the nonhuman Agents. The four central collaborators have explicit research/security/interface/trading loadouts. Working accessories move with the shared clock; moving Agents turn toward their route. Profile panels explain the props separately from real skills and services.
+
+Additional checks cover all ten task cycles, paired asset exchange without phase-boundary jumps, receipt sequencing, always-Demo provenance, six loadouts, actual Three scene construction, clickable stations, equipment state differences and resource cleanup. The Three scene test checks object state using a text-canvas stand-in; it does not certify browser pixels, GPU behavior or device frame rate.
