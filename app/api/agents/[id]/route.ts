@@ -9,7 +9,7 @@ export async function GET(
   if (!/^\d{1,15}$/.test(id))
     return Response.json({ error: '无效 Agent ID' }, { status: 400 });
   const old = cached.get(id);
-  if (old && Date.now() - Date.parse(old.fetchedAt) < 3600000)
+  if (old && Date.now() - Date.parse(old.fetchedAt) < 1200000)
     return Response.json({ ...old, mode: 'cached' });
   try {
     const p = await readPublicPage('/' + id);
@@ -18,18 +18,16 @@ export async function GET(
     const data: Detail = {
       fetchedAt: new Date().toISOString(),
       total: Number(s.total),
-      services: s.list
-        .slice(0, 9)
-        .map((a: Record<string, unknown>) => ({
-          serviceId: Number(a.serviceId),
-          name: String(a.name ?? ''),
-          description: String(a.description ?? ''),
-          price: String(a.price ?? ''),
-          symbol: String(a.symbol ?? 'USDT'),
-          priceInterval:
-            typeof a.priceInterval === 'string' ? a.priceInterval : undefined,
-          serviceType: String(a.serviceType ?? ''),
-        })),
+      services: s.list.slice(0, 9).map((a: Record<string, unknown>) => ({
+        serviceId: Number(a.serviceId),
+        name: String(a.name ?? ''),
+        description: String(a.description ?? ''),
+        price: String(a.price ?? ''),
+        symbol: String(a.symbol ?? 'USDT'),
+        priceInterval:
+          typeof a.priceInterval === 'string' ? a.priceInterval : undefined,
+        serviceType: String(a.serviceType ?? ''),
+      })),
     };
     if (cached.size >= 100) cached.clear();
     cached.set(id, data);

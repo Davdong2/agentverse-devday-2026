@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { WorldProvider } from '@/components/world-provider';
 export const metadata: Metadata = {
   title: 'Agentverse · 非人类数字文明',
   icons: { icon: '/favicon.svg' },
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        <WorldProvider>{children}</WorldProvider>
+      </body>
     </html>
   );
 }

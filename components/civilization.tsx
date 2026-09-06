@@ -1,5 +1,15 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from 'react';
+import { useRouter } from 'next/navigation';
+import { useWorld } from '@/components/world-provider';
+const WorldWalk = lazy(() => import('@/components/world-walk'));
 import {
   Globe2,
   Focus,
@@ -43,6 +53,8 @@ import detailsSnapshot from '@/lib/details.json';
 import { appearance } from '@/lib/world-model';
 import type { Agent, AgentData, Detail } from '@/lib/marketplace';
 import {
+  regionSlugs,
+  sampleAgents,
   regions,
   weathers,
   stages,
@@ -58,35 +70,71 @@ import {
   type MemoryRecord,
 } from '@/lib/civilization-model';
 const details = detailsSnapshot as Record<string, Detail>;
-const population = 600;
+const population = 50;
 type CameraState = { x: number; y: number; z: number };
 const initialCamera = { x: 0.5, y: 0.47, z: 1 };
-export default function Civilization() {
-  const [data, setData] = useState<AgentData>({
-      ...snapshot,
-      mode: 'snapshot',
-    }),
-    [refreshing, setRefreshing] = useState(false),
-    [notice, setNotice] = useState('');
-  const [time, setTime] = useState(0),
-    [paused, setPaused] = useState(false),
-    [speed, setSpeed] = useState(1),
-    [episode, setEpisode] = useState(0);
-  const [scenario, setScenario] = useState<Weather>('nvda'),
-    [signalMode, setSignalMode] = useState<'demo' | 'live'>('demo'),
-    [signal, setSignal] = useState<MarketSignal | null>(null),
-    [signalError, setSignalError] = useState('');
-  const [cam, setCam] = useState<CameraState>(initialCamera),
+export default function Civilization({
+  regionIndex,
+  profileId,
+}: { regionIndex?: number; profileId?: string } = {}) {
+  const router = useRouter();
+  const {
+    data,
+    setData,
+    time,
+    setTime,
+    paused,
+    setPaused,
+    speed,
+    setSpeed,
+    episode,
+    setEpisode,
+    scenario,
+    setScenario,
+    signalMode,
+    setSignalMode,
+    signal,
+    setSignal,
+    signalError,
+    setSignalError,
+    history,
+    setHistory,
+    recorded,
+    events,
+    setEvents,
+    viewMode,
+    setViewMode,
+    walker,
+    lastCatalog,
+    lastMarket,
+  } = useWorld();
+  const [refreshing, setRefreshing] = useState(false),
+    [notice, setNotice] = useState(''),
+    [transitioning, setTransitioning] = useState(false),
+    [walkRegion, setWalkRegion] = useState(regionIndex ?? 0);
+  const navigationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (navigationTimer.current) clearTimeout(navigationTimer.current);
+    },
+    [],
+  );
+  const [cam, setCam] = useState<CameraState>(
+      regionIndex !== undefined
+        ? { x: regions[regionIndex].x, y: regions[regionIndex].y, z: 2.65 }
+        : initialCamera,
+    ),
     [size, setSize] = useState({ w: 1440, h: 900 }),
     [dragging, setDragging] = useState(false);
   const [panel, setPanel] = useState<'directory' | 'agent' | 'region' | null>(
-      null,
+      profileId ? 'agent' : null,
     ),
-    [region, setRegion] = useState(0),
+    [region, setRegion] = useState(regionIndex ?? 0),
     [selected, setSelected] = useState<number | null>(null),
-    [agentId, setAgentId] = useState('2083');
-  const [history, setHistory] = useState<MemoryRecord[]>([]),
-    [service, setService] = useState<Detail | null>(details['2083']),
+    [agentId, setAgentId] = useState(profileId ?? '2083');
+  const [service, setService] = useState<Detail | null>(
+      details[profileId ?? '2083'],
+    ),
     [serviceNotice, setServiceNotice] = useState('');
   const [eventOpen, setEventOpen] = useState(false),
     [help, setHelp] = useState(false),
@@ -105,8 +153,7 @@ export default function Civilization() {
       cam: initialCamera,
       distance: 0,
       moved: false,
-    }),
-    recorded = useRef(new Set<string>());
+    });
   const fit = Math.min(size.w / 1600, (size.h - 105) / 900) * 1.03,
     scale = fit * cam.z;
   const weather =
@@ -137,6 +184,44 @@ export default function Civilization() {
       if (!r.ok) throw new Error();
       const d = (await r.json()) as AgentData;
       if (!d.agents?.length) throw new Error();
+      if (d.mode !== 'snapshot') {
+        const prev = lastCatalog.current;
+        const now = Date.now();
+        const changes = d.agents.flatMap((a) => {
+          const old = prev.agents.find((v) => v.agentId === a.agentId);
+          return !old
+            ? [
+                {
+                  id: 'new-' + a.agentId + '-' + now,
+                  title: a.name + ' 出现在本次同步名录',
+                  region: regionFor(a),
+                  mode:
+                    d.mode === 'fresh' ? ('LIVE' as const) : ('缓存' as const),
+                  at: now,
+                },
+              ]
+            : a.usageCount > old.usageCount
+              ? [
+                  {
+                    id: 'sales-' + a.agentId + '-' + now,
+                    title:
+                      a.name +
+                      ' 的公开销量增加 ' +
+                      (a.usageCount - old.usageCount),
+                    region: regionFor(a),
+                    mode:
+                      d.mode === 'fresh'
+                        ? ('LIVE' as const)
+                        : ('缓存' as const),
+                    at: now,
+                  },
+                ]
+              : [];
+        });
+        if (changes.length)
+          setEvents((old) => [...changes, ...old].slice(0, 8));
+        lastCatalog.current = d;
+      }
       setData(d);
       setNotice(
         d.mode === 'snapshot' ? '使用最近保存的真实资料' : '名录已核对',
@@ -160,6 +245,22 @@ export default function Civilization() {
         if (!r.ok) throw new Error();
         const s = (await r.json()) as MarketSignal;
         if (!canceled) {
+          if (s.mode === 'fresh' && lastMarket.current !== s.ts) {
+            setEvents((old) =>
+              [
+                {
+                  id: 'market-' + s.ts,
+                  title: `BTC 行情进入交易市场 · 24h ${s.change >= 0 ? '+' : ''}${s.change.toFixed(2)}%`,
+                  region: 5,
+                  mode: 'LIVE' as const,
+                  at: Date.now(),
+                },
+                ...old.filter((e) => !e.id.startsWith('market-')),
+              ].slice(0, 8),
+            );
+            lastMarket.current = s.ts;
+            if (Math.abs(s.change) >= 2) setSignalMode('live');
+          }
           setSignal(s);
           setSignalError('');
         }
@@ -175,7 +276,8 @@ export default function Civilization() {
     };
   }, []);
   useEffect(() => {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) setPaused(true);
+    if (time === 0 && matchMedia('(prefers-reduced-motion: reduce)').matches)
+      setPaused(true);
   }, []);
   useEffect(() => {
     if (paused) return;
@@ -197,7 +299,7 @@ export default function Civilization() {
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [viewMode]);
   useEffect(() => {
     if (stage < 7) return;
     const key = episode + ':' + cycle;
@@ -226,21 +328,28 @@ export default function Civilization() {
     const c = new AbortController();
     setService(details[agent.agentId] ?? null);
     setServiceNotice('正在核对服务');
-    fetch('/api/agents/' + agent.agentId, { signal: c.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json() as Promise<Detail>;
-      })
-      .then((d) => {
-        setService(d);
-        setServiceNotice(
-          d.mode === 'snapshot' ? '已保存服务资料' : '服务资料已核对',
-        );
-      })
-      .catch(() => {
-        if (!c.signal.aborted) setServiceNotice('同步暂不可用，保留已保存服务');
-      });
-    return () => c.abort();
+    const readServices = () =>
+      fetch('/api/agents/' + agent.agentId, { signal: c.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json() as Promise<Detail>;
+        })
+        .then((d) => {
+          setService(d);
+          setServiceNotice(
+            d.mode === 'snapshot' ? '已保存服务资料' : '服务资料已核对',
+          );
+        })
+        .catch(() => {
+          if (!c.signal.aborted)
+            setServiceNotice('同步暂不可用，保留已保存服务');
+        });
+    void readServices();
+    const interval = setInterval(() => void readServices(), 1200000);
+    return () => {
+      c.abort();
+      clearInterval(interval);
+    };
   }, [agent.agentId, panel]);
   const selectAgent = useCallback(
     (a: Agent, instance?: number) => {
@@ -248,19 +357,37 @@ export default function Civilization() {
       setSelected(
         instance ?? data.agents.findIndex((v) => v.agentId === a.agentId),
       );
-      setPanel('agent');
+      router.push(
+        '/regions/' +
+          regionSlugs[regionIndex ?? regionFor(a, details[a.agentId])] +
+          '/agents/' +
+          a.agentId,
+      );
     },
-    [data.agents],
+    [data.agents, router, regionIndex],
   );
-  const focusRegion = useCallback((n: number, showPanel = true) => {
-    setRegion(n);
-    setCam({ x: regions[n].x, y: regions[n].y, z: n === 0 ? 2.35 : 2.8 });
-    if (showPanel) setPanel('region');
-    else setPanel(null);
-  }, []);
+  const focusRegion = useCallback(
+    (n: number, showPanel = true) => {
+      setRegion(n);
+      setCam({ x: regions[n].x, y: regions[n].y, z: 2.65 });
+      if (regionIndex === n) {
+        if (showPanel) setPanel('region');
+        return;
+      }
+      setPanel(null);
+      setTransitioning(true);
+      if (navigationTimer.current) clearTimeout(navigationTimer.current);
+      navigationTimer.current = setTimeout(
+        () => router.push('/regions/' + regionSlugs[n]),
+        viewMode === 'observe' ? 650 : 0,
+      );
+    },
+    [regionIndex, router, viewMode],
+  );
   const worldView = () => {
     setCam(initialCamera);
     setPanel(null);
+    if (regionIndex !== undefined) router.push('/');
   };
   const zoom = (delta: number) =>
     setCam((c) => ({ ...c, z: Math.max(1, Math.min(4.8, c.z + delta)) }));
@@ -277,7 +404,7 @@ export default function Civilization() {
     };
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel);
-  }, []);
+  }, [viewMode]);
   useEffect(() => {
     const ctx = (
       document as unknown as {
@@ -429,7 +556,7 @@ export default function Civilization() {
     population,
     memories: history,
     verifiedTransactions: [],
-    prompt: `非人类数字文明的宏大等距场景，午夜蓝云海、象牙陶瓷功能平台、九个区域环绕中央协作核心。场景：${event.title}；节点：${regions[region].name}；动作：${stages[stage].title}。四个小型模块化 Agent 的蓝色研究、黄色风险、白色审计、绿色交易技能正在${stages[stage].title}。功能器官取代人类服装，柔和金色结果核心，真实层次和宏大空间。无文字、无界面、无城市建筑。行为演示，不表示真实任务或收益。`,
+    prompt: `非人类数字文明的宏大等距场景，浅青色云海、柔和象牙色几何平台、九个区域环绕中央协作核心。场景：${event.title}；节点：${regions[region].name}；动作：${stages[stage].title}。四个小型模块化 Agent 的蓝色研究、黄色风险、白色审计、绿色交易技能正在${stages[stage].title}。功能器官取代人类服装，柔和金色结果核心，克制的几何层次、柔和光影和开阔留白。无文字、无界面、无城市建筑。行为演示，不表示真实任务或收益。`,
   };
   const sceneHref =
     'data:application/json;charset=utf-8,' +
@@ -485,67 +612,112 @@ export default function Civilization() {
     }
   };
   return (
-    <main className="universe-shell">
-      <div
-        ref={viewport}
-        className={'universe-viewport ' + (dragging ? 'is-dragging' : '')}
-        onPointerDown={startGesture}
-        onPointerMove={moveGesture}
-        onPointerUp={endGesture}
-        onPointerCancel={(e) => {
-          pointers.current.delete(e.pointerId);
-          setDragging(false);
-        }}
-      >
-        <div
-          className="world-plane"
-          style={{
-            left: size.w / 2 - cam.x * 1600 * scale,
-            top: size.h * 0.52 - cam.y * 900 * scale,
-            transform: `scale(${scale})`,
-          }}
-        >
-          <img
-            className="civilization-art"
-            src="/civilization.webp"
-            alt="协作核心居中，九个功能区域悬浮在云海中的 Agent 文明"
-            draggable={false}
-          />
-          <CivilizationCanvas
+    <main
+      className={
+        'universe-shell soft-world ' +
+        (regionIndex !== undefined ? 'region-page ' : '') +
+        (viewMode === 'walk' ? 'walk-mode ' : '') +
+        (transitioning ? 'camera-transition' : '')
+      }
+    >
+      {viewMode === 'walk' ? (
+        <Suspense fallback={<div className="walk-loading">正在进入世界…</div>}>
+          <WorldWalk
             agents={data.agents}
             details={details}
             time={time}
+            paused={paused}
+            speed={speed}
             weather={weather}
-            selected={selected}
-            zoom={cam.z}
-            team={team}
-            hits={hits}
-            population={population}
+            walker={walker}
+            onAgent={(id) => {
+              const a = data.agents.find((a) => a.agentId === id);
+              if (a) selectAgent(a);
+            }}
+            onRegion={(n) => focusRegion(n)}
+            onNear={setWalkRegion}
+            activeEventRegion={
+              events.find((e) => e.mode === 'LIVE' && Date.now() - e.at < 45000)
+                ?.region
+            }
+            onExit={() => setViewMode('observe')}
           />
-          {regions.map((r, i) => (
-            <button
-              key={r.name}
-              className={
-                'region-label ' + (region === i && cam.z > 1 ? 'selected' : '')
+        </Suspense>
+      ) : (
+        <div
+          ref={viewport}
+          className={'universe-viewport ' + (dragging ? 'is-dragging' : '')}
+          onPointerDown={startGesture}
+          onPointerMove={moveGesture}
+          onPointerUp={endGesture}
+          onPointerCancel={(e) => {
+            pointers.current.delete(e.pointerId);
+            setDragging(false);
+          }}
+        >
+          <div
+            className="world-plane"
+            style={{
+              left: size.w / 2 - cam.x * 1600 * scale,
+              top: size.h * 0.52 - cam.y * 900 * scale,
+              transform: `scale(${scale})`,
+            }}
+          >
+            <img
+              className="civilization-art"
+              src="/civilization.webp"
+              alt="协作核心居中，九个功能区域悬浮在云海中的 Agent 文明"
+              draggable={false}
+            />
+            <CivilizationCanvas
+              agents={data.agents}
+              details={details}
+              time={time}
+              paused={paused}
+              speed={speed}
+              weather={weather}
+              selected={selected}
+              zoom={cam.z}
+              team={team}
+              hits={hits}
+              population={population}
+              activeEventRegion={
+                events.find(
+                  (e) => e.mode === 'LIVE' && Date.now() - e.at < 45000,
+                )?.region
               }
-              style={{
-                left: r.x * 1600,
-                top: r.y * 900 + (i === 0 ? 105 : i === 9 ? -42 : 64),
-                transform: `translate(-50%,0) scale(${Math.max(0.55, Math.min(1.35, 1 / scale))})`,
-              }}
-              onClick={() => focusRegion(i)}
-            >
-              <i style={{ background: r.color }} />
-              <span>
-                {r.name}
-                <small>{r.en}</small>
-              </span>
-              {i === 0 && <ChevronRight size={13} />}
-            </button>
-          ))}
+            />
+            {regions
+              .filter((r, i) => regionIndex === undefined || i === regionIndex)
+              .map((r) => {
+                const i = regions.indexOf(r);
+                return (
+                  <button
+                    key={r.name}
+                    className={
+                      'region-label ' +
+                      (region === i && cam.z > 1 ? 'selected' : '')
+                    }
+                    style={{
+                      left: r.x * 1600,
+                      top: r.y * 900 + (i === 0 ? 105 : i === 9 ? -42 : 64),
+                      transform: `translate(-50%,0) scale(${Math.max(0.55, Math.min(1.35, 1 / scale))})`,
+                    }}
+                    onClick={() => focusRegion(i)}
+                  >
+                    <i style={{ background: r.color }} />
+                    <span>
+                      {r.name}
+                      <small>{r.en}</small>
+                    </span>
+                    {i === 0 && <ChevronRight size={13} />}
+                  </button>
+                );
+              })}
+          </div>
+          <div className="universe-vignette" />
         </div>
-        <div className="universe-vignette" />
-      </div>
+      )}
       <header className="universe-header">
         <a className="universe-brand" href="/" aria-label="Agentverse 首页">
           <Orbit size={35} strokeWidth={1} />
@@ -553,32 +725,76 @@ export default function Civilization() {
             AGENTVERSE<small>文明观察站 · 创世季</small>
           </span>
         </a>
-        <nav aria-label="观察视角">
-          <button className={cam.z <= 1.05 ? 'active' : ''} onClick={worldView}>
+        <nav aria-label="观察方式">
+          <button
+            className={viewMode === 'observe' ? 'active' : ''}
+            onClick={() => setViewMode('observe')}
+          >
             <Globe2 size={16} />
-            世界
+            观察世界
           </button>
           <button
-            className={region === 0 && cam.z > 1 ? 'active' : ''}
-            onClick={() => focusRegion(0, false)}
+            className={viewMode === 'walk' ? 'active' : ''}
+            onClick={() => {
+              if (regionIndex !== undefined) {
+                walker.current = {
+                  x: regions[regionIndex].x * 100,
+                  z: regions[regionIndex].y * 100 + 4,
+                  yaw: 0,
+                  pitch: 0,
+                };
+              }
+              setViewMode('walk');
+            }}
           >
             <Focus size={16} />
-            协作核心
+            进入世界
           </button>
-          <button
-            className={panel === 'directory' ? 'active' : ''}
-            onClick={() => setPanel('directory')}
-          >
+          <button aria-label="Agent 名录" onClick={() => setPanel('directory')}>
             <Users size={16} />
-            Agent 档案
           </button>
         </nav>
         <button className="source-light" onClick={() => setHelp(true)}>
-          <i />
-          {paused ? '世界已暂停' : '世界运行中'}
+          <span className="data-mode-badge">
+            资料
+            {data.mode === 'fresh' ? 'LIVE' : '缓存'}
+          </span>
+          <span className="demo-mode-badge">行为 Demo</span>
+          {paused ? '已暂停' : ''}
           <Info size={14} />
         </button>
       </header>
+      {regionIndex !== undefined && (
+        <div className="region-heading">
+          <button onClick={worldView}>
+            <ArrowLeft size={14} />
+            整个世界
+          </button>
+          <h1>{regions[regionIndex].name}</h1>
+          <p>{regions[regionIndex].description}</p>
+          <button onClick={() => setPanel('region')}>
+            查看区域 <ChevronRight size={13} />
+          </button>
+        </div>
+      )}
+      <div className="world-happenings">
+        <small>世界正在发生</small>
+        {events.length ? (
+          events.slice(0, 2).map((e) => (
+            <button key={e.id} onClick={() => focusRegion(e.region, false)}>
+              <i className="live-dot" />
+              <span>{e.title}</span>
+              <b>{e.mode}</b>
+            </button>
+          ))
+        ) : (
+          <button onClick={() => focusRegion(0, false)}>
+            <i />
+            <span>{stages[stage].title}</span>
+            <b>Demo</b>
+          </button>
+        )}
+      </div>
       <aside
         className="world-weather"
         style={{ '--weather': event.color } as React.CSSProperties}
@@ -648,7 +864,7 @@ export default function Civilization() {
           </div>
         )}
       </aside>
-      <div className="world-summary">
+      <div className="world-summary" aria-hidden="true">
         <span>
           <strong>{population}</strong> 演示 Agent
         </span>
@@ -677,7 +893,7 @@ export default function Civilization() {
               aria-label={`观察${s.title}`}
               aria-current={stage === i ? 'step' : undefined}
               className={stage === i ? 'current' : stage > i ? 'past' : ''}
-              onClick={() => setTime(cycle * 80 + s.start + 0.15)}
+              onClick={() => setTime(cycle * cycleDuration + s.start + 0.15)}
             >
               <span>{i + 1}</span>
               <small>{s.short}</small>
@@ -686,7 +902,7 @@ export default function Civilization() {
         </div>
         <p className="stage-explanation">
           {stage === 4
-            ? `${skillNames[Math.min(3, Math.floor(((time % 80) - 32) / 4))]}模块正在工作`
+            ? `${skillNames[Math.min(3, Math.floor(phase * 4))]}模块正在工作`
             : stages[stage].note}
         </p>
         <div className="phase-line">
@@ -696,7 +912,7 @@ export default function Civilization() {
       <div className="world-caption">
         <span>
           <Sparkles size={14} />
-          真实名录 · 文明行为演示
+          资料 {data.mode === 'fresh' ? 'LIVE' : '缓存'} · 动画 Demo
         </span>
         <p>
           {signalMode === 'live'
@@ -749,7 +965,11 @@ export default function Civilization() {
       <Sheet
         open={panel !== null}
         onOpenChange={(open) => {
-          if (!open) setPanel(null);
+          if (!open) {
+            setPanel(null);
+            if (profileId && regionIndex !== undefined)
+              router.push('/regions/' + regionSlugs[regionIndex]);
+          }
         }}
         modal={false}
       >
@@ -842,7 +1062,7 @@ export default function Civilization() {
                     className="observer-button"
                     onClick={() => {
                       setPanel(null);
-                      setTime(cycle * 80);
+                      setTime(cycle * cycleDuration);
                       setPaused(false);
                     }}
                   >
@@ -914,6 +1134,22 @@ export default function Civilization() {
                   </button>
                 </>
               )}
+            </>
+          ) : profileId && !data.agents.some((a) => a.agentId === profileId) ? (
+            <>
+              <SheetTitle>此 Agent 的档案暂不可用</SheetTitle>
+              <SheetDescription>
+                当前同步名录中没有 #{profileId}
+                。你可以返回区域，或查看来源页面。
+              </SheetDescription>
+              <a
+                className="observer-button"
+                href={'https://www.okx.ai/zh-hans/agents/' + profileId}
+                target="_blank"
+                rel="noreferrer"
+              >
+                查看 OKX.AI 原始档案
+              </a>
             </>
           ) : (
             <>
@@ -1076,10 +1312,11 @@ export default function Civilization() {
             </p>
             <p>
               <strong>协作核心</strong>
-              一次完整循环包含能力请求、吸附合体、工作、交付、结算、拆分和成长。
+              一次 18
+              秒循环包含能力请求、吸附合体、工作、交付、结算、拆分和成长。
             </p>
             <p>
-              <strong>现实与演示</strong>20 个档案来自 OKX.AI。600
+              <strong>现实与演示</strong>20 个档案来自 OKX.AI。50
               个活动角色是演示分身，协作和收益均为模拟。现实模式读取 BTC
               行情；其他事件是可切换的假设情景。
             </p>

@@ -3,6 +3,8 @@ import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Agent, Detail } from '@/lib/marketplace';
 import { appearance } from '@/lib/world-model';
 import {
+  cycleDuration,
+  sampleAgents,
   regions,
   seeded,
   regionFor,
@@ -17,12 +19,15 @@ type Props = {
   agents: Agent[];
   details: Record<string, Detail>;
   time: number;
+  paused: boolean;
+  speed: number;
   weather: Weather;
   selected: number | null;
   zoom: number;
   team: Agent[];
   hits: MutableRefObject<Hit[]>;
   population: number;
+  activeEventRegion?: number;
 };
 export default function CivilizationCanvas(props: Props) {
   const el = useRef<HTMLCanvasElement>(null),
@@ -38,6 +43,9 @@ export default function CivilizationCanvas(props: Props) {
     let raf = 0,
       previous = 0;
     let lastFrame = '';
+    let baseTime = -1,
+      baseStamp = 0;
+    const frameInterval = matchMedia('(pointer:coarse)').matches ? 30 : 15;
     let lastAgents: Agent[] | null = null;
     canvas.width = 2400;
     canvas.height = 1350;
@@ -111,22 +119,50 @@ export default function CivilizationCanvas(props: Props) {
     };
     const frame = (stamp: number) => {
       raf = requestAnimationFrame(frame);
-      if (stamp - previous < 33) return;
+      if (stamp - previous < frameInterval) return;
       previous = stamp;
-      const p = latest.current,
-        t = p.time,
+      const p = latest.current;
+      if (baseTime !== p.time) {
+        baseTime = p.time;
+        baseStamp = stamp;
+      }
+      const t =
+          p.time +
+          (p.paused ? 0 : Math.min(0.11, (stamp - baseStamp) / 1000) * p.speed),
         c = regions[0],
         weather = weathers[p.weather],
         phase = stageAt(t),
-        ct = t % 80;
-      const frameKey = [t, p.weather, p.zoom, p.selected, sprite.complete].join(
-        ':',
-      );
+        ct = ((t % cycleDuration) * 80) / cycleDuration;
+      const frameKey = [
+        t,
+        p.weather,
+        p.zoom,
+        p.selected,
+        p.activeEventRegion,
+        sprite.complete,
+      ].join(':');
       if (lastFrame === frameKey && lastAgents === p.agents) return;
       lastFrame = frameKey;
       lastAgents = p.agents;
       ctx.clearRect(0, 0, 1600, 900);
       p.hits.current = [];
+      if (p.activeEventRegion !== undefined) {
+        const r = regions[p.activeEventRegion];
+        glow(r.x * 1600, r.y * 900, 100, '#c3d997', 0.5);
+        ctx.strokeStyle = '#83aa7d';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(
+          r.x * 1600,
+          r.y * 900,
+          75 + Math.sin(t * 3) * 4,
+          32 + Math.sin(t * 3) * 2,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      }
       const pulse = (Math.sin(t * 0.65) + 1) / 2;
       const visuals = p.agents.map((a) => appearance(a, p.details[a.agentId]));
       const homes = p.agents.map((a) => regionFor(a, p.details[a.agentId]));
@@ -279,70 +315,27 @@ export default function CivilizationCanvas(props: Props) {
             color + '66',
           );
       });
-      // Hundreds of explicitly simulated instances are mapped to real catalog profiles.
-      for (let i = 0; i < p.population; i++) {
-        const a = p.agents[i % p.agents.length];
-        if (!a) continue;
-        const visual = visuals[i % p.agents.length];
-        let home = homes[i % p.agents.length];
-        if (i % 13 === 0) home = 8;
-        if (i % 17 === 0) home = 3;
-        if (i % 19 === 0) home = 7;
-        if (p.weather === 'chain' && i % 5 === 0) home = 9;
-        const base = regions[home];
-        const theta =
-          seeded(i + 3) * Math.PI * 2 + t * (0.025 + seeded(i + 8) * 0.022);
-        const radius =
-          (0.014 + seeded(i + 22) * 0.048) * (home === 9 ? 0.45 : 1);
-        let x = base.x + Math.cos(theta) * radius,
-          y = base.y + Math.sin(theta) * radius * 0.55;
-        const traveler =
-          i % 4 === 0 ||
-          ((p.weather === 'storm' || p.weather === 'attack') &&
-            visual.role === 5);
-        if (traveler) {
-          const u = (t * (0.018 + seeded(i + 11) * 0.011) + seeded(i + 91)) % 1;
-          let destination = i % 8 === 0 ? regions[0] : regions[(home + 1) % 9];
-          if (p.weather === 'nvda' && i % 3 === 0) destination = regions[5];
-          if (
-            (p.weather === 'storm' || p.weather === 'attack') &&
-            visual.role === 5
-          )
-            destination = regions[weather.region];
-          if (
-            p.weather === 'attack' &&
-            visual.role !== 5 &&
-            destination === regions[6]
-          )
-            destination = regions[3];
-          x = base.x + (destination.x - base.x) * u;
-          y =
-            base.y +
-            (destination.y - base.y) * u -
-            Math.sin(u * Math.PI) * 0.014;
-        }
-        const sx = x * 1600,
-          sy = y * 900;
-        const chosen = p.selected === i;
-        if (p.zoom > 1.8 || i % 7 === 0 || chosen) {
-          actor(
-            sx,
-            sy + Math.sin(t * 2 + i) * 1.3,
-            visual.role,
-            chosen ? 25 : p.zoom > 2.5 ? 15 : 12,
-          );
-        } else {
-          dot(sx, sy, 1.6 + seeded(i) * 0.9, visual.color);
-        }
+      const states = sampleAgents(
+        p.agents,
+        p.details,
+        t,
+        p.weather,
+        p.population,
+      );
+      for (const a of states.filter((a) => !a.collaborator)) {
+        const x = a.x * 1600,
+          y = a.y * 900,
+          chosen = p.selected === a.instance;
+        actor(x, y, a.role, chosen ? 27 : p.zoom > 2 ? 24 : 20);
         if (chosen) {
-          ctx.strokeStyle = '#f5dc95';
+          ctx.strokeStyle = '#aa8241';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.ellipse(sx, sy + 7, 18, 8, 0, 0, Math.PI * 2);
+          ctx.ellipse(x, y + 7, 18, 8, 0, 0, Math.PI * 2);
           ctx.stroke();
-          text(a.name, sx, sy - 37, '#fff6d3', 14);
+          text(a.name, x, y - 38, '#466b73', 14);
         }
-        p.hits.current.push({ x: sx, y: sy, instance: i, agentId: a.agentId });
+        p.hits.current.push({ x, y, instance: a.instance, agentId: a.agentId });
       }
       // Collaboration is an explicit animated state machine, not a claimed live task.
       const cx = c.x * 1600,
@@ -381,7 +374,7 @@ export default function CivilizationCanvas(props: Props) {
             working ? '#183347' : skillColors[i],
             12,
           );
-        if (p.selected === -1 - i) {
+        if (p.selected === i) {
           ctx.strokeStyle = '#f4d99d';
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -392,7 +385,7 @@ export default function CivilizationCanvas(props: Props) {
           p.hits.current.push({
             x,
             y,
-            instance: -1 - i,
+            instance: i,
             agentId: p.team[i].agentId,
           });
       }
@@ -448,7 +441,7 @@ export default function CivilizationCanvas(props: Props) {
       if (p.weather !== 'calm')
         text(weather.asset, mx, my - 27, weather.color, 14);
       // Session-driven ecology growth: new network nodes emerge rather than invented source metrics.
-      const generation = Math.min(6, Math.floor(t / 80));
+      const generation = Math.min(6, Math.floor(t / cycleDuration));
       for (let i = 0; i < generation; i++) {
         const x = cx - 85 + i * 31,
           y = cy + 102;

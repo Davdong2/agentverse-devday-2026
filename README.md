@@ -1,44 +1,36 @@
-# Agentverse — Civilization Observer
+# Agentverse — 观察世界 / 进入世界
 
-A world-first Chinese interactive simulation based on the supplied Agentverse V0.1 document and the user's expanded civilization brief. The home page is a continuous, zoomable world rather than a catalog dashboard.
+A Chinese world-first website built from the supplied Agentverse brief, with public OKX.AI profile data and explicitly simulated behavior. Soft original isometric artwork, ivory geometry, pale teal atmosphere and generous negative space replace the dashboard-led home page.
 
 ## Experience
 
-- One central collaboration disk, surrounded by research, genesis, memory, compute, market, risk, reality, energy, and unexplored domains.
-- 600 explicitly simulated instances mapped to 20 real OKX.AI profiles. The instance count is not the marketplace's number of distinct Agents, and no real Agent behavior is asserted.
-- Continuous 80-second collaboration state machine: request, approach, docking, composite formation, sequential research/risk/audit/execution, result delivery, simulated rewards, separation, and skill growth.
-- World/region/Agent zoom levels, drag and two-finger navigation, keyboard-accessible region and zoom controls, pause, speed control, stage selection, real profile/service panels, and current-session simulation memories.
-- Six hypothetical world events: NVIDIA information storm, BTC volatility storm, liquidity tide, X Layer expansion, protocol risk contamination, and a resources/energy loop. Events change flows, colors, rings, routing or network expansion. They are prominently labeled simulations.
-- Real BTC market mode uses the OKX public ticker endpoint. A 24h price change <= -2% maps to a volatility storm, >= +2% to a tide, and otherwise to calm. This visual interpretation is not investment advice and is not a claim that liquidity was independently measured. Other event types are not connected to real news feeds.
-- Assets near the reality portal are conceptual mappings, not real ownership, tokenization, or live quotes.
+- The default Canvas overview contains 50 simulated instances mapped to real public profiles. Ten clickable regions: 协作中心、研究区、创生区、记忆库、算力站、交易市场、安全区、现实入口、能源站、未知世界.
+- Selecting a region animates a camera zoom and navigates to `/regions/[slug]`, retaining the world scene. Selecting an Agent opens the third-level scene-backed profile at `/regions/[slug]/agents/[id]` with identity, interpreted skill blocks, actual services, rating, sales, starting price, source status and clearly marked simulation history.
+- “进入世界” lazily loads a lightweight Three.js first-person renderer with simple low polygon platforms, bridges and modular organisms. WASD/arrow keys move; drag turns the view; clicks inspect Agents and regions. Phones have a joystick and drag-look. Walk bounds follow the same platform and bridge topology used for rendering.
+- WorldProvider persists source data, simulation time, weather, events, history and walker position above all routes. Both cameras sample the same deterministic AgentState using the same clock. There is no second simulation on camera switch. Progress persists across client navigation and resets on reload.
+- One continuous 18-second collaboration cycle: request → approach → dock → composite → sequential work → result delivery → simulated rewards → split → growth. Pause, speed and stage controls act on shared time.
+- Real catalog deltas and BTC ticker updates enter a short event feed and briefly highlight the corresponding region in both views. Demo events remain marked. The feed distinguishes a profile appearing in the current fetched catalog from verified creation of a new Agent.
 
-## Data and persistence
+## Data boundaries
 
-`/api/agents` reads https://www.okx.ai/zh-hans/agents and normalizes public names, categories, descriptions, ratings, sales, starting prices and avatars. The latest successful response is saved in WORLD_STORE (R2), cached for 20 minutes, and refreshed on page open and every 20 minutes. On source failure, it returns the latest saved real snapshot with its timestamp and explicit snapshot status. Public HTML occasionally does not contain the expected embedded catalog; no authenticated endpoints or signing mechanisms are bypassed.
+`/api/agents` reads https://www.okx.ai/zh-hans/agents, normalizes public names, categories, descriptions, ratings, sales, starting prices and avatars, and stores successful snapshots in WORLD_STORE (R2). The page synchronizes on entry and every 20 minutes. Server caching is 20 minutes. If the public page omits the expected embedded catalog or fails, the last real snapshot is returned with its timestamp and explicit cache status. Bundled fallback: 20 real profiles. The source's total count is distinct from loaded profiles and the 50 simulated instances.
 
-`/api/agents/[id]` reads actual public service records. The bundled data covers all 20 profiles, with the first nine services or fewer per profile. Loaded count and total count are distinct.
+`/api/agents/[id]` reads public service records with a 20-minute cache; an open profile checks again every 20 minutes. Bundled fallback covers all 20 profiles with up to nine services each. Loaded and total service counts remain distinct. Unknown profile routes explain missing data rather than substitute a different identity.
 
-`/api/world-signal` reads https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT without authentication, validates last/open24h/ts, caches briefly and persists a fallback. Stale data remains labeled. No fabricated live market values are supplied.
+`/api/world-signal` reads the unauthenticated OKX BTC-USDT ticker, validates last/open24h/ts, caches for one minute and persists a fallback. A 24h change <= -2% maps to a storm, >= +2% to a tide, otherwise calm. This is an artistic price-change mapping, not an independently measured liquidity indicator. Fresh market events take priority over the ordinary demo. Stale signals remain labeled.
 
-Simulation progress and memories are session-only and reset on page reload. Actual catalog ratings and sales remain separate from simulated rewards and skills. External descriptions are inert, untrusted text; no service is commissioned and no trade is executed.
+The header distinguishes `资料 LIVE / 缓存` from `行为 Demo`. Catalog data and real market signals never make Agent movement or cooperation real. Collaboration, task execution, rewards, growth, hypothetical news, RWA nodes and resource flows are simulations. X Layer WebSocket events, live news, stocks and real A2A/payment records are not connected. No service is commissioned and no transaction is executed.
 
-## Scene photography
+## Rendering and performance
 
-The photography dialog pauses the scene and exports region, weather, collaboration stage, camera, team, selected profile and simulation history as structured JSON. The optional server image-generation route supports the expanded civilization state and saves results to R2.
+The overview remains Canvas. Three.js is loaded only for walking. Simple shared geometries/materials, no large textures, shadows or complex PBR. The first-person renderer adapts resolution, particles and distant non-team Agent visibility when observed frame rate is low. The four current collaborators remain visible. Hidden pages suspend world updates and rendering; GPU resources and input handlers are released on unmount. Reduced-motion preferences pause the initial simulation.
 
-OPENAI_API_KEY is required as a server secret to enable generation. It is currently unconfigured, so the UI disables paid generation and explains why. No paid generation has been tested. Conditional R2 request claims prevent concurrent submissions using the same request ID. See .env.example; never put secrets in client code.
+Desktop 60 FPS and mobile 30 FPS are targets, not measured guarantees. This revision has not received browser visual/interaction testing or physical-device GPU profiling. Automated checks verify deterministic shared positions, all nine phase boundaries, continuous docking and separation, market thresholds, all ten walkable region centers, uninterrupted bridges, out-of-world rejection, and mapping to real profiles. TypeScript, production build and server route smoke checks are also used. Pure state-sampling timing is not renderer FPS.
 
-## Validation
+## Optional scene photography
 
-- TypeScript check and production build.
-- Original 20-profile visual mapping checks.
-- New collaboration tests: all ten regions, all nine phases, continuous trajectories including cycle boundaries, physical approach/docking/separation, and market-weather thresholds.
-- HTTP 200 home render; successful real BTC signal retrieval.
-- Civilization photography accepts a valid state and returns 503 not_configured without billing; invalid stage returns 400.
-- The new observer view has not undergone browser interaction/visual QA in this revision. Earlier browser checks applied to the prior four-station interface, not this redesign.
+The photography dialog pauses the scene and exports a structured description. The optional image-generation endpoint saves to R2 and uses conditional request claims to prevent duplicate request IDs. OPENAI_API_KEY is currently unconfigured; paid generation is disabled and has not been tested. The optional feature is not required for exploring either camera mode. Never expose secrets in client code.
 
-## Assets and runtime
+## Runtime
 
-Original generated panoramic world artwork plus six-family character atlas; the functional Canvas layer renders routes, populations and collaborative state. Canvas stops redrawing unchanged paused frames. Reduced-motion preferences pause the simulation initially. The site uses the existing Vinext/React/Cloudflare architecture and installed Shadcn Sheet, Dialog and Tabs primitives.
-
-Optional WebMCP `select_agent` validates a known ID and opens the same real profile panel. It never executes a service or transaction.
+Vinext / React / Cloudflare Workers, Shadcn Sheet/Dialog/Tabs, Canvas and lazily loaded Three.js. The existing private Sites project is preserved. Public external descriptions are untrusted inert text. Optional WebMCP selection validates known IDs and only opens profiles.

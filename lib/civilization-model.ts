@@ -3,82 +3,82 @@ import { appearance } from './world-model';
 export type Point = { x: number; y: number };
 export const regions = [
   {
-    name: '协作核心',
+    name: '协作中心',
     en: 'COLLABORATION',
-    x: 0.464,
-    y: 0.486,
+    x: 0.468,
+    y: 0.435,
     color: '#eacb82',
     description: '能力在这里相遇，为一次任务组成临时生命体。',
   },
   {
-    name: '研究域',
+    name: '研究区',
     en: 'RESEARCH',
-    x: 0.267,
-    y: 0.323,
+    x: 0.247,
+    y: 0.615,
     color: '#8ecaff',
     description: '吸收信号、财报与数据，形成可验证的判断。',
   },
   {
-    name: '创生域',
+    name: '创生区',
     en: 'GENESIS',
-    x: 0.123,
-    y: 0.5,
+    x: 0.125,
+    y: 0.44,
     color: '#efc79c',
     description: '新的技能与 Agent 在这里诞生。',
   },
   {
-    name: '记忆域',
+    name: '记忆库',
     en: 'MEMORY',
-    x: 0.449,
-    y: 0.259,
+    x: 0.454,
+    y: 0.741,
     color: '#bda9ed',
     description: '任务结果沉淀为经验，成为下一次协作的起点。',
   },
   {
-    name: '算力场',
+    name: '算力站',
     en: 'COMPUTE',
-    x: 0.651,
-    y: 0.254,
+    x: 0.67,
+    y: 0.654,
     color: '#87dfe6',
     description: '分配计算资源，为整个世界提供执行能力。',
   },
   {
-    name: '市场核心',
+    name: '交易市场',
     en: 'MARKET',
-    x: 0.694,
-    y: 0.45,
+    x: 0.691,
+    y: 0.391,
     color: '#edcb7c',
     description: '资产、流动性与策略在这里交换。',
   },
   {
-    name: '风险门',
+    name: '安全区',
     en: 'RISK',
-    x: 0.668,
-    y: 0.711,
+    x: 0.569,
+    y: 0.226,
     color: '#a4dbbc',
     description: '识别风险、检查权限，为协作提供安全边界。',
   },
   {
-    name: '现实之门',
+    name: '现实入口',
     en: 'REALITY',
-    x: 0.892,
-    y: 0.535,
+    x: 0.852,
+    y: 0.503,
     color: '#b1c7f6',
     description: '现实信号进入世界，服务结果返回现实。',
   },
   {
-    name: '能源场',
+    name: '能源站',
     en: 'ENERGY',
-    x: 0.273,
-    y: 0.738,
+    x: 0.275,
+    y: 0.223,
     color: '#f4c678',
     description: '能源转化为算力，支持 Agent 持续工作。',
   },
   {
-    name: '未知域',
+    name: '未知世界',
     en: 'UNEXPLORED',
-    x: 0.854,
-    y: 0.142,
+    x: 0.881,
+    y: 0.842,
     color: '#93a6bb',
     description: '生态扩张时，新的节点与连接逐渐出现。',
   },
@@ -86,7 +86,7 @@ export const regions = [
 export const weathers = {
   nvda: {
     title: '信息风暴',
-    event: 'NVIDIA 财报进入现实之门',
+    event: 'NVIDIA 财报进入现实入口',
     note: '研究、风险、审计和交易能力正向 NVDA 资产核心汇聚。',
     color: '#a5d8ff',
     asset: 'NVDA',
@@ -142,8 +142,8 @@ export const weathers = {
   },
 };
 export type Weather = keyof typeof weathers;
-export const cycleDuration = 80;
-export const stages = [
+export const cycleDuration = 18;
+const originalStages = [
   {
     title: '发出能力请求',
     short: '请求',
@@ -184,7 +184,7 @@ export const stages = [
     short: '交付',
     start: 48,
     end: 55,
-    note: '一份新的成果离开协作核心，送往现实之门。',
+    note: '一份新的成果离开协作中心，送往现实入口。',
   },
   {
     title: '奖励按贡献分流',
@@ -208,17 +208,26 @@ export const stages = [
     note: '记忆归档，新的技能块被安装，下一次协作开始。',
   },
 ];
+export const stages = originalStages.map((s) => ({
+  ...s,
+  start: (s.start * 18) / 80,
+  end: (s.end * 18) / 80,
+}));
 export const skillColors = ['#8ccfff', '#efd17c', '#f0f2ef', '#94d7ad'];
 export const skillNames = ['研究', '风险', '审计', '交易'];
 export function stageAt(time: number) {
-  const t = ((time % cycleDuration) + cycleDuration) % cycleDuration;
+  const m = time % cycleDuration;
+  const t = m < 0 ? m + cycleDuration : m;
   return stages.findIndex((s) => t >= s.start && t < s.end);
 }
 export function phaseProgress(time: number) {
   const i = stageAt(time),
     s = stages[i];
   return (
-    ((((time % cycleDuration) + cycleDuration) % cycleDuration) - s.start) /
+    ((time % cycleDuration < 0
+      ? (time % cycleDuration) + cycleDuration
+      : time % cycleDuration) -
+      s.start) /
     (s.end - s.start)
   );
 }
@@ -235,14 +244,14 @@ export function regionFor(a: Agent, d?: Detail) {
   return 2;
 }
 export function collaborationPose(time: number, index: number): Point {
-  const t = time % 80,
+  const t = ((time % cycleDuration) * 80) / cycleDuration,
     c = regions[0],
     homes = [regions[1], regions[6], regions[3], regions[5]];
   const slots = [
-    { x: -0.02, y: -0.009 },
-    { x: 0.02, y: -0.009 },
-    { x: -0.02, y: 0.026 },
-    { x: 0.02, y: 0.026 },
+    { x: -0.007, y: -0.006 },
+    { x: 0.007, y: -0.006 },
+    { x: -0.007, y: 0.012 },
+    { x: 0.007, y: 0.012 },
   ];
   const near = { x: c.x + slots[index].x, y: c.y + slots[index].y };
   const far = { x: c.x + slots[index].x * 3.1, y: c.y + slots[index].y * 2.7 };
@@ -274,3 +283,127 @@ export type MemoryRecord = {
   result: string;
   reward: number;
 };
+
+export const regionSlugs = [
+  'collaboration',
+  'research',
+  'genesis',
+  'memory',
+  'compute',
+  'market',
+  'safety',
+  'reality',
+  'energy',
+  'unknown',
+];
+export type AgentState = {
+  instance: number;
+  agentId: string;
+  name: string;
+  role: number;
+  x: number;
+  y: number;
+  collaborator: boolean;
+  activity: string;
+};
+export type WorldState = {
+  time: number;
+  weather: Weather;
+  agents: AgentState[];
+  stage: number;
+  paused: boolean;
+};
+export function sampleAgents(
+  agents: Agent[],
+  details: Record<string, Detail>,
+  time: number,
+  weather: Weather,
+  count = 50,
+): AgentState[] {
+  const team = ['2083', '8355', '9626', '8136'].map(
+    (id, i) =>
+      agents.find((a) => a.agentId === id) ?? agents[i % agents.length],
+  );
+  return Array.from({ length: count }, (_, i) => {
+    const a = i < 4 ? team[i] : agents[(i - 4) % agents.length];
+    const visual = appearance(a, details[a.agentId]);
+    if (i < 4) {
+      const p = collaborationPose(time, i);
+      return {
+        instance: i,
+        agentId: a.agentId,
+        name: a.name,
+        role: [0, 5, 2, 0][i],
+        x: p.x,
+        y: p.y,
+        collaborator: true,
+        activity: stages[stageAt(time)].title,
+      };
+    }
+    let home = regionFor(a, details[a.agentId]);
+    if (i % 13 === 0) home = 8;
+    if (i % 17 === 0) home = 3;
+    if (i % 19 === 0) home = 7;
+    if (weather === 'chain' && i % 5 === 0) home = 9;
+    const base = regions[home],
+      theta = seeded(i + 3) * Math.PI * 2 + time * 0.04,
+      radius = 0.014 + seeded(i + 22) * 0.04;
+    let x = base.x + Math.cos(theta) * radius,
+      y = base.y + Math.sin(theta) * radius * 0.55;
+    if (i % 4 === 0) {
+      const u = (time * 0.028 + seeded(i + 91)) % 1;
+      let destination = i % 8 === 0 ? regions[0] : regions[(home + 1) % 9];
+      if (weather === 'nvda' && i % 3 === 0) destination = regions[5];
+      if ((weather === 'attack' || weather === 'storm') && visual.role === 5)
+        destination = regions[6];
+      if (
+        weather === 'attack' &&
+        visual.role !== 5 &&
+        destination === regions[6]
+      )
+        destination = regions[3];
+      x = base.x + (destination.x - base.x) * u;
+      y = base.y + (destination.y - base.y) * u - Math.sin(u * Math.PI) * 0.014;
+    }
+    return {
+      instance: i,
+      agentId: a.agentId,
+      name: a.name,
+      role: visual.role,
+      x,
+      y,
+      collaborator: false,
+      activity: i % 4 === 0 ? '移动中' : '工作中',
+    };
+  });
+}
+
+export const regionConnections: [number, number][] = [
+  ...regions.slice(1).map((_, i): [number, number] => [0, i + 1]),
+  [2, 1],
+  [1, 3],
+  [3, 4],
+  [4, 7],
+  [7, 5],
+];
+export function canWalkAt(x: number, z: number) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
+  if (
+    regions.some(
+      (r, n) =>
+        Math.hypot(x - r.x * 100, z - r.y * 100) < (n === 0 ? 10.5 : 5.1),
+    )
+  )
+    return true;
+  return regionConnections.some(([a, b]) => {
+    const ax = regions[a].x * 100,
+      az = regions[a].y * 100;
+    const dx = (regions[b].x - regions[a].x) * 100,
+      dz = (regions[b].y - regions[a].y) * 100;
+    const t = Math.max(
+      0,
+      Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)),
+    );
+    return Math.hypot(x - ax - dx * t, z - az - dz * t) < 1.22;
+  });
+}
