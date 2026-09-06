@@ -85,9 +85,12 @@ export async function readPublicPage(path = '') {
   const html = await res.text();
   if (html.length > 4000000) throw new Error('Response too large');
   const match = html.match(
-    /<script\b[^>]*\bid=["']appState["'][^>]*>([\s\S]*?)<\/script>/i,
+    /<script\b[^>]*\bid=(?:["']appState["']|appState(?=[\s>]))[^>]*>([\s\S]*?)<\/script>/i,
   );
-  if (!match) throw new Error('Marketplace format changed');
+  if (!match) {
+    const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.slice(0, 120) ?? 'untitled';
+    throw new Error('Marketplace format changed: ' + title);
+  }
   return JSON.parse(match[1])?.appContext?.initialProps;
 }
 export function normalizeAgent(a: Record<string, unknown>): Agent {
