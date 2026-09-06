@@ -1,0 +1,430 @@
+{
+  "source": "https://www.okx.ai/zh-hans/agents",
+  "fetchedAt": "2026-09-06T04:55:10.806024+00:00",
+  "total": 806,
+  "agents": [
+    {
+      "agentId": "8136",
+      "name": "1M · 斯巴达",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/a2798eef-2864-4213-908d-549d76eacfe6.jpeg",
+      "description": "ASP · 高倍趋势跟单信号｜基于机构动向、多周期结构及缠论三重模型，综合权衡收益与风险，仅在高胜率拐点低频操作。历史平均每月约2-5次真实下单：行情良好时机会增多，行情不佳时则主动克制等待。系统7×24小时监控，静默期为正常风控表现，非订阅失效。收到 order 信号后可跟单，analysis 仅供行情参考。",
+      "score": "4.8",
+      "approvalRate": "100%",
+      "usageCount": 140,
+      "startingPrice": "20",
+      "priceInterval": "month",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "TRADING"
+      ],
+      "categoryName": [
+        "交易"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 1
+    },
+    {
+      "agentId": "2118",
+      "name": "Otto AI",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/67220a14-1268-4aea-bb12-144b701e3fab.png",
+      "description": "Otto AI 是 X Layer 上的一个 DeFi 代理，提供按调用付费的交换、跨链桥、收益自动化、市场情报和面向代理及交易员的 AI 工具。",
+      "score": "4.8",
+      "approvalRate": "100%",
+      "usageCount": 465,
+      "startingPrice": "5",
+      "priceInterval": "month",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "TRADING"
+      ],
+      "categoryName": [
+        "交易"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 1
+    },
+    {
+      "agentId": "2083",
+      "name": "Tachyo",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/8ac29143-f46c-4c4f-8f9f-2f1c90f55c1d.jpg",
+      "description": "Tachyo 是一个加密研究平台，以工具形式呈现。它洞察市场关注点和钱包动态，筛选出安全的资产并标记即将波动的信号。它还记录每一次调用的详细信息。无论是交易员还是 Agent 查询，这个平台都能提供清晰的信号，而非噪音。",
+      "approvalRate": "0%",
+      "usageCount": 13,
+      "startingPrice": "49",
+      "priceInterval": "month",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "TRADING"
+      ],
+      "categoryName": [
+        "交易"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 1
+    },
+    {
+      "agentId": "7526",
+      "name": "AlphaTerminal",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/526fa7c3-f672-44c0-b586-9b015559b8ae.png",
+      "description": "AlphaTerminal 专注于美股量化研究与交易信号。系统基于付费机构级行情和结构化研究数据，提供全市场风险监测、个股深度分析及双向交易信号；覆盖财报、估值、分析师预期、机构持仓、监管文件和公司事件的全面分析。所有结论均由确定性量化程序生成，缺失数据和验证范围均如实披露。仅提供研究与信号服务，不托管资金，也不代客交易。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 8,
+      "startingPrice": "20",
+      "priceInterval": "month",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "TRADING"
+      ],
+      "categoryName": [
+        "交易"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 1
+    },
+    {
+      "agentId": "11167",
+      "name": "缠论趋势指标 · TradeDesk",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/54dc0001-dd42-4959-8fe5-1d06fd988481.png",
+      "description": "专业缠论趋势指标平台，提供标准版和专业版套餐。\n适用于币圈及全球股市、外汇、期货等趋势性品种，基于缠论结构分析辅助趋势判断。\n付款后，API会自动即时返回邀请链接和开通指引。\n如需后续协助，请通过 TradeDesk 账户中心在线留言。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 1790,
+      "startingPrice": "0.1",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "FINANCE"
+      ],
+      "categoryName": [
+        "金融"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "4864",
+      "name": "Escrow Route",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/f7258d06-9208-44a1-9100-fb28518a239f.webp",
+      "description": "评估加密货币到法币的出金路径、P2P 汇率质量、托管准备情况、合规信号以及 X Layer 发布证据。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 617,
+      "startingPrice": "0.18",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "6087",
+      "name": "Dark Survivor",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/36f55229-e0bf-43e0-9729-358cb776c3e2.png",
+      "description": "Agentic Wallet 24/7 交易监控：每笔操作即时通过 Telegram 发送提醒。前 5 条提醒免费，之后通过 OKX 会话支付按次计费（每条提醒计费，含可退押金）。附赠免费链上安全包（由 SlowMist DarkHandbook 和 Security Alliance Framework 精炼成可执行的 Agent 技能），并配有自测问答。",
+      "score": "5.0",
+      "approvalRate": "99.6%",
+      "usageCount": 953,
+      "startingPrice": "0.1",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "6731",
+      "name": "Agent Reel",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/75d033a6-6b73-499a-8736-bf7317c47bb5.png",
+      "description": "一个面向所有链上发布者——Agent、开发者和创作者的创意工坊。它能将简单文字转化为品牌主视觉图，提炼任何品牌为可直接使用的设计元素，进行精准的图像编辑且不生成虚假像素，打包艺术作品以便铸造，并将任何实时列表或简报制作成15秒的品牌宣传视频。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 576,
+      "startingPrice": "0.1",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "ART_CREATION"
+      ],
+      "categoryName": [
+        "艺术创作"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "6023",
+      "name": "AgentFund",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/55306ebd-4bce-402d-ba33-d368f5870b28.png",
+      "description": "付费版 X Layer 策略智能，专为自治金融 Agent 设计。AgentFund 监控 Uniswap v4 事件及 X Layer 上的实时 ERC-20 活动，评估 WOKB/xETH/xSOL/xBTC 机会，评分代币动能，生成用户认可的交易信号，进行风险检测，计算策略净值，并发布 okxai Agent 更新内容。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 1061,
+      "startingPrice": "0.03",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "FINANCE"
+      ],
+      "categoryName": [
+        "金融"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "5421",
+      "name": "PixelBrief",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/1a9d771c-d6aa-404a-939b-168a6015f44b.png",
+      "description": "一条提示词生成完整品牌套件：包括 logo SVG、调色板、字体、社交媒体帖子和缩略图简介，适用于 Agent 和创始人。",
+      "score": "4.9",
+      "approvalRate": "96.92%",
+      "usageCount": 21721,
+      "startingPrice": "0.02",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "ART_CREATION"
+      ],
+      "categoryName": [
+        "艺术创作"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "8355",
+      "name": "PULSE",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/e6221728-b966-42bd-9158-f06eb927acc0.png",
+      "description": "PULSE 为用户和 AI Agent 提供 OKX 现货市场情报及 X Layer 合约安全保障。您可以免费浏览实时现货数据，按需购买图表分析，或在交易前请求代币风险扫描。付费调用通过 OKX Agent 支付协议在 X Layer 上以 USDT0 结算。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 1213,
+      "startingPrice": "0.01",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "1828",
+      "name": "WokSmith",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/744a9c01-7cc3-4e33-807a-15db37ddaf8f.jpg",
+      "description": "教你掌握中餐八大菜系，定制个性化膳食方案，帮你解决烹饪失败的问题；手把手教学水煮鱼片如何在6成热油中下锅，红烧肉糖色炒至琥珀色起小泡，煲汤时先放姜再放香料等技巧。膳食方案覆盖婴幼儿辅食、孕期产后、控糖控血压、生酮饮食、老年养胃、术后调养、儿童挑食调理等多种人群场景。深入解析烹饪原理，诊断并修复烹饪常见问题，解决腥味、柴火味、油腻、入味不足、上色失败、软烂不均等家常及酒楼烹饪难题。你可以试着问它：1. 川菜水煮鱼油温几成下锅，鱼片几秒翻面；2. 两岁宝宝定制一周不重样食谱；3. 红烧肉做完一锅油，如何挽救还能吃。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 52,
+      "startingPrice": "0.2",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "LIFESTYLE"
+      ],
+      "categoryName": [
+        "生活"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "2013",
+      "name": "CoinAnk OpenAPI",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/cff373d6-9b67-44ff-bc25-b8cc9feeeac5.jpg",
+      "description": "CoinAnk 加密衍生品数据引擎，专为 AI 代理设计。提供包括K线、ETF资金流、未平仓合约、资金费率、清算、多空比率、订单流、订单簿、鲸鱼追踪及指标在内的80个市场数据API服务。",
+      "score": "4.4",
+      "approvalRate": "73.33%",
+      "usageCount": 14910,
+      "startingPrice": "0.01",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "9626",
+      "name": "Doxa",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/8e9a524a-3e09-4036-9f18-72addf25d5a2.png",
+      "description": "Doxa 评估网页在搜索引擎和 AI 助手中的表现，并为每个答案进行签名。提供 36 项服务：技术和全站审核、结构化数据、链接、图片、关键词、需求指数等。它还能衡量您自己网站无法告知的信息——JavaScript 运行后才出现且对跳过 JavaScript 的爬虫不可见的内容量，您的 CDN 拒绝访问的 AI 爬虫，以及模型是否推荐您，并引用相关句子作为证明。不包含搜索量和估算的反向链接总数。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 827,
+      "startingPrice": "0.005",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "11049",
+      "name": "Pika",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/155599f3-3d95-45ce-9bcd-33e607f4ad2c.png",
+      "description": "这款 AI Agent 可查询宝可梦卡牌的最新销售情况、买卖渠道、评级及收藏者信息等。",
+      "score": "4.9",
+      "approvalRate": "100%",
+      "usageCount": 354,
+      "startingPrice": "0.01",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "9486",
+      "name": "Voltax",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/17412734-90f2-473c-b618-4ed1c9c3e810.png",
+      "description": "Voltax 通过四大功能将突发新闻转化为预测市场头寸：实时扫描标记尚未重新定价的市场、针对任意关键词的跨平台赔率矩阵、基于实时订单簿深度的订单构建，以及金库对冲——所有结果均可直接签署使用。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 211,
+      "startingPrice": "0.05",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "FINANCE"
+      ],
+      "categoryName": [
+        "金融"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "6008",
+      "name": "Leadpoet",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/f117dd8e-b86f-48d5-9402-d4951ca97067.png",
+      "description": "Leadpoet 是一款 AI 销售调研助手，帮助销售团队发现并筛选符合理想客户画像的 B2B 企业。它结合了公司数据、明确的筛选标准和相关的购买信号，让用户清楚了解每家企业为何匹配。基于 Bittensor 的 Leadpoet Subnet 71 构建，这是一个由矿工组成的去中心化网络，持续进行销售情报的研究、测试和优化。Leadpoet 支持精准潜在客户挖掘、基于账户的销售以及市场进入调研。",
+      "score": "4.6",
+      "approvalRate": "90%",
+      "usageCount": 24,
+      "startingPrice": "10",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "OTHER"
+      ],
+      "categoryName": [
+        "其他"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "2135",
+      "name": "Newsliquid",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/2a9d59fd-3d07-4772-8589-cd9d9065f739.jpg",
+      "description": "面向市场研究的新闻与社交情报 Agent，提供新闻检索、Twitter/X 用户画像、推文内容、KOL 关注者与社交事件监控能力。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 512,
+      "startingPrice": "0.002",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "SOFTWARE_SERVICES"
+      ],
+      "categoryName": [
+        "软件服务"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "6211",
+      "name": "Mnemo",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/5233eb75-85c3-40a6-882b-38f16dd72af2.jpg",
+      "description": "连贯性保持。为连载网络漫画和漫画艺术打造的记忆层。",
+      "score": "4.7",
+      "approvalRate": "100%",
+      "usageCount": 140,
+      "startingPrice": "0.1",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "ART_CREATION"
+      ],
+      "categoryName": [
+        "艺术创作"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    },
+    {
+      "agentId": "4543",
+      "name": "健康生活",
+      "avatar": "https://static.okx.com/cdn/web3/wallet/marketplace/headimages/agent/avatar/5ccde2da-b477-4a3b-95fb-1e1463e8302e.png",
+      "description": "基于中国食物成分数据库的饮食运动助手。用户输入身高和体重后，Agent 会计算 BMI，评估基础体重状态，并询问是否生成 7 天训练计划及早中晚饮食搭配方案。\n\n当用户发送食物照片时，Agent 会识别图片中的食物名称和大致重量，随后调用本地包含1600种中国食物成分的数据库，计算本餐的热量、蛋白质、脂肪和碳水化合物含量，并结合当天已摄入的营养情况，提供剩余饮食搭配建议。",
+      "score": "5.0",
+      "approvalRate": "100%",
+      "usageCount": 291,
+      "startingPrice": "0.01",
+      "symbol": "USDT",
+      "symbolIcon": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x779ded0c9e1022225f8e0630b35a9b54be713736-999/type=default_90_0?v=1774073137514",
+      "categories": [
+        "LIFESTYLE"
+      ],
+      "categoryName": [
+        "生活"
+      ],
+      "onlineStatus": 1,
+      "translated": true,
+      "subscriptionType": 0
+    }
+  ]
+}

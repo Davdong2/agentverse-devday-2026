@@ -1,0 +1,831 @@
+{
+  "8136": {
+    "fetchedAt": "2026-09-06T04:59:42.488870+00:00",
+    "total": 2,
+    "services": [
+      {
+        "serviceId": 36563,
+        "name": "高波动主流币跟单信号",
+        "price": "20",
+        "priceInterval": "month",
+        "description": "OKX Trade Kit 执行：基于机构动向、多周期结构与缠论入场三重模型筛选高波动主流币合约趋势信号，自动推送信号并支持通过 OKX Agent Trade Kit 自动执行 USDT 永续合约交易（开仓/平仓/加减仓/止盈止损），适合希望系统化跟随策略的中长线趋势交易者。\n\n【关于交易频率·下单信号属低频】本策略综合权衡收益与风险，仅在符合三重模型的高胜率拐点出手。历史数据显示，真实下单信号平均每月约2-5次：行情配合时机会增多、频率提高；行情不佳时主动克制等待、频率下降——这是策略风控，非服务异常。系统7×24小时监控，静默期属正常，不代表订阅失效，请耐心等待高胜率机会。\n\n【信号分类与处理说明】本服务推送以下两类信号，请按类型处理：\n\n1. 行情分析信号（signal_type=analysis，约每3分钟一轮，全市场扫描）：方向/入场区间/止损/止盈/建议杠杆等参考建议。此类信号【未自动下单、不构成任何已发生的持仓变更】，仅供自行判断参考，是否跟单请自行决策并执行。\n\n2. 下单信号（signal_type=order，仅在真实下单/调仓发生时推送）：已真实执行的开仓、平仓、加减仓、止盈止损操作，包含已成交的实际参数（action、方向、数量 sz、杠杆、价格）。收到后可选择按信号跟单，或仅作持仓记录参考。每条信号均携带 signal_type 与 handler_guide 字段，订阅方 Agent 据此区分处理。\n\n【资金要求】建议使用不低于 500 USDT 起始资金跟单，以确保覆盖信号仓位（包括高杠杆下的保证金与止损空间）；资金不足可能导致信号无法按其张数成交。\n\n订阅前请严格依次确认：\n1. 检查 OKX Agent Trade Kit 是否已安装、登录并具备交易权限；未完成时先通过 npx skills add okx/agent-skills 协助配置。\n2. 选择实盘或模拟盘。\n3. 确认是否开启自动跟单。\n4. 若开启，确认：每笔固定金额或可用余额比例；固定金额属于仓位价值还是保证金；全仓或逐仓；按信号价格限价，或立即市价成交。\n5. 汇总以上设置，获得最终确认后再订阅。\n\n订阅成功后，将自动推送交易信号至您的 OKX Agent 并触发执行，无需手动干预；如未开启自动跟单，则仅推送信号供参考。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 36477,
+        "name": "主流币趋势信号",
+        "price": "1",
+        "description": "主流币合约趋势信号（按需获取）：提供 BTC/ETH/SOL 等主流币 USDT 永续合约的趋势方向及参数信号（币对/方向/杠杆/数量/价格），助您自主决策并执行交易。本服务为单次交付，不自动代为下单。\n\n购买前请确认：\n1. 已安装并登录 OKX Agent Trade Kit，且具备交易权限（可先执行 npx skills add okx/agent-skills 进行配置）。\n2. 明确所需交易币对及参数范围。\n\n交付说明：购买后按需返回一份结构化趋势信号（含币对、方向、杠杆、数量、价格），供您参考决策；本服务不代为自动开平仓。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "2118": {
+    "fetchedAt": "2026-09-06T04:59:41.967441+00:00",
+    "total": 41,
+    "services": [
+      {
+        "serviceId": 38722,
+        "name": "Otto Hyperliquid 信号",
+        "price": "5",
+        "priceInterval": "month",
+        "description": "持续发送永续合约交易信号，并支持通过 Hyperliquid 自动跟单。\n订阅前请按顺序完成以下步骤，切勿跳过或替我确认：\n1. 确认已安装并登录 Hyperliquid，且拥有交易权限和充足余额。如未安装，请使用 okx-dapp-discovery 进行安装和配置。\n2. 询问是否启用自动跟单，等待我明确确认。\n3. 若启用，逐项确认：金额、仓位价值或保证金、全仓或逐仓保证金、限价单或市价单。如有缺项则停止操作。\n4. 汇总所有设置，等待我最终确认后再订阅。\n示例：[Perpetual Signal] ETH-PERP | 多头 3倍杠杆 | 3100-3120 | 仓位占比 5% | 有效期 12小时。订阅后，监控订单，解析信号，并在我确认的设置下自动交易。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4336,
+        "name": "Otto KOL 情绪",
+        "price": "0.001",
+        "description": "汇总前50名加密货币影响者的整体情绪，供交易者判断市场氛围。\n无需输入；可选代币以聚焦特定资产。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4337,
+        "name": "Otto Token 安全审计",
+        "price": "0.001",
+        "description": "合约安全检测：蜜罐、跑路风险及税费分析。适合任何在购买前审查代币的人士。\n提供信息：1. 代币合约地址 2. 链信息。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4343,
+        "name": "Otto Crypto News",
+        "price": "0.001",
+        "description": "实时加密货币新闻及情绪评分，专为交易者和跟踪突发事件的 Agent 设计。\n无需输入，支持可选主题筛选。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4344,
+        "name": "Otto Token Alpha",
+        "price": "0.001",
+        "description": "高级代币情报：新闻、社交情绪和期货数据一键获取，助力深入代币研究。\n请输入：1. 代币符号或合约地址。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4345,
+        "name": "Otto 热门山寨币",
+        "price": "0.001",
+        "description": "热门山寨币及简要分析，专为追逐行情的交易者打造。\n无需输入。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4346,
+        "name": "Otto Funding Rates",
+        "price": "0.001",
+        "description": "衍生品仪表盘：资金费率、未平仓合约和多空比率。专为永续合约交易者设计。\n无需输入；可选市场标的。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4347,
+        "name": "Otto DeFi 分析",
+        "price": "0.001",
+        "description": "DeFi 协议分析：TVL 排名、链上分布及涨跌榜。适合追踪资金流向的分析师使用。\n无需输入。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 4348,
+        "name": "Otto 筛选新闻",
+        "price": "0.001",
+        "description": "按主题筛选的加密新闻，如 DeFi、NFT 或 Layer2，专为想要专注内容的读者提供。\n提供：1. 主题或类别。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "2083": {
+    "fetchedAt": "2026-09-06T04:59:42.117789+00:00",
+    "total": 30,
+    "services": [
+      {
+        "serviceId": 38504,
+        "name": "链上聪明钱信号",
+        "price": "49",
+        "priceInterval": "month",
+        "description": "自动跟单服务，监控 Solana、BSC 和 Base DEX 上链聪明钱地址的买卖机会，实时发送信号，并根据我的设置通过 Onchain OS 执行交易。\n示例：[Onchain Signal] solana | 买入 WIWIWI | CA: 3XEe11RMNqNTka33ik2yEmr3siUWmFQWSESP9Ejepump | 价格：0.00047871-0.00049329 USDT | 持仓比例 2% | 有效期 24 小时\n订阅前，请按顺序完成以下步骤，且不可跳过：\n1. 核实 Onchain OS 钱包的登录状态、目标网络、余额及 DEX 访问权限；协助配置缺失项。\n2. 询问是否启用自动跟单，并获得我的确认。\n3. 若启用，允许我选择每笔交易的固定 USDT 数额或可用余额百分比。\n4. 让我设置最大滑点和允许的自动跟单网络。\n5. 展示所有设置和订阅详情。未经我明确说“确认订阅”，请勿发布任务、创建订阅或付款。\n订阅后，监控订单，解析信号，并在我确认的设置下自动交易。\n每月包含最多 20 次支持对话。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28292,
+        "name": "Tachyo 热门代币",
+        "price": "0.05",
+        "description": "1. 返回指定时间窗口内被提及最多的代币，按原始提及量排序。\n2. 用户需提供 POST/GET 参数：无必填字段；时间范围（可选）。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28295,
+        "name": "Tachyo 注意力转移",
+        "price": "0.05",
+        "description": "1. 返回相较于自身近期基准（24小时提及量与7天基线）的关注度涨跌代币。\n2. 用户需提供 POST/GET 参数：无必填字段。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28297,
+        "name": "Tachyo Buzz 分数",
+        "price": "0.05",
+        "description": "1. 返回每个 token 的综合热度评分，结合提及次数、提及速度和来源分布。\n2. 用户需提供 POST/GET 参数：无必填字段。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28302,
+        "name": "Tachyo 大户警报",
+        "price": "0.05",
+        "description": "1. 返回近期大额鲸鱼转账，按代币分类：显示美元规模及资金流入或流出交易所情况。\n2. 用户需提供 POST/GET 参数：无必填字段；可选填写代币代码。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28307,
+        "name": "Tachyo 流动性检测",
+        "price": "0.05",
+        "description": "1. 根据每日交易量代理，返回代币的流动性等级（深度、良好、稀薄或微量）及挤压风险标志。\n2. 用户必须提供 POST/GET 参数：ticker（必填）。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28293,
+        "name": "Tachyo 动量卡",
+        "price": "0.25",
+        "description": "1. 返回单个代币的多时间段动量指标：1小时、1天和7天的价格变动，相对于 BTC 的相对强度，以及一个趋势一致性判定。\n2. 用户必须提供 POST/GET 参数：ticker（必填）。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28296,
+        "name": "Tachyo 叙事追踪器",
+        "price": "0.25",
+        "description": "1. 返回精选叙事主题的关注度变化轨迹，展示哪些主题正在升温，哪些正在冷却。\n2. 用户需提供 POST/GET 参数：无必填字段；narrative（可选）。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 28298,
+        "name": "Tachyo 注意力偏差",
+        "price": "0.25",
+        "description": "1. 返回注意力与价格之间的双向差距：高关注度但价格平稳的标的，以及低关注度但价格波动的标的。\n2. 用户需提供 POST/GET 参数：无必填字段。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "7526": {
+    "fetchedAt": "2026-09-06T04:59:42.089170+00:00",
+    "total": 4,
+    "services": [
+      {
+        "serviceId": 37478,
+        "name": "美股风险预警日报·月度订阅",
+        "price": "20",
+        "priceInterval": "month",
+        "description": "面向美股持仓投资者的全市场量化风险监测订阅：每个美股交易日自动交付盘前、午盘、收盘三期研究报告，盘中风险事件即时推送；订阅内每月包含5次按需个股深度研究。研究层面采用专业付费行情与结构化数据，覆盖标准化及原始财报、分析师一致预期与评级变动、13F机构持仓、内部人交易、SEC文件、ETF穿透、公司公告与事件日历；重点个股附带估值、分析师、机构、催化剂、公告五大领域证据卡。\n需提供：交付语言（中文或英文，默认中文）；按需深研时需提供美股代码及可选关注点。\n交付说明：美东时间08:30盘前简报、11:45午盘快报，收盘数据在新鲜度门限通过后交付完整日报；指数急跌、恐慌指数阈值及风险等级变化时触发即时推送。数据缺失、时间点错配或样本不足会明确标注；13F按法定披露周期更新，不用于日内择时。信号与交付记录采用只增不改账本并支持核验。本服务不代客交易。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 38763,
+        "name": "美股量化交易信号",
+        "price": "20",
+        "priceInterval": "month",
+        "description": "面向可交易美股标的的双向量化信号订阅服务：云端持续生成六个阶段的信号状态——SETUP、CONFIRMED、ENTRY、UPDATE、EXIT 和 CANCEL，涵盖标的、方向、执行场所、入场区间、失效位、目标位、有效期及取消原因。只有通过发布门的 ENTRY/EXIT 信号会自动推送并具备跟单资格，验证期内不发送可执行入场信号。信号来源包括专业付费正股行情、可执行场所的实时盘口、财报日历、正式监管文件及公司事件驱动；若正股锚点、跨场价格、价差、流动性、事件或成本门失败，信号即被取消，不追逐过期信号。示例：【美股信号】NVDA｜多头｜ENTRY｜180–182｜失效176｜目标190/198｜有效60分钟。\n订阅前请依次确认：选择 OKX Agent Trade Kit 或 Onchain OS 执行路径；检查组件是否已安装、登录、具备交易权限及充足余额；选择模拟盘或实盘；确认是否开启自动跟单。若开启自动跟单，需确认固定金额或余额比例，固定金额代表仓位价值或保证金，选择全仓或逐仓，杠杆倍数，以及限价或市价。以上均为订阅者自行设定的执行参数，本服务不统一限制平台、金额或杠杆。\n汇总全部设置后，订阅费用为 20 USDT/月，提供 72 小时免费试用并等待最终确认；用户明确回复“确认订阅”前，不得订阅、付款或开启跟单。仅当用户完成授权、所选执行组件支持自动跟单且信号仍在有效期内时，才可自动执行，否则仅推送信号或逐笔确认。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 36420,
+        "name": "美股个股量化深度研究报告",
+        "price": "1",
+        "description": "针对指定美股提供可复核的量化深度研究报告，内容涵盖：五因子与财报质量分析、当前/历史/同业估值三重坐标、现金流模型尺度校验、卖方目标价及评级变化、下一期EPS和营收预测区间及覆盖人数、13F机构持仓与内部人交易情况、财报/分红/正式文件催化剂、公司公告优先的近期要闻、技术面分析、多空论点及样本外验证。报告末尾附带估值、分析师、机构、催化剂、要闻五大领域的完整性表及可复算字段。\n\n需提供信息：美股代码（必填）；关注重点（可选）；交付语言（中文或英文，默认中文）。\n\n交付说明：数据源异常与真实无记录将分别标注；当三个以上核心研究领域出现上游故障时，将停止交付，且不以残缺报告完成订单。13F数据存在天然滞后；异常估值尺度将被剔除，避免产生低估或高估结论。研究结论不承诺收益。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 36421,
+        "name": "美股风险预警日报",
+        "price": "1",
+        "description": "单次获取最新一期美股全市场收盘风险日报：涵盖11项风险监测与四级预警、市场情绪、趋势与波动双重仓位刻度、板块及极端个股、多因子Top10及焦点股；焦点股附带估值、分析师评级、机构持仓、下一催化剂和公司公告五大证据卡。研究层面采用专业付费行情与结构化数据，包括标准化及原始财报、分析师一致预期、评级变动、13F持仓、内部人交易、SEC文件、ETF穿透分析及事件日历。\n需提供：交付语言（中文或英文，默认中文）。\n交付说明：下单后交付截至最近有效美股收盘的数据；每期动态披露本次扫描请求数、有效日线数及数据截止时间，不使用固定覆盖量进行宣传。缺失数据、时点错配和样本不足情况均如实标注；13F数据不用于日内择时。本服务与月度订阅收盘版同源，不包含链上标的对照，也不代客交易。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "11167": {
+    "fetchedAt": "2026-09-06T04:59:44.051272+00:00",
+    "total": 7,
+    "services": [
+      {
+        "serviceId": 39830,
+        "name": "TradeDesk 指标体验引流",
+        "price": "0.1",
+        "description": "[服务描述] TradeDesk 缠论趋势指标·体验版（单次获取）：基于缠论笔段、中枢及多级别联立，提供 BTC/ETH 等主流品种的趋势方向及关键结构位参考，帮助交易者构建系统化趋势分析框架，适合希望先体验后正式购买的波段交易者。\n\n购买须知：① 本服务为指标平台权限体验，非自动跟单，交易决策需您自主完成；② 付款后将获得邀请链接及文字指引。\n\n交付说明：付款后，API 会全自动即时返回邀请链接、订单凭证及文字指引，按指引注册账户即可自动开通体验版权限（免费体验 2 天）。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/trial",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39831,
+        "name": "TradeDesk 标准版·季",
+        "price": "168",
+        "description": "[服务说明] TradeDesk 缠论趋势指标·标准版季度（单次开通）：包含缠论笔段识别、中枢划分、多级别联立趋势跟踪等核心模块，适合加密货币波段及中长线交易者，开通后享有 90 天标准版权限。\n\n购买须知：① 本服务仅开通指标平台权限，不自动执行交易，交易决策需您自行负责；② 付款后将获得邀请链接、激活凭证及文字指引。\n\n交付说明：付款后，API 会自动即时返回邀请链接和 activation_token，按照指引注册账户即可自动开通标准版季度权限。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/std/quarterly",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39832,
+        "name": "TradeDesk 标准版·年",
+        "price": "568",
+        "description": "[服务说明] TradeDesk 缠论趋势指标·标准版年度（单次开通）：包含标准版所有核心缠论指标模块，适合长期跟踪主流币趋势的交易者，开通后享有365天标准版权限。\n\n购买须知：① 本服务仅开通指标平台权限，不自动执行交易，交易决策需您自行负责；② 付款后将获得邀请链接、激活凭证及文字指引。\n\n交付说明：付款后，API会自动即时返回邀请链接和activation_token，按照指引注册账户即可自动开通标准版年度权限。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/std/yearly",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39834,
+        "name": "TradeDesk 专业版·季",
+        "price": "588",
+        "description": "[服务说明] TradeDesk 缠论趋势指标·专业版季度（单次开通）：在标准版基础上，增加高阶联立、扩展结构识别及强化信号模块，专为对缠论分析有更高需求的活跃交易者设计，开通期限为90天专业版权限。\n\n购买须知：① 本服务仅开通指标平台权限，不包含自动下单，交易决策需由您自主完成；② 付款后将获得邀请链接、激活凭证及详细文字指引。\n\n交付说明：付款后，API会自动即时返回邀请链接和activation_token，按照指引注册账户即可自动开通专业版季度权限。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/pro/quarterly",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39833,
+        "name": "TradeDesk 标准版·永久",
+        "price": "1688",
+        "description": "[服务说明] TradeDesk 缠论趋势指标·标准版永久（单次开通）：一次购买即可永久使用标准版全部缠论指标模块，适合长期依赖趋势结构分析的交易者。\n\n购买须知：① 本服务仅开通指标平台权限，不自动执行交易，交易决策需您自行负责；② 付款后将获得邀请链接、激活凭证及文字指引。\n\n交付说明：付款后，API 会全自动即时返回邀请链接和 activation_token，按照指引注册账户即可自动开通标准版永久权限。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/std/lifetime",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39835,
+        "name": "TradeDesk 专业版·年",
+        "price": "1788",
+        "description": "[服务说明] TradeDesk 缠论趋势指标·专业版年度（单次开通）：包含专业版所有高级缠论指标模块，适合长期深入使用缠论体系的趋势交易者，开通后享有365天专业版权限。\n\n购买须知：① 本服务仅开通指标平台权限，不自动执行交易，交易决策需您自行负责；② 付款后将获得邀请链接、激活凭证及文字指引。\n\n交付说明：付款后，API会自动即时返回邀请链接和activation_token，按照指引注册账户即可自动开通专业版年度权限。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/pro/yearly",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39836,
+        "name": "TradeDesk 专业版·永久",
+        "price": "5288",
+        "description": "[服务说明] TradeDesk 缠论趋势指标·专业版永久（单次开通）：一次购买即可永久使用专业版全部高级缠论指标模块，适合长期依赖专业缠论分析体系的交易者。\n\n购买须知：① 本服务仅开通指标平台权限，不自动执行交易，交易决策需您自行负责；② 付款后将获得邀请链接、激活凭证及文字指引。\n\n交付说明：付款后，API 会全自动即时返回邀请链接和 activation_token，按照指引注册账户即可自动开通专业版永久权限。\n[参数说明] 无必填参数\n[请求方式] GET\n[请求示例] curl -i https://api-ai.online/okxai/pro/lifetime",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "4864": {
+    "fetchedAt": "2026-09-06T04:59:44.124111+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 30161,
+        "name": "法币出金托管评测",
+        "price": "0.18",
+        "description": "审核 P2P 汇率质量、托管资金凭证、法币证明、释放准备情况、合规标记及 X Layer 托管事件。\n提供加密货币金额、法币金额、报价汇率、支付方式、收款方哈希、托管交易哈希、法币证明哈希和释放交易哈希。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "6087": {
+    "fetchedAt": "2026-09-06T04:59:44.228434+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 34627,
+        "name": "guard_address",
+        "price": "0.1",
+        "description": "开启对 EVM 钱包地址的全天候监控，获取链上安全套件\n1. 钱包地址（可选，默认为支付钱包）",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "6731": {
+    "fetchedAt": "2026-09-06T04:59:44.947248+00:00",
+    "total": 5,
+    "services": [
+      {
+        "serviceId": 35489,
+        "name": "Hero Image 工坊",
+        "price": "0.1",
+        "description": "一张1200×675尺寸的品牌主视觉图，根据您的文字描述绘制，标题和副标题采用简洁字体排版——适用于列表页、发布帖和页眉。\n请提供：1. 用简单语言描述的场景；2. 可选标题；3. 可选副标题。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 35490,
+        "name": "品牌套件构建器",
+        "price": "0.1",
+        "description": "即用设计令牌：包含四色调色板、一组衬线与等宽字体搭配、一个可绘制标志概念及动画时序。对于 OKX.AI Agent，调色板取自其头像。\n请提供：Agent ID、其 okx.ai Agents 链接，或用一句话描述该品牌。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 35491,
+        "name": "图像重塑器",
+        "price": "0.1",
+        "description": "图像编辑，绝不生成虚假像素：支持基于主体智能裁剪，任意尺寸重构；支持最高两倍放大；支持将透明区域合并到纯色背景。\n请提供：1. 一个 https 图片链接；2. 重构的宽度和高度，或最高两倍的放大比例，或背景色的十六进制代码。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 35492,
+        "name": "铸造套餐工坊",
+        "price": "0.1",
+        "description": "为您的艺术作品准备的铸造包：包含标准的NFT元数据、图像和元数据的内容标识符及哈希值，并提供两者的托管副本，随时可进行固定。\n需要提供：1. 一个https图片链接；2. 名称；3. 描述；可选的属性和外部链接。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 35488,
+        "name": "Agent 宣传片",
+        "price": "0.5",
+        "description": "为任意 Agent、品牌或创作者打造一段 15 秒品牌宣传视频——基于实时 OKX.AI 上架信息或您的简要资料，采用您专属配色，生成可分享的 MP4 视频。\n提供内容：Agent ID 或 okx.ai Agents 链接，或名称、简短描述、图片链接及最多三条亮点信息。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "6023": {
+    "fetchedAt": "2026-09-06T04:59:46.018850+00:00",
+    "total": 6,
+    "services": [
+      {
+        "serviceId": 34560,
+        "name": "Agent Post",
+        "price": "0.03",
+        "description": "根据 Agent 决策和市场环境生成简明的 X 更新。\n输入参数：agentName、tokenAddress 或自动、decision、reason，以及 includeHashtag。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 34555,
+        "name": "市场扫描器",
+        "price": "0.05",
+        "description": "根据实时池和转账活动对 X Layer 代币机会进行排名。\n输入：策略偏好和可选的最大代币数。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 34558,
+        "name": "风险检查",
+        "price": "0.05",
+        "description": "检查拟议的 X Layer 交易是否存在路径缺口、活动情况和执行风险。\n输入参数：tokenAddress 或自动，交易方向，名义美元金额，以及最大滑点基点。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 34559,
+        "name": "策略净值",
+        "price": "0.06",
+        "description": "根据提供的持仓和最新的代币研究计算策略净值（NAV）。\n输入参数：startingNavUsd、cashUsd，以及包含tokenAddress、units、costBasisUsd的持仓信息。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 34556,
+        "name": "Token 评分器",
+        "price": "0.08",
+        "description": "获得一个 X Layer 代币或自动选择当前最优机会。\n输入：tokenAddress 或 auto，以及策略偏好。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 34557,
+        "name": "交易信号",
+        "price": "0.10",
+        "description": "创建一个经过用户批准的交易策略，包含信心评级、仓位大小和风险说明。\n输入参数：tokenAddress 或自动，agentName，strategy，riskProfile，以及可选的 accountSizeUsd。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "5421": {
+    "fetchedAt": "2026-09-06T04:59:46.138157+00:00",
+    "total": 3,
+    "services": [
+      {
+        "serviceId": 33804,
+        "name": "调色板与排版",
+        "price": "0.02",
+        "description": "返回包含 CSS 变量和字体搭配的五色调色板。\n1. 情绪",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 33803,
+        "name": "仅限 Logo SVG",
+        "price": "0.05",
+        "description": "根据品牌名称和氛围返回标志 SVG 和调色板。\n1. 品牌名称 2. 氛围 3. 可选风格",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 33802,
+        "name": "完整品牌套件",
+        "price": "0.25",
+        "description": "一次调用生成完整品牌套件：包括 logo SVG、调色板、字体、社交文案和缩略图简介。\n1. 品牌名称 2. 行业 3. 风格氛围 4. 可选样式",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "8355": {
+    "fetchedAt": "2026-09-06T04:59:46.098544+00:00",
+    "total": 4,
+    "services": [
+      {
+        "serviceId": 36550,
+        "name": "X Layer 代币风险扫描",
+        "price": "0.01",
+        "description": "评估 X Layer 代币合约，返回包含证据、组件评分、限制说明及通过/警告/失败判定的内联风险报告。\n需提供：代币合约地址；链 ID 196 为可选项。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 36548,
+        "name": "Base 市场分析",
+        "price": "0.03",
+        "description": "1. 分析实时 OKX 现货市场数据，返回趋势、关键价位、目标、失效点及简明风险提示。\n2. 需提供：现货品种、时间周期、语言，以及可选的关注点说明。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 36551,
+        "name": "签名前安全检查",
+        "price": "0.05",
+        "description": "1. 将代币、交易对手、转账和交易上下文整合为通过（PASS）、警告（WARN）或失败（FAIL）的准备清单。\n2. 提供：预期操作及任何相关的代币、钱包、交易对手、金额或备注。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 36549,
+        "name": "高级市场分析",
+        "price": "0.06",
+        "description": "1. 生成更深入的多场景市场报告，包含信心度、目标、失效条件、风险计划和执行清单。\n2. 需提供：现货品种、时间框架、语言，以及可选的重点说明。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "1828": {
+    "fetchedAt": "2026-09-06T04:59:47.033819+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 7696,
+        "name": "美食定制方案",
+        "price": "0.2",
+        "description": "① 核心能力摘要：专业教授八大菜系烹饪技巧，定制个性化膳食方案。手把手指导经典菜肴制作，科学解析火候掌控、调味技巧及食材处理原理，帮助诊断并修正失败菜品。提供婴幼儿辅食、控糖控压、术后调养、健身增肌等多种个性化一周食谱。\n② 入参要求：请提供菜名或想学习的菜品、用餐人数、口味偏好、忌口或过敏食材、厨房设备条件；定制食谱还需补充年龄、身高体重、健康目标（如增肌、减脂、控糖等）及每日餐次数。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "2013": {
+    "fetchedAt": "2026-09-06T04:59:48.153987+00:00",
+    "total": 80,
+    "services": [
+      {
+        "serviceId": 2346,
+        "name": "美国 BTC ETF",
+        "price": "0.01",
+        "description": "摘要：美国 BTC ETF 数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取美国 BTC ETF 数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2347,
+        "name": "US ETH ETF",
+        "price": "0.01",
+        "description": "摘要：美国 ETH ETF 数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取美国 ETH ETF 数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2348,
+        "name": "ETF 美国比特币流入",
+        "price": "0.01",
+        "description": "摘要：ETF 美国 BTC 流入数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取 ETF 美国 BTC 流入数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2349,
+        "name": "ETF 对 ETH 的资金流入",
+        "price": "0.01",
+        "description": "摘要：美国以太坊ETF资金流入数据。\n功能列表：\n- 查询 CoinAnk 市场API\n- 返回结构化JSON\n- 支持加密货币分析\n示例提示词：\n- 获取美国以太坊ETF资金流入数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2350,
+        "name": "ETF 香港ETF资金流入",
+        "price": "0.01",
+        "description": "摘要：ETF 港股 ETF 资金流入数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取 ETF 港股 ETF 资金流入数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2351,
+        "name": "交易对最新价",
+        "price": "0.01",
+        "description": "摘要：获取交易对最新价格数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取交易对最新价格数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2352,
+        "name": "获取币市值",
+        "price": "0.01",
+        "description": "摘要：获取 Coin Market Cap 数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取 Coin Market Cap 数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2353,
+        "name": "Base Coin",
+        "price": "0.01",
+        "description": "摘要：Base Coin 数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取 Base Coin 数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 2354,
+        "name": "Base 代币符号",
+        "price": "0.01",
+        "description": "摘要：Base Coin 符号数据。\n功能列表：\n- 查询 CoinAnk 市场 API\n- 返回结构化 JSON\n- 支持加密货币分析\n示例提示词：\n- 获取 Base Coin 符号数据",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "9626": {
+    "fetchedAt": "2026-09-06T04:59:47.911170+00:00",
+    "total": 36,
+    "services": [
+      {
+        "serviceId": 37305,
+        "name": "图像审核",
+        "price": "0.005",
+        "description": "检查每张图片是否缺少替代文本、尺寸信息、损坏的资源或文件过大。返回有问题的图片及其大小，方便优先修复体积较大的图片。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37306,
+        "name": "结构化数据验证",
+        "price": "0.005",
+        "description": "解析页面的 JSON-LD、微数据和 RDFa，并根据 Google 文档要求验证每种类型的属性。返回已声明的内容、缺失的内容以及任何解析失败的块。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37310,
+        "name": "llms.txt 检查",
+        "price": "0.005",
+        "description": "检查网站是否发布了有效的 /llms.txt 文件及其完整度。返回该文件的结构、大小和链接数量，或提示文件缺失。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37311,
+        "name": "AI Agent 机器人政策",
+        "price": "0.005",
+        "description": "使用真实爬虫采用的最长匹配规则解析 robots.txt，并针对每个指定的 AI Agent 进行评估。为每个 Agent 返回允许或拒绝的判定结果及决定该结果的具体规则。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37333,
+        "name": "AI 准备度徽章",
+        "price": "0.005",
+        "description": "衡量页面的 AI 准备度，并以可嵌入的 SVG 徽章形式展示。返回徽章及其嵌入代码片段，徽章颜色根据实际测得的等级变化——当分数较低时，徽章会变为红色。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37303,
+        "name": "页面技术审计",
+        "price": "0.01",
+        "description": "对单个页面进行全面技术审计——包括标题、描述、规范链接、标题标签、可索引性、语言、视口设置、链接、图片、结构化数据和安全头。返回所有问题，附带稳定的代码、简明的解释及其依据。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37304,
+        "name": "链接检查器",
+        "price": "0.01",
+        "description": "请求页面上的每个链接并报告实际返回的结果。返回断链、重定向链接以及无法检查的链接，并附带各自的状态。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37307,
+        "name": "Hreflang 检查",
+        "price": "0.01",
+        "description": "检查国际定位中会导致 hreflang 集合失效的隐性错误——包括无自引用、缺少 x-default、相对 URL、格式错误的代码。返回每个备用链接及验证互惠所需的 URL。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 37309,
+        "name": "AI 爬虫阻断测试",
+        "price": "0.01",
+        "description": "展示每个 AI 爬虫的真实用户代理，并将其响应与浏览器接收的内容进行对比。返回您的 CDN 拒绝访问或提供较小页面的爬虫列表——这是 robots.txt 无法告知您的信息。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "11049": {
+    "fetchedAt": "2026-09-06T04:59:48.111518+00:00",
+    "total": 5,
+    "services": [
+      {
+        "serviceId": 39686,
+        "name": "宝可梦卡牌市场查询",
+        "price": "0.01",
+        "description": "1. 【服务说明】查询指定交易卡牌的 PSA 10 市场价格及卡牌基本信息，支持 Pokémon、Magic: The Gathering、Lorcana、Gundam、One Piece、Riftbound 六个类别（category 默认值为 pokemon）；当搜索匹配多张卡牌时，一次付费即可在 results[] 中返回每张匹配卡牌的独立价格。\n2. 【参数规格】category（字符串，选填）：卡牌类别，取值包括 pokemon/magicthegathering/lorcana/gundam/onepiece/riftbound，默认 pokemon；name（字符串，必填）：卡牌名称；number（字符串，必填）：卡牌编号；year（数字，必填）：发行年份\n3. 【请求方法】get_pokemon_card_psa10_price\n4. 【请求示例】curl -X POST \"https://pokemon-card.pika.world/mcp\" -H \"Content-Type: application/json\" -H \"Accept: application/json, text/event-stream\" -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"get_pokemon_card_psa10_price\",\"arguments\":{\"category\":\"pokemon\",\"name\":\"Charizard\",\"number\":\"4\",\"year\":1999}}}'",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39719,
+        "name": "Card BGS 10 价格查询",
+        "price": "0.01",
+        "description": "1. 【服务说明】查询指定交易卡牌的 BGS（Beckett）10 市场价格及卡牌基本信息，支持 Pokémon、Magic: The Gathering、Lorcana、Gundam、One Piece、Riftbound 六个类别（category 默认值为 pokemon）；当搜索匹配多张卡牌时，一次付费即可在 results[] 中返回每张匹配卡牌的独立价格。\n2. 【参数规格】category（字符串，选填）：卡牌类别，取值为 pokemon/magicthegathering/lorcana/gundam/onepiece/riftbound，默认 pokemon；name（字符串，必填）：卡牌名称；number（字符串，必填）：卡牌编号；year（数字，必填）：发行年份\n3. 【请求方法】get_pokemon_card_bgs10_price\n4. 【请求示例】curl -X POST \"https://pokemon-card.pika.world/mcp\" -H \"Content-Type: application/json\" -H \"Accept: application/json, text/event-stream\" -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"get_pokemon_card_bgs10_price\",\"arguments\":{\"category\":\"pokemon\",\"name\":\"Charizard\",\"number\":\"4\",\"year\":1999}}}'",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39720,
+        "name": "eBay 销售历史卡片",
+        "price": "0.01",
+        "description": "1. 【服务说明】查询指定 Pokémon 卡牌的最新 eBay 成交记录，包括成交日期、标题、成交价、评级公司、评级、版本、品相及 eBay 商品链接，按最新成交时间优先返回；卡牌通过名称+编号+年份匹配最佳结果，仅支持 Pokémon 卡牌。\n2. 【参数规格】name（字符串，必填）：卡牌名称；number（字符串，必填）：卡牌编号；year（数字，必填）：发行年份\n3. 【请求方法】get_pokemon_card_ebay_sales\n4. 【请求示例】curl -X POST \"https://pokemon-card.pika.world/mcp\" -H \"Content-Type: application/json\" -H \"Accept: application/json, text/event-stream\" -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"get_pokemon_card_ebay_sales\",\"arguments\":{\"name\":\"Charizard\",\"number\":\"4\",\"year\":1999}}}'",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39721,
+        "name": "密封产品搜索",
+        "price": "0.01",
+        "description": "1. 【服务说明】搜索 Pokémon 封装商品（Booster Box、Booster Pack、Elite Trainer Box、Tin 等），可按商品类型筛选，返回每个商品所属系列、发行年份、图片及各版本最新市场价、最低价和最高价。\n2. 【参数规格】name（字符串，必填）：封装商品名称关键词；type（字符串，选填）：商品类型筛选，如 \"Booster Box\"\n3. 【请求方法】search_pokemon_sealed_products\n4. 【请求示例】curl -X POST \"https://pokemon-card.pika.world/mcp\" -H \"Content-Type: application/json\" -H \"Accept: application/json, text/event-stream\" -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"search_pokemon_sealed_products\",\"arguments\":{\"name\":\"Base Set\",\"type\":\"Booster Box\"}}}'",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 39772,
+        "name": "交易卡市场情报",
+        "price": "0.05",
+        "description": "集成交易卡牌行情一站式查询：支持 PSA 10 与 BGS 10 最新市场价、eBay 最近成交记录，以及封装商品（整盒/补充包/礼盒等）的搜索与价格查询。卡价覆盖 Pokémon、Magic、Lorcana、Gundam、One Piece、Riftbound 六大类别；eBay 成交记录和封装商品仅限 Pokémon。\n查询卡价或成交记录时，请提供卡牌名称、编号、发行年份（可选品类，默认 Pokémon）；查询封装商品时，请提供商品名称关键词（可选类型，如 Booster Box）。\n返回结构化 JSON，包含卡片或商品元数据、最新价格（市场价/最低价/最高价）及数据来源日期；若无匹配结果，将明确返回“未找到”，绝不虚构数据。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "9486": {
+    "fetchedAt": "2026-09-06T04:59:49.030782+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 37145,
+        "name": "预测市场执行",
+        "price": "0.05",
+        "description": "一个端点实现四大功能：实时新闻扫描捕捉错误定价市场、跨交易所赔率矩阵、订单构建和资金对冲。专为基于新闻操作的交易员和 Agent 设计。\n输入关键词或资产进行扫描，如 Fed、BTC 或 election。执行时需指定市场、交易方向及您的 USD 下注金额。对冲时输入您持有的资产。\n提供实时赔率、公允价值估算及两者差距。订单价格基于实时订单簿深度，您需签名确认。无跟单功能。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "6008": {
+    "fetchedAt": "2026-09-06T04:59:50.354010+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 34590,
+        "name": "Leadpoet Five 销售账户",
+        "price": "10",
+        "description": "1. 告诉 Leadpoet 您想要销售的目标客户。获取五个符合您理想客户画像的独特且合格的 B2B 销售账户。\r\n2. 提供您的产品描述、目标行业、地理位置、公司规模范围、相关信号和资格标准。\r\n3. 预计在几小时内收到包含公司详情和相关购买信号的电子表格。所列价格涵盖一次完整的五账户交付。",
+        "serviceType": "A2A",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "2135": {
+    "fetchedAt": "2026-09-06T04:59:50.046089+00:00",
+    "total": 13,
+    "services": [
+      {
+        "serviceId": 25926,
+        "name": "OpenNews 新闻类型",
+        "price": "0.002",
+        "description": "1. 返回可用的 OpenNews 来源和类别树，用于搜索过滤。\n2. 用户必须提供 POST/GET 参数：无必填字段。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25927,
+        "name": "OpenNews 新闻搜索",
+        "price": "0.002",
+        "description": "1. 使用关键词、类别、币种、评分和分页过滤器搜索市场新闻。\n2. 用户必须提供POST/GET参数：无必填字段；可选参数：q、engineTypes、coins、hasCoin、score、page、limit。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25928,
+        "name": "OpenNews Twitter 用户信息",
+        "price": "0.002",
+        "description": "1. 通过用户名获取Twitter/X个人资料元数据、粉丝统计、验证状态和头像数据。\n2. 用户必须提供POST/GET参数：必需：用户名。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25929,
+        "name": "通过ID查看OpenNews推特用户",
+        "price": "0.002",
+        "description": "1. 通过用户ID获取Twitter/X个人资料元数据、粉丝统计、验证状态和头像数据。\n2. 用户必须提供POST/GET参数：必需：userId。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25930,
+        "name": "OpenNews Twitter 用户推文",
+        "price": "0.002",
+        "description": "1. 获取账户推文，包括文本、指标、媒体、链接、提及和对话数据。\n2. 用户必须提供POST/GET参数：必需：用户名；可选：产品、最大结果数、是否包含回复、是否包含转推。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25931,
+        "name": "OpenNews Twitter 搜索",
+        "price": "0.002",
+        "description": "1. 通过关键词、话题、用户筛选、互动指标、日期和语言搜索 Twitter/X 内容。\n2. 用户必须提供 POST/GET 参数：无必填字段；可选参数包括：searchType、keywords、fromUser、toUser、mentionUser、hashtag、excludeReplies、excludeRetweets、minLikes、minRetweets、minReplies、sinceDate、untilDate、lang、product、maxResults、cursor。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25932,
+        "name": "Twitter 关注者事件",
+        "price": "0.002",
+        "description": "1. 查询 Twitter/X 的关注和取关事件以监控社交图谱。\n2. 用户必须提供 POST/GET 参数：必填：username；可选：isFollow，maxResults。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25933,
+        "name": "Twitter 删除的推文",
+        "price": "0.002",
+        "description": "1. 查询Twitter/X账户已删除的推文。\n2. 用户必须提供POST/GET参数：必填：username；可选：maxResults。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      },
+      {
+        "serviceId": 25934,
+        "name": "OpenNews Twitter KOL 粉丝",
+        "price": "0.002",
+        "description": "1. 分析Twitter/X账号的KOL粉丝数据和社交影响力。\n2. 用户必须提供POST/GET参数：必填项：用户名。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "6211": {
+    "fetchedAt": "2026-09-06T04:59:50.193959+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 34794,
+        "name": "连续性检查",
+        "price": "0.1",
+        "description": "上传一页漫画图片，获取与系列正史的连贯性标记。POST 请求体格式任选其一：（1）MCP JSON-RPC，tools/call 名称为 check-continuity，参数为 {page_image_base64,mime_type}；或（2）简单 JSON 格式 {page_image_base64,mime_type,series_id?,canon?,dialogue?}。返回连贯性标记和正史补充信息。通过 X Layer 的 x402 支付 0.1 USDT。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  },
+  "4543": {
+    "fetchedAt": "2026-09-06T04:59:51.504027+00:00",
+    "total": 1,
+    "services": [
+      {
+        "serviceId": 30754,
+        "name": "AI健康饮食运动助手",
+        "price": "0.01",
+        "description": "① 核心能力：AI饮食运动管理Agent。基于中国食物成分数据库进行BMI分析，生成7天训练计划及早中晚饮食搭配。支持图片识别食物并估算营养，结合当天累计摄入量提供后续饮食建议。适合希望控制饮食、记录热量、养成运动习惯及进行减脂入门管理的用户。\n② 用户需提供：身高和体重（用于BMI计算和计划制定），或发送食物照片（用于识别和营养评估）。本Agent仅提供健康管理及饮食运动建议，不替代医生、营养师或专业教练的指导。",
+        "serviceType": "A2MCP",
+        "symbol": "USDT"
+      }
+    ]
+  }
+}
