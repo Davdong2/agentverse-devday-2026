@@ -49,9 +49,8 @@ export default function WorldScene({
     if (!el) return;
     const context = el.getContext('2d');
     if (!context) return;
-    let frame = 0;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const draw = (time: number) => {
+    const draw = () => {
       const w = el.clientWidth,
         h = el.clientHeight,
         dpr = Math.min(devicePixelRatio, 2);
@@ -74,7 +73,7 @@ export default function WorldScene({
       context.stroke();
       if (active) {
         for (let i = 0; i < 6; i++) {
-          const p = pointAt(reduced ? progress : (time / 18000 + i / 6) % 1);
+          const p = pointAt(reduced ? progress : (progress + i / 6) % 1);
           context.beginPath();
           context.fillStyle = '#ffedaf';
           context.shadowColor = '#f3d895';
@@ -84,13 +83,11 @@ export default function WorldScene({
         }
         context.shadowBlur = 0;
       }
-      if (active && !reduced) frame = requestAnimationFrame(draw);
     };
-    draw(0);
-    const observer = new ResizeObserver(() => draw(performance.now()));
+    draw();
+    const observer = new ResizeObserver(draw);
     observer.observe(el);
     return () => {
-      cancelAnimationFrame(frame);
       observer.disconnect();
     };
   }, [active, progress]);

@@ -36,13 +36,14 @@ export async function POST(req: Request) {
     return Response.json({ error: '场景数据无效' }, { status: 400 });
   }
   if (
+    !b || typeof b !== 'object' ||
     typeof b.agentId !== 'string' ||
     typeof b.node !== 'number' ||
     !Number.isInteger(b.node) ||
     b.node < 0 ||
     b.node > 3 ||
     typeof b.state !== 'string' ||
-    !(b.state in stateNames) ||
+    !Object.hasOwn(stateNames, b.state) ||
     typeof b.requestId !== 'string' ||
     !/^[-0-9a-f]{36}$/.test(b.requestId)
   )
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
       { status: 409 },
     );
   const createdAt = new Date().toISOString();
-  await store.put(
+  const claimed = await store.put(
     metaPath,
     JSON.stringify({
       status: 'submitted',
@@ -85,7 +86,9 @@ export async function POST(req: Request) {
       node: b.node,
       state: b.state,
     }),
+    { onlyIf: new Headers({ 'If-None-Match': '*' }) },
   );
+  if (!claimed) return Response.json({ error: '这次生成请求已提交，请稍后查看结果。', code: 'already_requested', url: '/api/photographs/' + b.requestId }, { status: 409 });
   try {
     const res = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',

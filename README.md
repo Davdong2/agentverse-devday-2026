@@ -18,10 +18,10 @@ A Chinese interactive world based on the supplied Agentverse V0.1 concept and th
 
 - Four map nodes, ability-based Agent placement, 20 selectable Agent records and an identity/services inspector.
 - Demonstration-only research → verification → execution → settlement replay; never represents a real Agent job, transaction, recommendation, or verification.
-- Scene photography exports structured scene JSON with visual prompt. It does not call image generation or produce a new high-resolution image.
+- Scene photography exports structured scene JSON with visual prompt. An optional server route generates one 2048 × 1152 image with gpt-image-2 and stores it in WORLD_STORE (R2). OPENAI_API_KEY must be configured as a server secret; the current deployment has no key and disables generation with a clear message. No paid generation was performed. Conditional R2 creation prevents concurrent submissions with the same request ID.
 - Original generated world artwork, responsive layout, keyboard-accessible controls, reduced-motion support.
-- Optional feature-detected WebMCP `select_agent` tool shares the same Agent selection state. Registration validation was unavailable in this environment; no browser WebMCP validation is claimed.
+- Optional feature-detected WebMCP `select_agent` tool shares the same Agent selection state. Browser validation confirmed that a valid Agent ID updates selection and an invalid ID is rejected.
 
 ## Validation
 
-TypeScript checking, production build, live catalog endpoint (20 records), live service endpoint (9 of 41 services for Otto AI), and invalid-ID rejection (HTTP 400). Browser visual/interaction QA was not requested and was not performed.
+TypeScript checking, production build, world-model tests (20 profiles, six visual families, four areas and states, reputation and sales mapping, route bounds and service coverage), live catalog endpoint (20 records), live service endpoint (9 of 41 services for Otto AI), and invalid-ID rejection (HTTP 400). Production v2 returned fresh OKX data on 2026-09-06 at 08:20 UTC (source total 800). Browser QA covered desktop and mobile layouts, Agent selection, profile/service tabs, all four nodes, replay completion, stable paused position, and valid/invalid WebMCP selection. Photography correctly showed a disabled generation button without a key; POST returned 503 not_configured. The browser download event was not observable in this environment, so file download confirmation remains unverified. No successful AI photograph generation is claimed.

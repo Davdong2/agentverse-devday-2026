@@ -76,7 +76,7 @@ export default function Home() {
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const r = await fetch('/api/agents');
+      const r = await fetch('/api/agents?refresh=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error();
       const d = (await r.json()) as AgentData;
       if (!Array.isArray(d.agents) || !d.agents.length) throw new Error();
@@ -239,7 +239,9 @@ export default function Home() {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'agentverse-' + agent.agentId + '-scene.json';
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   useEffect(() => {
@@ -545,7 +547,7 @@ export default function Home() {
             <span>{areas[node].note}</span>
             <span className="state-badge">{stateNames[worldState]}</span>
             <small>
-              {playing ? '演示进行中' : progress >= 1 ? '演示完成' : '节点预览'}
+              {playing ? '演示进行中' : progress >= 1 ? '演示完成' : replayStarted ? '已暂停' : '节点预览'}
             </small>
           </p>
         </div>
