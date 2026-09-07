@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import { createWorldArchitecture } from '@/components/world-architecture';
 import { createCryptoProps } from '@/components/crypto-props';
+import { createAgentLabels } from '@/components/agent-labels';
 import { createAvatarFactory } from '@/components/agent-avatar';
 import { avatarMotion } from '@/lib/agent-design';
 import { cryptoTaskState } from '@/lib/crypto-world';
@@ -121,11 +122,14 @@ export default function WorldWalk(props: Props) {
     geometries.push(coreGeo);
     const cryptoProps = createCryptoProps(scene, pickable);
     const avatars = createAvatarFactory();
+    const labels = createAgentLabels();
     const actors = Array.from({ length: 50 }, (_, i) => {
       const avatar = avatars.create(i);
+      const label = labels.create(i);
+      avatar.g.add(label.sprite);
       scene.add(avatar.g);
-      pickable.push(...avatar.pickable);
-      return { ...avatar, positioned: false };
+      pickable.push(...avatar.pickable, label.sprite);
+      return { ...avatar, label, positioned: false };
     });
     const eventGeo = new THREE.TorusGeometry(4.8, 0.045, 5, 48);
     geometries.push(eventGeo);
@@ -194,6 +198,7 @@ export default function WorldWalk(props: Props) {
       setHint(false);
     };
     const pointerUp = (e: PointerEvent) => {
+      if (latest.current.inputBlocked) return;
       looking = false;
       if (dragDistance > 8) return;
       const r = renderer.domElement.getBoundingClientRect();
@@ -342,6 +347,14 @@ export default function WorldWalk(props: Props) {
           level < 2 ||
           Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < 18;
         actor.g.scale.setScalar(motion.composite ? 1.08 : 1);
+        actor.label.update(
+          a.name,
+          Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z),
+          canvas.clientHeight,
+          camera.fov,
+          motion.composite,
+          actor.g.visible,
+        );
       });
       architecture.update(time, phase, progress, states, level);
       particles.forEach((m, i) => {
@@ -394,6 +407,7 @@ export default function WorldWalk(props: Props) {
       architecture.dispose();
       cryptoProps.dispose();
       avatars.dispose();
+      labels.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();

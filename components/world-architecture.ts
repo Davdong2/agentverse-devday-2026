@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import {
   regions,
   regionConnections,
+  canWalkAt,
   type AgentState,
 } from '@/lib/civilization-model';
 
@@ -30,6 +31,33 @@ export function createWorldArchitecture(
       shininess: 26,
     }),
   );
+  stone.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      '#include <common>\nvarying vec3 vStonePosition;',
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      vec4 stoneLocal=vec4(transformed,1.0);
+      #ifdef USE_INSTANCING
+      stoneLocal=instanceMatrix*stoneLocal;
+      #endif
+      vStonePosition=(modelMatrix*stoneLocal).xyz;`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>',
+      '#include <common>\nvarying vec3 vStonePosition;',
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+      float grain=fract(sin(dot(floor(vStonePosition*150.0),vec3(12.9898,78.233,37.719)))*43758.5453);
+      float strata=sin(vStonePosition.y*8.0+sin(vStonePosition.x*2.0)*0.3);
+      diffuseColor.rgb*=0.967+grain*0.038+strata*0.006;`,
+    );
+  };
+  stone.customProgramCacheKey = () => 'agentverse-limestone-v1';
   const edge = mat(
     new THREE.MeshPhongMaterial({ color: '#D3CECD', shininess: 14 }),
   );
@@ -110,6 +138,9 @@ export function createWorldArchitecture(
   }
   towers.instanceMatrix.needsUpdate = true;
   const regionPlatforms: THREE.Mesh[] = [];
+  const pavingPoints: number[] = [];
+  const segment = (a: THREE.Vector3, b: THREE.Vector3) =>
+    pavingPoints.push(...a.toArray(), ...b.toArray());
   const waterfalls: THREE.Mesh[] = [];
   const beamMat = mat(
     new THREE.ShaderMaterial({
@@ -149,6 +180,38 @@ export function createWorldArchitecture(
         0.7,
         R * (0.63 - k * 0.12),
       );
+    for (let sector = 0; sector < 20; sector++) {
+      const angle = (sector * Math.PI * 2) / 20;
+      segment(
+        new THREE.Vector3(
+          x + Math.cos(angle) * R * 0.32,
+          0.012,
+          z + Math.sin(angle) * R * 0.32,
+        ),
+        new THREE.Vector3(
+          x + Math.cos(angle) * R * 0.94,
+          0.012,
+          z + Math.sin(angle) * R * 0.94,
+        ),
+      );
+    }
+    for (const radius of [R * 0.32, R * 0.6, R * 0.78])
+      for (let s = 0; s < 96; s++) {
+        const a = (s * Math.PI * 2) / 96,
+          b = ((s + 1) * Math.PI * 2) / 96;
+        segment(
+          new THREE.Vector3(
+            x + Math.cos(a) * radius,
+            0.012,
+            z + Math.sin(a) * radius,
+          ),
+          new THREE.Vector3(
+            x + Math.cos(b) * radius,
+            0.012,
+            z + Math.sin(b) * radius,
+          ),
+        );
+      }
     ring(x, 0.022, z, R * 0.96, gold);
     ring(x, 0.03, z, R * 0.87, glow[n % 3]);
     for (let j = 0; j < 5; j++) {
@@ -160,6 +223,46 @@ export function createWorldArchitecture(
     }
     const fall = mesh(curtain, beamMat, x, -9, z, 0.36, 17, 0.36);
     waterfalls.push(fall);
+    if (n === 1 || n === 3 || n === 4) {
+      // Quiet library / memory / compute arc, with open circulation through the middle.
+      for (let k = 0; k < 5; k++) {
+        const a = Math.PI * 1.12 + k * 0.2,
+          px = x + Math.cos(a) * 4.55,
+          pz = z + Math.sin(a) * 4.55;
+        const h = n === 4 ? 2.8 + (k % 2) * 0.5 : n === 3 ? 2.3 : 1.6;
+        const shelf = mesh(box, stone, px, h / 2, pz, 0.54, h, 0.58);
+        shelf.rotation.y = -a;
+        for (let j = 0; j < 3; j++) {
+          const slab = mesh(
+            box,
+            n === 3 ? gold : glow[n % 3],
+            px,
+            0.5 + j * 0.48,
+            pz - 0.32,
+            0.36,
+            0.025,
+            0.055,
+          );
+          slab.rotation.y = -a;
+        }
+      }
+    }
+    if (n === 5) {
+      [-1, 1].forEach((side) => {
+        ring(x + side * 2.65, 0.08, z, 1.05, gold);
+        ring(x + side * 2.65, 0.09, z, 0.82, glow[side === 1 ? 1 : 2]);
+      });
+    }
+    if (n === 6) {
+      for (let k = 0; k < 3; k++) {
+        const shield = ring(x, 2.75, z - 2.6, 0.85 + k * 0.24, glow[1]);
+        shield.rotation.x = 0;
+      }
+    }
+    if (n === 7) {
+      const portal = mesh(curtain, beamMat, x, 2.6, z - 2.4, 1.05, 5.2, 1.05);
+      waterfalls.push(portal);
+    }
     if (n !== 0) {
       const arch = mesh(archGeo, stone, x, 0, z - 2.4, 1.35, 1.35, 1);
       arch.userData.region = n;
@@ -167,6 +270,41 @@ export function createWorldArchitecture(
       ring(x, 0.045, z, 2.5, glow[n % 3]);
     }
   });
+  // A high open rotunda gives the collaboration center a distinct skyline.
+  const rotundaX = regions[0].x * 100,
+    rotundaZ = regions[0].y * 100;
+  const rotundaShape = new THREE.Shape();
+  rotundaShape.absarc(0, 0, 11.5, 0, Math.PI * 2, false);
+  const rotundaHole = new THREE.Path();
+  rotundaHole.absarc(0, 0, 9.7, 0, Math.PI * 2, true);
+  rotundaShape.holes.push(rotundaHole);
+  const upperRing = mesh(
+    geo(
+      new THREE.ExtrudeGeometry(rotundaShape, {
+        depth: 0.45,
+        bevelEnabled: true,
+        bevelSize: 0.035,
+        bevelThickness: 0.035,
+        bevelSegments: 2,
+        curveSegments: 64,
+      }),
+    ),
+    stone,
+    rotundaX,
+    9.5,
+    rotundaZ,
+  );
+  upperRing.rotation.x = -Math.PI / 2;
+  ring(rotundaX, 9.54, rotundaZ, 11.4, gold);
+  ring(rotundaX, 9.55, rotundaZ, 9.8, glow[0]);
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4 + 0.18,
+      x = rotundaX + Math.cos(a) * 11.3,
+      z = rotundaZ + Math.sin(a) * 11.3;
+    if (!canWalkAt(x, z)) mesh(box, stone, x, 2.75, z, 0.8, 13.5, 0.8);
+    const colonnade = mesh(archGeo, stone, x, 9.5, z, 0.72, 0.8, 0.8);
+    colonnade.rotation.y = Math.PI / 2 - a;
+  }
   // Background terraces sit outside the walkable islands, separated by aerial haze.
   for (let i = 0; i < 12; i++) {
     const a = (i * Math.PI * 2) / 12,
@@ -220,8 +358,34 @@ export function createWorldArchitecture(
         g,
       );
     if (i % 3 === 0 && length > 15) mesh(archGeo, stone, 0, 0, 0, 1, 1, 1, g);
+    const laneSegments = Math.floor(length / 1.35);
+    for (let k = 1; k < laneSegments; k++) {
+      const u = k / laneSegments,
+        point = A.clone().lerp(B, u),
+        side = new THREE.Vector3(B.z - A.z, 0, A.x - B.x).normalize();
+      segment(
+        point.clone().addScaledVector(side, -1.24).setY(0.013),
+        point.clone().addScaledVector(side, 1.24).setY(0.013),
+      );
+    }
     routes.push({ a: A, b: B, length, group: g });
   });
+  const pavingGeometry = geo(new THREE.BufferGeometry());
+  pavingGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(pavingPoints, 3),
+  );
+  const paving = new THREE.LineSegments(
+    pavingGeometry,
+    mat(
+      new THREE.LineBasicMaterial({
+        color: '#A8A7A7',
+        transparent: true,
+        opacity: 0.25,
+      }),
+    ),
+  );
+  root.add(paving);
   // Each moving pulse is a single instance, shared across all routes.
   const pulseGeo = geo(new THREE.SphereGeometry(1, 8, 6));
   const pulseMat = mat(
