@@ -1,11 +1,10 @@
 'use client';
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
-import {
-  createCryptoProps,
-  createAgentEquipment,
-} from '@/components/crypto-props';
-import { loadoutIndex, cryptoTaskState } from '@/lib/crypto-world';
+import { createCryptoProps } from '@/components/crypto-props';
+import { createAvatarFactory } from '@/components/agent-avatar';
+import { avatarMotion } from '@/lib/agent-design';
+import { cryptoTaskState } from '@/lib/crypto-world';
 import { ArrowUp, Globe2, MapPin, Navigation, RotateCcw } from 'lucide-react';
 import {
   regions,
@@ -183,31 +182,15 @@ export default function WorldWalk(props: Props) {
         }
       }
     });
-    const bodyGeo = new THREE.BoxGeometry(0.72, 0.83, 0.64),
-      coreGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3),
-      eyeGeo = new THREE.SphereGeometry(0.045, 6, 4);
-    geometries.push(bodyGeo, coreGeo, eyeGeo);
-    const ink = new THREE.MeshBasicMaterial({ color: '#4e686e' });
-    materials.push(ink);
+    const coreGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    geometries.push(coreGeo);
     const cryptoProps = createCryptoProps(scene, pickable);
-    const equipment = createAgentEquipment();
+    const avatars = createAvatarFactory();
     const actors = Array.from({ length: 50 }, (_, i) => {
-      const g = new THREE.Group();
-      const body = new THREE.Mesh(bodyGeo, white);
-      body.position.y = 0.62;
-      body.userData.instance = i;
-      const core = new THREE.Mesh(coreGeo, mats[i % 6]);
-      core.position.set(0, 1.24, 0);
-      g.add(body, core);
-      for (const x of [-0.15, 0.15]) {
-        const eye = new THREE.Mesh(eyeGeo, ink);
-        eye.position.set(x, 0.72, -0.326);
-        g.add(eye);
-      }
-      g.userData.instance = i;
-      scene.add(g);
-      pickable.push(body, core);
-      return { g, body, core, positioned: false, gear: equipment.attach(g) };
+      const avatar = avatars.create(i);
+      scene.add(avatar.g);
+      pickable.push(...avatar.pickable);
+      return { ...avatar, positioned: false };
     });
     const links = Array.from({ length: 4 }, (_, i) => {
       const mat = new THREE.MeshBasicMaterial({
@@ -406,27 +389,25 @@ export default function WorldWalk(props: Props) {
         else if (!actor.positioned) actor.g.rotation.y = i * 0.8;
         actor.positioned = true;
         actor.g.position.set(a.x * 100, 0, a.y * 100);
-        actor.body.position.y =
-          0.62 + Math.sin(time * (moving ? 5 : 2) + i) * 0.025;
-        actor.core.material = mats[a.role % 6];
-        actor.gear.update(
-          loadoutIndex(a.role, i),
+        const motion = avatarMotion(
           time,
-          a.collaborator
-            ? phase === 4 && Math.floor(progress * 4) === i
-            : a.activity === '工作中',
+          i,
+          phase,
+          progress,
+          a.collaborator,
+          moving,
+        );
+        actor.update(
+          a.variant,
+          time,
+          motion,
+          Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < (level > 0 ? 12 : 22),
         );
         actor.g.visible =
           i < 4 ||
           level < 2 ||
           Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < 18;
-        actor.core.scale.setScalar(
-          a.collaborator && phase === 4 && Math.floor(progress * 4) === i
-            ? 1.5
-            : 1,
-        );
-        if (a.collaborator)
-          actor.g.scale.setScalar(phase >= 3 && phase <= 6 ? 1.1 : 1);
+        actor.g.scale.setScalar(motion.composite ? 1.08 : 1);
       });
       links.forEach((m, i) => {
         const a = states[i];
@@ -440,7 +421,7 @@ export default function WorldWalk(props: Props) {
         m.rotation.y = Math.atan2(x - cx, z - cz);
       });
       result.visible = phase >= 3 && phase <= 6;
-      result.position.set(center.x * 100, 1.5, center.y * 100);
+      result.position.set(center.x * 100, 2.75, center.y * 100);
       result.rotation.y = time * 0.8;
       if (phase === 5) {
         result.position.x += (regions[7].x - center.x) * 100 * progress;
@@ -494,7 +475,7 @@ export default function WorldWalk(props: Props) {
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
       cryptoProps.dispose();
-      equipment.dispose();
+      avatars.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();

@@ -52,3 +52,8 @@ body:has(.soft-world) .civilization-sheet,body:has(.soft-world) .observer-dialog
 .crypto-workflow>div span.active{background:#d6e4d1;color:#416451}
 .walk-task-action{display:block;font-size:14px;color:#527675;margin-left:8px}
 @media(max-width:640px){.walk-location{flex-wrap:wrap;max-width:calc(100vw - 44px)}.walk-task-action{font-size:12px}.walk-location small{display:none}}
+
+/* Shared ivory robot with capability cubes, based on the supplied character references. */
+.agent-sprite.reference-agent{background-image:url('/agent-reference-atlas.png');background-size:400% 200%;background-repeat:no-repeat;filter:drop-shadow(0 4px 3px #637f8a20)}
+.civilization-sheet .agent-portrait>.reference-agent{width:116px;height:154px;flex-shrink:0}
+.civilization-directory .reference-agent{width:44px;height:59px;flex-shrink:0}

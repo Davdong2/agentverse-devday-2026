@@ -50,11 +50,13 @@ import { AgentSprite } from '@/components/world-scene';
 import CivilizationCanvas, { type Hit } from '@/components/civilization-canvas';
 import snapshot from '@/lib/agents.json';
 import detailsSnapshot from '@/lib/details.json';
+import { cryptoTaskState } from '@/lib/crypto-world';
 import {
-  cryptoTaskState,
-  cryptoLoadouts,
-  loadoutIndex,
-} from '@/lib/crypto-world';
+  agentVariant,
+  agentDesigns,
+  teamVariants,
+  pickAvatar,
+} from '@/lib/agent-design';
 import { appearance } from '@/lib/world-model';
 import type { Agent, AgentData, Detail } from '@/lib/marketplace';
 import {
@@ -180,10 +182,6 @@ export default function Civilization({
   );
   const appearanceData = appearance(agent, service ?? undefined);
   const teamIndex = team.findIndex((a) => a.agentId === agent.agentId);
-  const loadout =
-    cryptoLoadouts[
-      loadoutIndex(appearanceData.role, teamIndex < 0 ? 4 : teamIndex)
-    ];
   const regionTask = cryptoTaskState(region, time);
   const memories = history.filter((h) => h.agentIds.includes(agent.agentId));
   const refresh = useCallback(async () => {
@@ -517,16 +515,10 @@ export default function Civilization({
       const bounds = viewport.current!.getBoundingClientRect();
       const wx = (e.clientX - bounds.left - size.w / 2) / scale + cam.x * 1600,
         wy = (e.clientY - bounds.top - size.h * 0.52) / scale + cam.y * 900;
-      const nearest = hits.current.reduce<{ hit: Hit | null; d: number }>(
-        (v, h) => {
-          const d = Math.hypot(h.x - wx, h.y - wy);
-          return d < v.d ? { hit: h, d } : v;
-        },
-        { hit: null, d: 22 / scale },
-      );
-      if (nearest.hit) {
-        const a = data.agents.find((a) => a.agentId === nearest.hit!.agentId);
-        if (a) selectAgent(a, nearest.hit.instance);
+      const hit = pickAvatar(hits.current, wx, wy, Math.max(4, 8 / scale));
+      if (hit) {
+        const a = data.agents.find((a) => a.agentId === hit.agentId);
+        if (a) selectAgent(a, hit.instance);
       }
     }
   };
@@ -567,7 +559,7 @@ export default function Civilization({
     population,
     memories: history,
     verifiedTransactions: [],
-    prompt: `非人类数字文明的宏大等距场景，浅青色云海、柔和象牙色几何平台、九个区域环绕中央协作核心。场景：${event.title}；节点：${regions[region].name}；动作：${stages[stage].title}。四个小型模块化 Agent 的蓝色研究、黄色风险、白色审计、绿色交易技能正在${stages[stage].title}。功能器官取代人类服装，柔和金色结果核心，克制的几何层次、柔和光影和开阔留白。无文字、无界面、无城市建筑。行为演示，不表示真实任务或收益。`,
+    prompt: `非人类数字文明的宏大等距场景，浅青色云海、柔和象牙色几何平台、九个区域环绕中央协作核心。场景：${event.title}；节点：${regions[region].name}；动作：${stages[stage].title}。四个圆润白色机身、头顶能力块的小型 Agent 的蓝色研究、黄色风险、紫色审计、绿色交易技能正在${stages[stage].title}。功能器官取代人类服装，柔和金色结果核心，克制的几何层次、柔和光影和开阔留白。无文字、无界面、无城市建筑。行为演示，不表示真实任务或收益。`,
   };
   const sceneHref =
     'data:application/json;charset=utf-8,' +
@@ -1016,6 +1008,7 @@ export default function Civilization({
                   <button key={a.agentId} onClick={() => selectAgent(a)}>
                     <AgentSprite
                       role={appearance(a, details[a.agentId]).role}
+                      variant={agentVariant(a)}
                     />
                     <span>
                       <strong>{a.name}</strong>
@@ -1111,6 +1104,7 @@ export default function Civilization({
                         <button key={a.agentId} onClick={() => selectAgent(a)}>
                           <AgentSprite
                             role={appearance(a, details[a.agentId]).role}
+                            variant={agentVariant(a)}
                           />
                           <span>
                             <strong>{a.name}</strong>
@@ -1194,7 +1188,14 @@ export default function Civilization({
                 {agent.categoryName.join(' · ')} · OKX.AI #{agent.agentId}
               </SheetDescription>
               <div className="agent-portrait">
-                <AgentSprite role={appearanceData.role} />
+                <AgentSprite
+                  role={appearanceData.role}
+                  variant={
+                    teamIndex >= 0
+                      ? teamVariants[teamIndex]
+                      : agentVariant(agent)
+                  }
+                />
                 <span>
                   {selected !== null && selected < 0
                     ? '协作核心 · 演示角色'
@@ -1207,10 +1208,26 @@ export default function Civilization({
                 </span>
               </div>
               <div className="crypto-loadout">
-                <small>场景功能装 · Demo</small>
-                <strong>{loadout.name}</strong>
-                <p>{loadout.gear}</p>
-                <p>{loadout.action}</p>
+                <small>能力块与工作道具 · Demo</small>
+                <strong>
+                  {
+                    agentDesigns[
+                      teamIndex >= 0
+                        ? teamVariants[teamIndex]
+                        : agentVariant(agent)
+                    ].name
+                  }{' '}
+                  Agent
+                </strong>
+                <p>
+                  {
+                    agentDesigns[
+                      teamIndex >= 0
+                        ? teamVariants[teamIndex]
+                        : agentVariant(agent)
+                    ].description
+                  }
+                </p>
                 <p className="subtle">
                   为观察工作分工而设计，不是实际装备或技能认证。
                 </p>

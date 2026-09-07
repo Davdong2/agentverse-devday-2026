@@ -39,6 +39,15 @@ Vinext / React / Cloudflare Workers, Shadcn Sheet/Dialog/Tabs, Canvas and lazily
 
 Ten small interactive workstations now show crypto concepts inside the world: collaboration settlement, BTC research, Agent identity, hash/receipt archives, execution queues, ETH/USDC asset exchange, authorization checks, oracle-style signal packaging, Gas supply and cross-domain discovery. These are labeled Demo; no transaction is submitted. Both Canvas and Three.js use `cryptoTaskState` for matching step, token positions, lift, visibility and receipt timing. Overview annotations appear at closer zoom, with only restrained market/security activity at world scale.
 
-Six functional loadouts add scanning visors, colored waist rings, interface blocks, message/metadata crystals and permission shields to the nonhuman Agents. The four central collaborators have explicit research/security/interface/trading loadouts. Working accessories move with the shared clock; moving Agents turn toward their route. Profile panels explain the props separately from real skills and services.
+The current character direction follows the nine user-supplied September 7 reference boards: one rounded ivory robot body, oversized head, black oval eyes, blush accents, cyan chest core and colored capability cubes. Eight visual variants cover research, trading, risk, audit, finance, creation, life and development. Profile panels explain capability blocks and props separately from real skills and services.
 
 Additional checks cover all ten task cycles, paired asset exchange without phase-boundary jumps, receipt sequencing, always-Demo provenance, six loadouts, actual Three scene construction, clickable stations, equipment state differences and resource cleanup. The Three scene test checks object state using a text-canvas stand-in; it does not certify browser pixels, GPU behavior or device frame rate.
+
+
+## Reference-led Agent redesign
+
+A new built-in-imagegen transparent 4×2 sprite atlas (1536×1024, 384×512 cells) is used in Canvas, the directory and Agent profiles. The atlas has modest baked glows and a nearly frontal view; it is not an eight-direction walking atlas. The original reference images are visual guidance, not a source of example ratings, identities, balances or LIVE activity.
+
+First-person robots use shared rounded geometry: head, torso, short hinged arms and legs, oval eyes, cheeks, chest core, capability cube, translucent top cube and role-specific handheld props. Movement adds alternating gait, direction changes, blinking, head tilt, handoff, working pulses and a temporary capability crown on the collaboration leader. Other participants remain identifiable. Distant faces omit tiny accents, and existing quality reductions remain in place. No complex PBR, shadow maps or large model textures were introduced.
+
+The shared AgentState includes an eight-way variant. Shared avatarMotion drives movement cues and cooperation in both renderers. Known collaborators use the same variant across every instance and profile. Canvas selection now covers the full body and head cube. The pure tests cover variant identity, silhouette proportions, clickable body/head/cube, alternating gait, forward handoff, composite/split sequencing, full-body hit areas and deterministic sampling. Browser visual inspection and actual device FPS measurements remain unperformed.

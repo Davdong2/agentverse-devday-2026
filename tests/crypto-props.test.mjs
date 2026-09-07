@@ -13,10 +13,12 @@ const url = (s) =>
   'data:text/javascript;base64,' + Buffer.from(s).toString('base64');
 const base = url(compile('lib/world-model.ts'));
 const model = url(
-  compile('lib/civilization-model.ts').replace(
-    /(['"])\.\/world-model\1/g,
-    JSON.stringify(base),
-  ),
+  compile('lib/civilization-model.ts')
+    .replace(
+      /(['"])\.\/agent-design\1/g,
+      JSON.stringify(url(compile('lib/agent-design.ts'))),
+    )
+    .replace(/(['"])\.\/world-model\1/g, JSON.stringify(base)),
 );
 const crypto = url(compile('lib/crypto-world.ts'));
 const source = compile('components/crypto-props.ts')

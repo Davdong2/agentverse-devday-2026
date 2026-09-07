@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, type CSSProperties } from 'react';
+import { legacyVariant } from '@/lib/agent-design';
 import type { Agent, Detail } from '@/lib/marketplace';
 import {
   appearance,
@@ -12,15 +13,20 @@ import {
 export function AgentSprite({
   role,
   className = '',
+  variant,
 }: {
   role: number;
+  variant?: number;
   className?: string;
 }) {
+  const index = variant ?? legacyVariant(role);
   return (
     <span
       aria-hidden="true"
-      className={'agent-sprite ' + className}
-      style={{ backgroundPosition: `${role * 20}% 50%` }}
+      className={'agent-sprite reference-agent ' + className}
+      style={{
+        backgroundPosition: `${((index % 4) * 100) / 3}% ${Math.floor(index / 4) * 100}%`,
+      }}
     />
   );
 }

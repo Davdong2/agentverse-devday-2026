@@ -1,11 +1,14 @@
 'use client';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Agent, Detail } from '@/lib/marketplace';
+import { cryptoTaskState } from '@/lib/crypto-world';
 import {
-  cryptoTaskState,
-  cryptoLoadouts,
-  loadoutIndex,
-} from '@/lib/crypto-world';
+  avatarMotion,
+  teamVariants,
+  agentDesigns,
+  type AvatarMotion,
+  type AvatarHit,
+} from '@/lib/agent-design';
 import { appearance } from '@/lib/world-model';
 import {
   cycleDuration,
@@ -15,11 +18,12 @@ import {
   regionFor,
   collaborationPose,
   stageAt,
+  phaseProgress,
   skillColors,
   weathers,
   type Weather,
 } from '@/lib/civilization-model';
-export type Hit = { x: number; y: number; instance: number; agentId: string };
+export type Hit = AvatarHit;
 type Props = {
   agents: Agent[];
   details: Record<string, Detail>;
@@ -44,7 +48,7 @@ export default function CivilizationCanvas(props: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const sprite = new Image();
-    sprite.src = '/agent-sprites.png';
+    sprite.src = '/agent-reference-atlas.png';
     let raf = 0,
       previous = 0;
     let lastFrame = '';
@@ -95,20 +99,46 @@ export default function CivilizationCanvas(props: Props) {
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
     };
-    const actor = (x: number, y: number, role: number, size: number) => {
-      if (sprite.complete && sprite.naturalWidth)
+    const actor = (
+      x: number,
+      y: number,
+      variant: number,
+      size: number,
+      motion?: AvatarMotion,
+    ) => {
+      ctx.save();
+      ctx.translate(x, y - (motion?.bob ?? 0) * 18);
+      if (motion) ctx.rotate(motion.stride * 0.04 + motion.headTilt * 0.4);
+      if (sprite.complete && sprite.naturalWidth) {
+        const sw = sprite.naturalWidth / 4,
+          sh = sprite.naturalHeight / 2;
         ctx.drawImage(
           sprite,
-          (role * sprite.naturalWidth) / 6,
-          0,
-          sprite.naturalWidth / 6,
-          sprite.naturalHeight,
-          x - size / 2,
-          y - size * 1.6,
+          (variant % 4) * sw,
+          Math.floor(variant / 4) * sh,
+          sw,
+          sh,
+          -size / 2,
+          -size * 1.22,
           size,
-          size * 2,
+          (size * 4) / 3,
         );
-      else dot(x, y, size / 5, skillColors[role % 4]);
+      } else dot(0, 0, size / 5, agentDesigns[variant].color);
+      if (motion?.composite) {
+        [2, 1, 3].forEach((v, j) => {
+          ctx.fillStyle = agentDesigns[v].color;
+          ctx.beginPath();
+          ctx.roundRect(-15 + j * 10, -size * 1.02, 9, 9, 2);
+          ctx.fill();
+        });
+      }
+      if (motion?.joining || motion?.presenting) {
+        ctx.fillStyle = '#91e5f5';
+        ctx.fillRect(-4, -size * 0.39, 8, 8);
+        ctx.strokeStyle = '#e6fdff';
+        ctx.strokeRect(-4, -size * 0.39, 8, 8);
+      }
+      ctx.restore();
     };
     const text = (
       str: string,
@@ -121,38 +151,6 @@ export default function CivilizationCanvas(props: Props) {
       ctx.font = `${size}px Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(str, x, y);
-    };
-    const equipment = (
-      x: number,
-      y: number,
-      role: number,
-      instance: number,
-      time: number,
-      size: number,
-    ) => {
-      const outfit = cryptoLoadouts[loadoutIndex(role, instance)];
-      ctx.save();
-      ctx.strokeStyle = outfit.color;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.ellipse(
-        x,
-        y - size * 0.28,
-        size * 0.45,
-        size * 0.15,
-        0,
-        0,
-        Math.PI * 2,
-      );
-      ctx.stroke();
-      ctx.fillStyle = outfit.color;
-      ctx.fillRect(
-        x + size * 0.38,
-        y - size * 0.6 + Math.sin(time * 3 + instance) * 2,
-        size * 0.19,
-        size * 0.19,
-      );
-      ctx.restore();
     };
     const frame = (stamp: number) => {
       raf = requestAnimationFrame(frame);
@@ -400,10 +398,16 @@ export default function CivilizationCanvas(props: Props) {
       for (const a of states.filter((a) => !a.collaborator)) {
         const x = a.x * 1600,
           y = a.y * 900,
-          chosen = p.selected === a.instance;
-        actor(x, y, a.role, chosen ? 27 : p.zoom > 2 ? 24 : 20);
-        if (p.zoom > 1.7)
-          equipment(x, y, a.role, a.instance, t, chosen ? 27 : 24);
+          chosen = p.selected === a.instance,
+          actorSize = chosen ? 42 : p.zoom > 2 ? 36 : 30;
+        actor(
+          x,
+          y,
+          a.variant,
+          actorSize,
+          avatarMotion(t, a.instance, phase, 0, false, a.activity === '移动中'),
+        );
+
         if (chosen) {
           ctx.strokeStyle = '#aa8241';
           ctx.lineWidth = 1.5;
@@ -412,7 +416,14 @@ export default function CivilizationCanvas(props: Props) {
           ctx.stroke();
           text(a.name, x, y - 38, '#466b73', 14);
         }
-        p.hits.current.push({ x, y, instance: a.instance, agentId: a.agentId });
+        p.hits.current.push({
+          x,
+          y,
+          width: actorSize,
+          height: actorSize * 1.22,
+          instance: a.instance,
+          agentId: a.agentId,
+        });
       }
       // Collaboration is an explicit animated state machine, not a claimed live task.
       const cx = c.x * 1600,
@@ -426,7 +437,6 @@ export default function CivilizationCanvas(props: Props) {
         const pos = collaborationPose(t, i),
           x = pos.x * 1600,
           y = pos.y * 900;
-        const role = [0, 5, 2, 0][i];
         const working = phase === 4 && Math.floor((ct - 32) / 4) === i;
         if (phase >= 2 && phase <= 7) {
           line(
@@ -437,13 +447,20 @@ export default function CivilizationCanvas(props: Props) {
           );
           glow(x, y, working ? 45 : 25, skillColors[i], working ? 0.6 : 0.2);
         }
-        actor(x, y, role, phase >= 3 && phase <= 6 ? 40 : 32);
-        equipment(x, y, role, i, t, 32);
-        ctx.fillStyle = skillColors[i];
-        ctx.shadowColor = skillColors[i];
-        ctx.shadowBlur = working ? 18 : 0;
-        ctx.fillRect(x - 6, y - 40, 12, 12);
-        ctx.shadowBlur = 0;
+        actor(
+          x,
+          y,
+          teamVariants[i],
+          phase >= 3 && phase <= 6 ? 43 : 39,
+          avatarMotion(
+            t,
+            i,
+            phase,
+            phaseProgress(t),
+            true,
+            phase === 1 || phase === 2 || phase >= 7,
+          ),
+        );
         if (p.zoom > 1.5 || phase === 4)
           text(
             skillNamesLocal[i],
@@ -463,6 +480,8 @@ export default function CivilizationCanvas(props: Props) {
           p.hits.current.push({
             x,
             y,
+            width: phase >= 3 && phase <= 6 ? 43 : 39,
+            height: (phase >= 3 && phase <= 6 ? 43 : 39) * 1.22,
             instance: i,
             agentId: p.team[i].agentId,
           });

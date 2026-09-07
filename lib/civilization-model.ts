@@ -1,4 +1,5 @@
 import type { Agent, Detail } from './marketplace';
+import { agentVariant, teamVariants, agentDesigns } from './agent-design';
 import { appearance } from './world-model';
 export type Point = { x: number; y: number };
 export const regions = [
@@ -213,7 +214,7 @@ export const stages = originalStages.map((s) => ({
   start: (s.start * 18) / 80,
   end: (s.end * 18) / 80,
 }));
-export const skillColors = ['#8ccfff', '#efd17c', '#f0f2ef', '#94d7ad'];
+export const skillColors = teamVariants.map((v) => agentDesigns[v].color);
 export const skillNames = ['研究', '风险', '审计', '交易'];
 export function stageAt(time: number) {
   const m = time % cycleDuration;
@@ -248,10 +249,10 @@ export function collaborationPose(time: number, index: number): Point {
     c = regions[0],
     homes = [regions[1], regions[6], regions[3], regions[5]];
   const slots = [
-    { x: -0.007, y: -0.006 },
-    { x: 0.007, y: -0.006 },
-    { x: -0.007, y: 0.012 },
-    { x: 0.007, y: 0.012 },
+    { x: -0.009, y: -0.006 },
+    { x: 0.009, y: -0.006 },
+    { x: -0.009, y: 0.012 },
+    { x: 0.009, y: 0.012 },
   ];
   const near = { x: c.x + slots[index].x, y: c.y + slots[index].y };
   const far = { x: c.x + slots[index].x * 3.1, y: c.y + slots[index].y * 2.7 };
@@ -301,6 +302,7 @@ export type AgentState = {
   agentId: string;
   name: string;
   role: number;
+  variant: number;
   x: number;
   y: number;
   collaborator: boolean;
@@ -334,6 +336,7 @@ export function sampleAgents(
         agentId: a.agentId,
         name: a.name,
         role: [0, 5, 2, 0][i],
+        variant: teamVariants[i],
         x: p.x,
         y: p.y,
         collaborator: true,
@@ -370,6 +373,7 @@ export function sampleAgents(
       agentId: a.agentId,
       name: a.name,
       role: visual.role,
+      variant: agentVariant(a),
       x,
       y,
       collaborator: false,

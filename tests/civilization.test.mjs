@@ -11,10 +11,12 @@ const compile = (name) =>
 const url = (text) =>
   'data:text/javascript;base64,' + Buffer.from(text).toString('base64');
 const worldUrl = url(compile('lib/world-model.ts'));
-const model = compile('lib/civilization-model.ts').replace(
-  /(['"])\.\/world-model\1/g,
-  JSON.stringify(worldUrl),
-);
+const model = compile('lib/civilization-model.ts')
+  .replace(
+    /(['"])\.\/agent-design\1/g,
+    JSON.stringify(url(compile('lib/agent-design.ts'))),
+  )
+  .replace(/(['"])\.\/world-model\1/g, JSON.stringify(worldUrl));
 const {
   regions,
   stages,
