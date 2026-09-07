@@ -85,6 +85,14 @@ export const regions = [
   },
 ];
 export const weathers = {
+  news: {
+    title: '现实信息涌入',
+    event: '公开新闻进入研究区',
+    note: '研究、风险检查与协作响应这一条信息。角色响应为演示。',
+    color: '#A9CDE4',
+    asset: 'DATA',
+    region: 1,
+  },
   nvda: {
     title: '信息风暴',
     event: 'NVIDIA 财报进入现实入口',
@@ -315,6 +323,23 @@ export type WorldState = {
   stage: number;
   paused: boolean;
 };
+/** One visible body per source identity; genuine same-name identities are preserved. */
+export function worldRoster(agents: Agent[], limit = 50): Agent[] {
+  const unique = [...new Map(agents.map((a) => [a.agentId, a])).values()];
+  const used = new Set<string>();
+  const team = ['2083', '8355', '9626', '8136'].flatMap((id) => {
+    const a =
+      unique.find((item) => item.agentId === id && !used.has(id)) ??
+      unique.find((item) => !used.has(item.agentId));
+    if (!a) return [];
+    used.add(a.agentId);
+    return [a];
+  });
+  return [...team, ...unique.filter((a) => !used.has(a.agentId))].slice(
+    0,
+    Math.max(0, limit),
+  );
+}
 export function sampleAgents(
   agents: Agent[],
   details: Record<string, Detail>,
@@ -322,12 +347,8 @@ export function sampleAgents(
   weather: Weather,
   count = 50,
 ): AgentState[] {
-  const team = ['2083', '8355', '9626', '8136'].map(
-    (id, i) =>
-      agents.find((a) => a.agentId === id) ?? agents[i % agents.length],
-  );
-  return Array.from({ length: count }, (_, i) => {
-    const a = i < 4 ? team[i] : agents[(i - 4) % agents.length];
+  const roster = worldRoster(agents, count);
+  return roster.map((a, i) => {
     const visual = appearance(a, details[a.agentId]);
     if (i < 4) {
       const p = collaborationPose(time, i);
@@ -357,6 +378,7 @@ export function sampleAgents(
       const u = (time * 0.028 + seeded(i + 91)) % 1;
       let destination = i % 8 === 0 ? regions[0] : regions[(home + 1) % 9];
       if (weather === 'nvda' && i % 3 === 0) destination = regions[5];
+      if (weather === 'news') destination = regions[1];
       if ((weather === 'attack' || weather === 'storm') && visual.role === 5)
         destination = regions[6];
       if (

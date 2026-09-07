@@ -82,6 +82,17 @@ export function createAvatarFactory() {
       'varying vec2 vUv;void main(){float r=length(vUv-.5)*2.;gl_FragColor=vec4(.22,.29,.37,.18*pow(max(0.,1.-r),2.));}',
   });
   const textures: THREE.Texture[] = [];
+  const panelMats = Array.from(
+    { length: 4 },
+    () =>
+      new THREE.MeshPhongMaterial({
+        color: '#F5F2E9',
+        shininess: 95,
+        specular: '#FFFFFF',
+        side: THREE.DoubleSide,
+      }),
+  );
+
   const glyphMats = agentDesigns.map((_, i) => {
     const c = document.createElement('canvas');
     c.width = 128;
@@ -207,6 +218,7 @@ export function createAvatarFactory() {
     ...variants,
     ...skins,
     ...glyphMats,
+    ...panelMats,
   ];
   function mesh(
     g: THREE.Group,
@@ -226,6 +238,18 @@ export function createAvatarFactory() {
     return m;
   }
   return {
+    setPanelAtlas(texture: THREE.Texture) {
+      panelMats.forEach((m, i) => {
+        const t = texture.clone();
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.repeat.set(0.493, 0.47);
+        t.offset.set(i % 2 === 0 ? 0.003 : 0.503, i < 2 ? 0.525 : 0.008);
+        t.needsUpdate = true;
+        textures.push(t);
+        m.map = t;
+        m.needsUpdate = true;
+      });
+    },
     create(instance: number) {
       const g = new THREE.Group();
       g.userData.instance = instance;
@@ -289,6 +313,54 @@ export function createAvatarFactory() {
         0.36,
         0.18,
       );
+      const detailPlates = new THREE.Group();
+      g.add(detailPlates);
+      const heartPlate = mesh(
+        detailPlates,
+        plane,
+        panelMats[0],
+        0,
+        0.66,
+        -0.26,
+        0.275,
+        0.275,
+        1,
+      );
+      heartPlate.rotation.y = Math.PI;
+      const backPlate = mesh(
+        detailPlates,
+        plane,
+        panelMats[1],
+        0,
+        0.7,
+        0.371,
+        0.27,
+        0.29,
+        1,
+      );
+      const backCover = mesh(
+        detailPlates,
+        rounded,
+        panelMats[3],
+        0,
+        0.48,
+        0.25,
+        0.23,
+        0.1,
+        0.06,
+      );
+      const coupling = mesh(
+        detailPlates,
+        rounded,
+        ink,
+        0,
+        0.72,
+        0.27,
+        0.37,
+        0.42,
+        0.08,
+      );
+      coupling.position.z = 0.245;
       const shoulderCaps = limbs.map((l, i) =>
         mesh(
           l.arm,
@@ -454,6 +526,10 @@ export function createAvatarFactory() {
           crownEdge.visible = detail;
           shoulderCaps.forEach((m) => (m.visible = detail));
           backpack.visible = detail;
+          detailPlates.visible = detail;
+          heartPlate.scale.setScalar(
+            0.275 * (1 + (motion.corePulse - 1) * 0.1),
+          );
           skillCore.rotation.y = time * 0.8;
           skillCore.scale.setScalar(0.1 * motion.corePulse);
           hat.position.y =

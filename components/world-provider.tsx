@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { WorldNews, NewsReaction } from '@/lib/world-news';
 import ignixSeed from '@/lib/ignix-snapshot.json';
 import { mergeIgnixProfiles, type IgnixData } from '@/lib/ignix';
 import snapshot from '@/lib/agents.json';
@@ -23,6 +24,8 @@ export type WorldEvent = {
   region: number;
   mode: 'LIVE' | '缓存' | 'Demo';
   at: number;
+  sourceUrl?: string;
+  publishedAt?: string;
 };
 function useStore() {
   const [ignix, setIgnix] = useState<IgnixData>(ignixSeed as IgnixData);
@@ -68,7 +71,7 @@ function useStore() {
     [speed, setSpeed] = useState(1),
     [episode, setEpisode] = useState(0);
   const [scenario, setScenario] = useState<Weather>('calm'),
-    [signalMode, setSignalMode] = useState<'demo' | 'live'>('demo'),
+    [signalMode, setSignalMode] = useState<'demo' | 'live'>('live'),
     [signal, setSignal] = useState<MarketSignal | null>(null),
     [signalError, setSignalError] = useState('');
   const [history, setHistory] = useState<MemoryRecord[]>([]),
@@ -79,6 +82,59 @@ function useStore() {
     walker = useRef({ x: 46.8, z: 51.5, yaw: 0, pitch: 0 }),
     lastCatalog = useRef<AgentData>({ ...snapshot, mode: 'snapshot' }),
     lastMarket = useRef<number | null>(null);
+  const [news, setNews] = useState<WorldNews | null>(null);
+  const [newsReaction, setNewsReaction] = useState<NewsReaction | null>(null);
+  const seenNews = useRef(new Set<string>());
+  useEffect(() => {
+    const controller = new AbortController();
+    async function refreshNews() {
+      if (document.hidden) return;
+      try {
+        const r = await fetch('/api/world-news', { signal: controller.signal });
+        if (!r.ok) throw new Error();
+        const d = (await r.json()) as WorldNews;
+        if (controller.signal.aborted || !Array.isArray(d.items)) return;
+        setNews(d);
+        const item =
+          d.mode !== 'stale'
+            ? d.items.find(
+                (i) =>
+                  !seenNews.current.has(i.id) &&
+                  Date.now() - Date.parse(i.publishedAt) < 86400000,
+              )
+            : null;
+        d.items.forEach((i) => seenNews.current.add(i.id));
+        if (item) {
+          setNewsReaction({ ...item, until: Date.now() + 45000 });
+          setEvents((old) =>
+            [
+              {
+                id: 'news-' + item.id,
+                title: item.category + ' · ' + item.title,
+                region: item.region,
+                mode:
+                  d.mode === 'fresh' ? ('LIVE' as const) : ('缓存' as const),
+                at: Date.now(),
+                sourceUrl: item.url,
+                publishedAt: item.publishedAt,
+              },
+              ...old,
+            ].slice(0, 8),
+          );
+          setTime((t) => Math.ceil(t / 18) * 18);
+        }
+      } catch {
+        if (!controller.signal.aborted)
+          setNews((old) => (old ? { ...old, mode: 'stale' } : null));
+      }
+    }
+    void refreshNews();
+    const timer = setInterval(refreshNews, 600000);
+    return () => {
+      controller.abort();
+      clearInterval(timer);
+    };
+  }, []);
   const displayData = useMemo(
     () => ({
       ...data,
@@ -93,6 +149,8 @@ function useStore() {
   return {
     data: displayData,
     ignix,
+    news,
+    newsReaction,
     setData,
     time,
     setTime,

@@ -30,6 +30,9 @@ const source = compile('components/world-architecture.ts')
       import.meta.resolve('three/addons/geometries/RoundedBoxGeometry.js'),
     ),
   )
+  .replace(/(['"])(three\/addons\/[^'"]+)\1/g, (_, q, m) =>
+    JSON.stringify(import.meta.resolve(m)),
+  )
   .replace(/(['"])@\/lib\/civilization-model\1/g, JSON.stringify(model));
 const { createWorldArchitecture } = await import(url(source));
 const { regions, regionConnections, sampleAgents } = await import(model);
@@ -58,7 +61,10 @@ assert.ok(
 );
 world.update(10, 4, 0.5, states, 0);
 assert.ok(world.coop.visible);
-assert.ok(world.links.every((m) => m.visible));
+assert.ok(
+  world.links.every((m) => !m.visible),
+  'Old solid cylinders are replaced by layered effects ribbons',
+);
 assert.equal(world.result.visible, false, 'No receipt before work completes');
 world.update(12, 5, 0, states, 0);
 const start = world.result.position.clone();

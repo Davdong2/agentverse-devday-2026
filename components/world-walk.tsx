@@ -1,6 +1,10 @@
 'use client';
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
+import { environmentFor } from '@/lib/world-environment';
+import type { WorldNews, NewsReaction } from '@/lib/world-news';
+import type { MarketSignal } from '@/lib/civilization-model';
+import { createWorldEffects } from '@/components/world-effects';
 import { createWorldArchitecture } from '@/components/world-architecture';
 import { createCryptoProps } from '@/components/crypto-props';
 import { createAgentLabels } from '@/components/agent-labels';
@@ -29,6 +33,9 @@ type Props = {
   paused: boolean;
   speed: number;
   weather: Weather;
+  signal?: MarketSignal | null;
+  news?: WorldNews | null;
+  activeNews?: NewsReaction | null;
   walker: MutableRefObject<Walker>;
   onAgent: (id: string, instance: number) => void;
   inputBlocked?: boolean;
@@ -73,7 +80,7 @@ export default function WorldWalk(props: Props) {
       56,
       host.clientWidth / host.clientHeight,
       0.1,
-      120,
+      240,
     );
     camera.rotation.order = 'YXZ';
     scene.add(new THREE.HemisphereLight('#F4F7FF', '#AAB8CD', 1.65));
@@ -132,15 +139,53 @@ export default function WorldWalk(props: Props) {
       pickable.push(...avatar.pickable, label.sprite, label.badge);
       return { ...avatar, label, positioned: false };
     });
-    const eventGeo = new THREE.TorusGeometry(4.8, 0.045, 5, 48);
-    geometries.push(eventGeo);
-    const eventMat = new THREE.MeshBasicMaterial({ color: '#89b28a' });
-    materials.push(eventMat);
-    const eventRing = mesh(eventGeo, eventMat, 0, 0.08, 0);
-    eventRing.rotation.x = -Math.PI / 2;
-    const particles = Array.from({ length: 20 }, (_, i) =>
-      mesh(coreGeo, i % 2 ? mats[0] : mats[1], 0, 1, 0, 0.4, 0.4, 0.4),
+    const effects = createWorldEffects(scene);
+    let disposed = false;
+    const surfaceTexture = new THREE.TextureLoader().load(
+      '/world-limestone.jpg',
+      (texture) => {
+        if (disposed) {
+          texture.dispose();
+          return;
+        }
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = Math.min(
+          4,
+          renderer.capabilities.getMaxAnisotropy(),
+        );
+        architecture.setSurfaceMap(texture);
+        cryptoProps.setSurfaceMap(texture);
+      },
     );
+    const panelTexture = new THREE.TextureLoader().load(
+      '/world-panels.jpg',
+      (t) => {
+        if (disposed) {
+          t.dispose();
+          return;
+        }
+        avatars.setPanelAtlas(t);
+      },
+    );
+    const skyTexture = new THREE.TextureLoader().load('/world-skyline.jpg');
+    skyTexture.colorSpace = THREE.SRGBColorSpace;
+    const skyGeometry = new THREE.CylinderGeometry(108, 108, 164, 80, 1, true);
+    const skyMaterial = new THREE.MeshBasicMaterial({
+      map: skyTexture,
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+      color: '#F0F5FF',
+    });
+    const skyline = new THREE.Mesh(skyGeometry, skyMaterial);
+    skyline.position.set(48, 35, 48);
+    skyline.renderOrder = -10;
+    scene.add(skyline);
+    const skyColor = new THREE.Color(),
+      fogColor = new THREE.Color();
+    const walkable = (x: number, z: number) =>
+      canWalkAt(x, z) && !cryptoProps.blocksPoint(x, z);
     const keys = new Set<string>();
     let looking = false,
       lastX = 0,
@@ -208,12 +253,15 @@ export default function WorldWalk(props: Props) {
         -((e.clientY - r.top) / r.height) * 2 + 1,
       );
       ray.setFromCamera(pointer, camera);
-      const hit = ray
-        .intersectObjects(pickable, false)
-        .find(
-          (h) =>
-            h.distance < 30 && h.object.visible && h.object.parent?.visible,
-        );
+      const hit = ray.intersectObjects(pickable, false).find((h) => {
+        if (h.distance >= 30) return false;
+        let object: THREE.Object3D | null = h.object;
+        while (object) {
+          if (!object.visible) return false;
+          object = object.parent;
+        }
+        return true;
+      });
       if (hit) {
         const obj = hit.object;
         const instance = obj.userData.instance ?? obj.parent?.userData.instance;
@@ -224,7 +272,7 @@ export default function WorldWalk(props: Props) {
             latest.current.time,
             latest.current.weather,
           )[instance];
-          latest.current.onAgent(a.agentId, instance);
+          if (a) latest.current.onAgent(a.agentId, instance);
         } else if (obj.userData.region !== undefined)
           latest.current.onRegion(obj.userData.region);
       }
@@ -284,12 +332,12 @@ export default function WorldWalk(props: Props) {
       const dx =
           (-Math.sin(w.yaw) * forward + Math.cos(w.yaw) * strafe) * dt * 5,
         dz = (-Math.cos(w.yaw) * forward - Math.sin(w.yaw) * strafe) * dt * 5;
-      if (canWalkAt(w.x + dx, w.z + dz)) {
+      if (walkable(w.x + dx, w.z + dz)) {
         w.x += dx;
         w.z += dz;
       } else {
-        if (canWalkAt(w.x + dx, w.z)) w.x += dx;
-        if (canWalkAt(w.x, w.z + dz)) w.z += dz;
+        if (walkable(w.x + dx, w.z)) w.x += dx;
+        if (walkable(w.x, w.z + dz)) w.z += dz;
       }
       camera.position.set(w.x, 1.65, w.z);
       camera.rotation.set(w.pitch, w.yaw, 0, 'YXZ');
@@ -318,6 +366,12 @@ export default function WorldWalk(props: Props) {
         progress = phaseProgress(time),
         center = regions[0];
       cryptoProps.update(time, level);
+      actors.forEach((actor, i) => {
+        if (i >= states.length) {
+          actor.g.visible = false;
+          actor.positioned = false;
+        }
+      });
       states.forEach((a, i) => {
         const actor = actors[i];
         const moveX = a.x * 100 - actor.g.position.x,
@@ -358,25 +412,34 @@ export default function WorldWalk(props: Props) {
           p.ignixIds.includes(a.agentId),
         );
       });
-      architecture.update(time, phase, progress, states, level);
-      particles.forEach((m, i) => {
-        m.visible = level < 1;
-        const source = regions[p.weather === 'resources' ? 8 : 7],
-          dest = regions[p.weather === 'attack' ? 6 : 5];
-        let u = (time * 0.18 + i / 20) % 1;
-        if (p.weather === 'storm') u = 1 - u;
-        m.position.set(
-          (source.x + (dest.x - source.x) * u) * 100,
-          0.7 + Math.sin(u * Math.PI) * 0.6,
-          (source.y + (dest.y - source.y) * u) * 100,
-        );
-      });
-      eventRing.visible = p.activeEventRegion !== undefined;
-      if (p.activeEventRegion !== undefined) {
-        const r = regions[p.activeEventRegion];
-        eventRing.position.set(r.x * 100, 0.08, r.y * 100);
-        eventRing.scale.setScalar(1 + Math.sin(time * 3) * 0.05);
-      }
+      const environment = environmentFor(p.weather, p.signal?.change ?? 0);
+      skyColor.set(environment.sky);
+      fogColor.set(environment.fog);
+      skyMaterial.color.lerp(skyColor, dt * 1.2);
+      (scene.background as THREE.Color).lerp(fogColor, dt * 1.2);
+      if (scene.fog instanceof THREE.Fog)
+        scene.fog.color.lerp(fogColor, dt * 1.2);
+      sun.intensity += (environment.sun - sun.intensity) * dt * 1.2;
+      renderer.toneMappingExposure +=
+        (environment.exposure - renderer.toneMappingExposure) * dt * 1.2;
+      architecture.update(
+        time,
+        phase,
+        progress,
+        states,
+        level,
+        environment.flow,
+      );
+      effects.update(
+        time,
+        phase,
+        progress,
+        states,
+        camera,
+        level,
+        p.weather,
+        p.activeEventRegion,
+      );
       renderer.render(scene, camera);
       elapsed += frameSeconds;
       frames++;
@@ -406,6 +469,13 @@ export default function WorldWalk(props: Props) {
       canvas.removeEventListener('webglcontextlost', onLost);
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
+      disposed = true;
+      surfaceTexture.dispose();
+      panelTexture.dispose();
+      skyTexture.dispose();
+      skyGeometry.dispose();
+      skyMaterial.dispose();
+      effects.dispose();
       architecture.dispose();
       cryptoProps.dispose();
       avatars.dispose();
@@ -439,6 +509,49 @@ export default function WorldWalk(props: Props) {
       ) : (
         <>
           <div className="walk-reticle" />
+          <div className="walk-signal-card">
+            <span>
+              BTC / USDT{' '}
+              <small>
+                {props.signal
+                  ? props.signal.mode === 'fresh'
+                    ? 'LIVE'
+                    : '缓存'
+                  : '暂无行情'}
+              </small>
+            </span>
+            {props.signal && (
+              <strong>
+                {props.signal.last.toLocaleString('en-US', {
+                  maximumFractionDigits: 2,
+                })}
+                <em className={props.signal.change < 0 ? 'negative' : ''}>
+                  {props.signal.change >= 0 ? '+' : ''}
+                  {props.signal.change.toFixed(2)}%
+                </em>
+              </strong>
+            )}
+            <p>24h 行情映射环境 · 世界响应为演示</p>
+            {props.activeNews && (
+              <a href={props.activeNews.url} target="_blank" rel="noreferrer">
+                {props.activeNews.category} · {props.activeNews.title}
+                <small>CoinDesk · 查看新闻来源 ↗</small>
+              </a>
+            )}
+            {!props.activeNews && props.news?.items[0] && (
+              <a
+                href={props.news.items[0].url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {props.news.items[0].title}
+                <small>
+                  CoinDesk ·{' '}
+                  {props.news.mode === 'stale' ? '缓存新闻' : '公开新闻'} ↗
+                </small>
+              </a>
+            )}
+          </div>
           <div className="walk-location">
             <MapPin size={15} />
             {regions[area].name}

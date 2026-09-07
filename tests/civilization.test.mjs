@@ -27,6 +27,7 @@ const {
   cycleDuration,
   regionFor,
   sampleAgents,
+  worldRoster,
   canWalkAt,
   regionConnections,
 } = await import(url(model));
@@ -76,7 +77,44 @@ console.log(
 
 const details = JSON.parse(fs.readFileSync('lib/details.json', 'utf8'));
 const state = sampleAgents(agents, details, 7, 'nvda', 50);
-assert.equal(state.length, 50);
+assert.equal(state.length, agents.length);
+assert.equal(
+  new Set(state.map((a) => a.agentId)).size,
+  state.length,
+  'An identity must never be cloned to fill capacity',
+);
+assert.deepEqual(
+  state.slice(0, 4).map((a) => a.agentId),
+  ['2083', '8355', '9626', '8136'],
+);
+const sameNames = [
+  ...agents,
+  { ...agents[0], agentId: '99999', name: agents[0].name },
+];
+assert.equal(
+  worldRoster(sameNames).filter((a) => a.name === agents[0].name).length,
+  2,
+  'Different source IDs may legitimately share a name',
+);
+assert.equal(
+  worldRoster([...agents, agents[0]]).length,
+  agents.length,
+  'Duplicate source IDs produce one body',
+);
+assert.deepEqual(
+  sampleAgents([], {}, 0, 'calm'),
+  [],
+  'Empty catalogs must not fabricate actors',
+);
+const fifty = Array.from({ length: 50 }, (_, i) => ({
+  ...agents[i % agents.length],
+  agentId: String(90000 + i),
+}));
+assert.equal(
+  sampleAgents(fifty, {}, 0, 'calm').length,
+  50,
+  'Capacity still supports 50 distinct source identities',
+);
 assert.equal(state.filter((a) => a.collaborator).length, 4);
 for (let i = 0; i < 4; i++) {
   assert.equal(state[i].x, collaborationPose(7, i).x);
@@ -111,5 +149,5 @@ assert.equal(canWalkAt(0, 0), false);
 assert.equal(canWalkAt(100, 100), false);
 assert.equal(canWalkAt(NaN, 50), false);
 console.log(
-  'PASS: shared camera samples, 50 real-profile instances, all walkable regions and continuous bridges, out-of-world rejection.',
+  'PASS: shared camera samples, unique real-profile instances (50-identity capacity), all walkable regions and continuous bridges, out-of-world rejection.',
 );

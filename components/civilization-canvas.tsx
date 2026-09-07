@@ -444,7 +444,7 @@ export default function CivilizationCanvas(props: Props) {
       ctx.beginPath();
       ctx.ellipse(cx, cy + 12, 97, 52, 0, 0, Math.PI * 2);
       ctx.stroke();
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < p.team.length; i++) {
         const pos = collaborationPose(t, i),
           x = pos.x * 1600,
           y = pos.y * 900;

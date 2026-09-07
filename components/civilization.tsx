@@ -64,6 +64,7 @@ import type { Agent, AgentData, Detail } from '@/lib/marketplace';
 import {
   regionSlugs,
   sampleAgents,
+  worldRoster,
   regions,
   weathers,
   stages,
@@ -79,7 +80,6 @@ import {
   type MemoryRecord,
 } from '@/lib/civilization-model';
 const details = detailsSnapshot as Record<string, Detail>;
-const population = 50;
 type CameraState = { x: number; y: number; z: number };
 const initialCamera = { x: 0.5, y: 0.47, z: 1 };
 export default function Civilization({
@@ -90,6 +90,8 @@ export default function Civilization({
   const {
     data,
     ignix,
+    news,
+    newsReaction,
     setData,
     time,
     setTime,
@@ -167,23 +169,26 @@ export default function Civilization({
     });
   const fit = Math.min(size.w / 1600, (size.h - 105) / 900) * 1.03,
     scale = fit * cam.z;
+  const activeNews =
+    signalMode === 'live' && newsReaction && newsReaction.until > Date.now()
+      ? newsReaction
+      : null;
   const weather =
-    signalMode === 'live'
+    activeNews?.weather ??
+    (signalMode === 'live'
       ? signal
         ? liveWeather(signal.change)
         : 'calm'
-      : scenario;
+      : scenario);
   const event = weathers[weather],
     stage = stageAt(time),
     phase = phaseProgress(time),
     cycle = Math.floor(time / cycleDuration);
   const agent =
     data.agents.find((a) => a.agentId === agentId) ?? data.agents[0];
-  const team = ['2083', '8355', '9626', '8136'].map(
-    (id, i) =>
-      data.agents.find((a) => a.agentId === id) ??
-      data.agents[i % data.agents.length],
-  );
+  const roster = worldRoster(data.agents);
+  const population = roster.length;
+  const team = roster.slice(0, 4);
   const appearanceData = appearance(agent, service ?? undefined);
   const teamIndex = team.findIndex((a) => a.agentId === agent.agentId);
   const regionTask = cryptoTaskState(region, time);
@@ -366,19 +371,14 @@ export default function Civilization({
   }, [agent.agentId, panel]);
   const selectAgent = useCallback(
     (a: Agent, instance?: number) => {
-      inspected.current = {
-        agentId: a.agentId,
-        instance:
-          instance ??
-          sampleAgents(data.agents, details, time, weather).find(
-            (s) => s.agentId === a.agentId,
-          )?.instance ??
-          0,
-      };
-      setAgentId(a.agentId);
-      setSelected(
-        instance ?? data.agents.findIndex((v) => v.agentId === a.agentId),
+      const state = sampleAgents(data.agents, details, time, weather).find(
+        (s) => s.agentId === a.agentId,
       );
+      inspected.current = state
+        ? { agentId: a.agentId, instance: state.instance }
+        : null;
+      setAgentId(a.agentId);
+      setSelected(state?.instance ?? null);
       router.push(
         '/regions/' +
           regionSlugs[regionIndex ?? regionFor(a, details[a.agentId])] +
@@ -646,6 +646,9 @@ export default function Civilization({
             paused={paused}
             speed={speed}
             weather={weather}
+            signal={signalMode === 'live' ? signal : null}
+            news={news}
+            activeNews={activeNews}
             walker={walker}
             inputBlocked={panel !== null}
             onAgent={(id, instance) => {
@@ -655,8 +658,12 @@ export default function Civilization({
             onRegion={(n) => focusRegion(n)}
             onNear={setWalkRegion}
             activeEventRegion={
-              events.find((e) => e.mode === 'LIVE' && Date.now() - e.at < 45000)
-                ?.region
+              (
+                activeNews ??
+                events.find(
+                  (e) => e.mode === 'LIVE' && Date.now() - e.at < 45000,
+                )
+              )?.region
             }
             onExit={() => setViewMode('observe')}
           />
@@ -826,13 +833,13 @@ export default function Civilization({
           {signalMode === 'demo' ? '情景演示' : '现实信号'}
           <ChevronDown size={13} />
         </button>
-        <h1>{event.title}</h1>
+        <h1>{activeNews?.category ?? event.title}</h1>
         <p>
           {signalMode === 'live'
             ? signal
               ? `BTC 24h ${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%`
               : '等待行情信号'
-            : event.event}
+            : (activeNews?.title ?? event.event)}
         </p>
         <button
           className="watch-event"
@@ -1216,10 +1223,7 @@ export default function Civilization({
               serviceNotice={serviceNotice}
               time={time}
               state={sampleAgents(data.agents, details, time, weather).find(
-                (s) =>
-                  s.agentId === agent.agentId &&
-                  (inspected.current?.agentId !== agent.agentId ||
-                    s.instance === inspected.current.instance),
+                (s) => s.agentId === agent.agentId,
               )}
               memories={memories}
               team={team}
@@ -1246,8 +1250,9 @@ export default function Civilization({
               秒循环包含能力请求、吸附合体、工作、交付、结算、拆分和成长。
             </p>
             <p>
-              <strong>现实与演示</strong>20 个档案来自 OKX.AI。50
-              个活动角色是演示分身，协作和收益均为模拟。现实模式读取 BTC
+              <strong>现实与演示</strong>
+              {data.agents.length} 个档案来自 OKX.AI，世界中每个身份只出现一次。
+              当前 {population} 个角色的协作和收益均为模拟。现实模式读取 BTC
               行情；其他事件是可切换的假设情景。
             </p>
             <p>

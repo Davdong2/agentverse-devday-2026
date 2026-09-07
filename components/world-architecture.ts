@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   regions,
@@ -34,7 +35,7 @@ export function createWorldArchitecture(
   stone.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
-      '#include <common>\nvarying vec3 vStonePosition;',
+      '#include <common>\nvarying vec3 vStonePosition;\nvarying vec3 vStoneNormal;',
     );
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
@@ -43,11 +44,24 @@ export function createWorldArchitecture(
       #ifdef USE_INSTANCING
       stoneLocal=instanceMatrix*stoneLocal;
       #endif
-      vStonePosition=(modelMatrix*stoneLocal).xyz;`,
+      vStonePosition=(modelMatrix*stoneLocal).xyz;
+      vStoneNormal=normalize(mat3(modelMatrix)*objectNormal);`,
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
-      '#include <common>\nvarying vec3 vStonePosition;',
+      '#include <common>\nvarying vec3 vStonePosition;\nvarying vec3 vStoneNormal;',
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      `
+      #ifdef USE_MAP
+      vec3 weights=pow(abs(vStoneNormal),vec3(5.));weights/=max(.001,weights.x+weights.y+weights.z);
+      vec3 px=texture2D(map,vStonePosition.yz*.3).rgb;
+      vec3 py=texture2D(map,vStonePosition.xz*.3).rgb;
+      vec3 pz=texture2D(map,vStonePosition.xy*.3).rgb;
+      diffuseColor.rgb*=mix(vec3(1.),px*weights.x+py*weights.y+pz*weights.z,.42);
+      #endif
+    `,
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <color_fragment>',
@@ -57,7 +71,7 @@ export function createWorldArchitecture(
       diffuseColor.rgb*=0.967+grain*0.038+strata*0.006;`,
     );
   };
-  stone.customProgramCacheKey = () => 'agentverse-limestone-v1';
+  stone.customProgramCacheKey = () => 'agentverse-limestone-textured-v2';
   const edge = mat(
     new THREE.MeshPhongMaterial({ color: '#D3CECD', shininess: 14 }),
   );
@@ -155,7 +169,7 @@ export function createWorldArchitecture(
       vertexShader:
         'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader:
-        'varying vec2 vUv; uniform float uTime; uniform vec3 uColor; void main(){float lane=pow(.5+.5*sin(vUv.x*100.),14.);float pulse=pow(.5+.5*sin(vUv.y*65.+uTime*3.),8.);float fade=smoothstep(0.,.2,vUv.y)*smoothstep(1.,.7,vUv.y);gl_FragColor=vec4(uColor,fade*(.035+lane*.22+pulse*lane*.5));}',
+        'varying vec2 vUv; uniform float uTime; uniform vec3 uColor; void main(){float lane=pow(.5+.5*sin(vUv.x*150.),24.);float pulse=pow(.5+.5*cos(vUv.y*30.-uTime*2.+sin(vUv.x*16.)*2.),16.);float fade=smoothstep(0.,.12,vUv.y)*(1.-smoothstep(.76,1.,vUv.y));gl_FragColor=vec4(mix(uColor,vec3(.94,.98,1.),pulse),fade*(.012+lane*.10+pulse*lane*.38));}',
     }),
   );
   const curtain = geo(new THREE.CylinderGeometry(1, 1, 1, 32, 1, true));
@@ -264,10 +278,81 @@ export function createWorldArchitecture(
       waterfalls.push(portal);
     }
     if (n !== 0) {
-      const arch = mesh(archGeo, stone, x, 0, z - 2.4, 1.35, 1.35, 1);
-      arch.userData.region = n;
-      pickable.push(arch);
       ring(x, 0.045, z, 2.5, glow[n % 3]);
+      if (n === 5 || n === 8) {
+        // Exchange pavilion and energy canopy share an open circular roof line.
+        ring(x, 5.1, z - 0.65, 4.2, gold);
+        const canopy = ring(x, 5.0, z - 0.65, 4.1, stone);
+        canopy.scale.z = 5.5;
+        for (const side of [-1, 1]) {
+          mesh(box, stone, x + side * 3.8, 2.45, z - 1.2, 0.4, 4.9, 0.46);
+          mesh(box, gold, x + side * 3.8, 4.8, z - 1.2, 0.46, 0.1, 0.52);
+        }
+        if (n === 8)
+          for (let k = 0; k < 7; k++) {
+            const fin = mesh(
+              box,
+              stone,
+              x - 2.4 + k * 0.8,
+              4.45,
+              z - 2.6,
+              0.32,
+              0.08,
+              1.4,
+            );
+            fin.rotation.z = -0.25;
+          }
+      } else if (n === 3 || n === 4) {
+        // Archive galleries and compute piers have clearly different silhouettes.
+        for (const side of [-1, 1]) {
+          const arch = mesh(
+            archGeo,
+            stone,
+            x + side * 2.9,
+            0,
+            z - 2.85,
+            0.6,
+            n === 3 ? 1.0 : 1.28,
+            0.7,
+          );
+          arch.userData.region = n;
+          pickable.push(arch);
+          mesh(box, gold, x + side * 2.9, 6.1, z - 2.85, 0.65, 0.075, 0.7);
+        }
+        mesh(box, stone, x, n === 3 ? 5.1 : 6.6, z - 2.85, 5.8, 0.26, 0.72);
+      } else if (n === 9) {
+        const horizon = ring(x, 4.7, z - 2.8, 2.65, gold);
+        horizon.rotation.x = 0.24;
+        horizon.rotation.y = 0.35;
+        mesh(box, stone, x - 3.2, 1.7, z - 2.0, 0.65, 3.4, 0.9);
+        mesh(box, stone, x + 3.2, 2.3, z - 2.0, 0.65, 4.6, 0.9);
+      } else {
+        const arch = mesh(
+          archGeo,
+          stone,
+          x,
+          0,
+          z - 3.55,
+          n === 7 ? 1.8 : 1.55,
+          n === 7 ? 1.5 : 1.2,
+          1,
+        );
+        arch.userData.region = n;
+        pickable.push(arch);
+        const inset = mesh(
+          archGeo,
+          gold,
+          x,
+          0,
+          z - 3.12,
+          n === 7 ? 1.66 : 1.4,
+          n === 7 ? 1.45 : 1.15,
+          0.12,
+        );
+        if (n === 2) {
+          inset.material = glow[0];
+        }
+      }
     }
   });
   // A high open rotunda gives the collaboration center a distinct skyline.
@@ -343,8 +428,34 @@ export function createWorldArchitecture(
       new THREE.Vector3(0, -0.6, 0),
       new THREE.Vector3(0, -3.5, length * 0.4),
     );
-    const supportGeo = geo(new THREE.TubeGeometry(curve, 28, 0.3, 5, false));
-    mesh(supportGeo, edge, 0, 0, 0, 1, 1, 1, g);
+    const bridgeShape = new THREE.Shape();
+    bridgeShape.moveTo(-length * 0.46, -0.36);
+    bridgeShape.lineTo(length * 0.46, -0.36);
+    bridgeShape.lineTo(length * 0.46, -4.0);
+    bridgeShape.quadraticCurveTo(0, -0.65, -length * 0.46, -4.0);
+    bridgeShape.closePath();
+    const supportGeo = geo(
+      new THREE.ExtrudeGeometry(bridgeShape, {
+        depth: 0.22,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        bevelSize: 0.045,
+        bevelThickness: 0.045,
+        curveSegments: 32,
+        steps: 1,
+      }),
+    );
+    for (const side of [-1, 1]) {
+      const arch = mesh(supportGeo, stone, side * 1.06, 0, 0, 1, 1, 1, g);
+      arch.rotation.y = Math.PI / 2;
+      // Slender separated parapet posts leave the route visible from eye level.
+      for (let k = 0; k < Math.floor(length / 3); k++) {
+        const z = -length / 2 + 1.5 + k * 3;
+        mesh(box, stone, side * 1.35, 0.29, z, 0.13, 0.6, 0.13, g);
+        mesh(box, gold, side * 1.35, 0.61, z, 0.16, 0.035, 0.16, g);
+      }
+      mesh(box, stone, side * 1.35, 0.59, 0, 0.1, 0.085, length, g);
+    }
     for (let lane = 0; lane < 3; lane++)
       mesh(
         box,
@@ -459,6 +570,48 @@ export function createWorldArchitecture(
   result.add(new THREE.LineSegments(edgeGeo, lineMat));
   const yAxis = new THREE.Vector3(0, 1, 0),
     direction = new THREE.Vector3();
+  // Static world geometry is batched by material, retaining pick targets and animated parts.
+  root.updateMatrixWorld(true);
+  const keep = new Set<THREE.Object3D>([
+    ...pickable,
+    ...waterfalls,
+    ...links,
+    result,
+    coreBeam,
+  ]);
+  const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const original: THREE.Mesh[] = [];
+  root.traverse((o) => {
+    if (
+      !(o instanceof THREE.Mesh) ||
+      o instanceof THREE.InstancedMesh ||
+      keep.has(o)
+    )
+      return;
+    let parent: THREE.Object3D | null = o;
+    while (parent) {
+      if (parent === coop) return;
+      parent = parent.parent;
+    }
+    const m = o.material as THREE.Material;
+    if (Array.isArray(m)) return;
+    const list = batches.get(m) ?? [];
+    list.push(o.geometry.clone().applyMatrix4(o.matrixWorld));
+    batches.set(m, list);
+    original.push(o);
+  });
+  original.forEach((o) => o.removeFromParent());
+  batches.forEach((list, m) => {
+    // Buffer layouts differ between extruded stone and parametric primitives.
+    const normalized = list.map((g) => {
+      const result = g.index ? g.toNonIndexed() : g;
+      if (result !== g) g.dispose();
+      return result;
+    });
+    const merged = mergeGeometries(normalized);
+    normalized.forEach((g) => g.dispose());
+    if (merged) root.add(new THREE.Mesh(geo(merged), m));
+  });
   return {
     root,
     regionPlatforms,
@@ -469,22 +622,27 @@ export function createWorldArchitecture(
     result,
     coop,
     waterfalls,
+    setSurfaceMap(texture: THREE.Texture) {
+      stone.map = texture;
+      stone.needsUpdate = true;
+    },
     update(
       time: number,
       phase: number,
       progress: number,
       states: AgentState[],
       quality: number,
+      flow = 1,
     ) {
       beamMat.uniforms.uTime.value = time;
       waterfalls.forEach((o, i) => (o.visible = quality < 2 || i === 0));
       pulses.count = routes.length * (quality > 0 ? 3 : 6);
       for (let i = 0; i < pulses.count; i++) {
         const route = routes[Math.floor(i / (quality > 0 ? 3 : 6))],
-          u = (time * 0.09 + (i % 6) / 6) % 1;
+          u = (time * 0.09 * flow + (i % 6) / 6) % 1;
         dummy.position.copy(route.a).lerp(route.b, u);
         dummy.position.y = 0.07;
-        dummy.scale.set(0.085, 0.035, 0.25);
+        dummy.scale.set(0.085, 0.035, 0.25 * flow);
         dummy.rotation.set(0, route.group.rotation.y, 0);
         dummy.updateMatrix();
         pulses.setMatrixAt(i, dummy.matrix);
@@ -505,7 +663,7 @@ export function createWorldArchitecture(
         o.rotation.set(0, phase === 2 ? (1 - progress) * 0.8 : 0, 0);
       });
       links.forEach((o, i) => {
-        o.visible = phase >= 1 && phase <= 4;
+        o.visible = false; // Camera-facing layered ribbons are rendered by world-effects.
         const a = states[i];
         if (!a) return;
         const start = new THREE.Vector3(a.x * 100, 1.05, a.y * 100),
