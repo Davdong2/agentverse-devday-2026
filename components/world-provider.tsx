@@ -36,6 +36,7 @@ function useStore() {
   const [history, setHistory] = useState<MemoryRecord[]>([]),
     [events, setEvents] = useState<WorldEvent[]>([]),
     [viewMode, setViewMode] = useState<'observe' | 'walk'>('observe');
+  const inspected = useRef<{ agentId: string; instance: number } | null>(null);
   const recorded = useRef(new Set<string>()),
     walker = useRef({ x: 46.8, z: 51.5, yaw: 0, pitch: 0 }),
     lastCatalog = useRef<AgentData>({ ...snapshot, mode: 'snapshot' }),
@@ -67,6 +68,7 @@ function useStore() {
     viewMode,
     setViewMode,
     walker,
+    inspected,
     lastCatalog,
     lastMarket,
   };

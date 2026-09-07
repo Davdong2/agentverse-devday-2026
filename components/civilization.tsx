@@ -46,6 +46,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import AgentDossier from '@/components/agent-dossier';
 import { AgentSprite } from '@/components/world-scene';
 import CivilizationCanvas, { type Hit } from '@/components/civilization-canvas';
 import snapshot from '@/lib/agents.json';
@@ -112,6 +113,7 @@ export default function Civilization({
     viewMode,
     setViewMode,
     walker,
+    inspected,
     lastCatalog,
     lastMarket,
   } = useWorld();
@@ -362,6 +364,15 @@ export default function Civilization({
   }, [agent.agentId, panel]);
   const selectAgent = useCallback(
     (a: Agent, instance?: number) => {
+      inspected.current = {
+        agentId: a.agentId,
+        instance:
+          instance ??
+          sampleAgents(data.agents, details, time, weather).find(
+            (s) => s.agentId === a.agentId,
+          )?.instance ??
+          0,
+      };
       setAgentId(a.agentId);
       setSelected(
         instance ?? data.agents.findIndex((v) => v.agentId === a.agentId),
@@ -373,7 +384,7 @@ export default function Civilization({
           a.agentId,
       );
     },
-    [data.agents, router, regionIndex],
+    [data.agents, router, regionIndex, time, weather, inspected],
   );
   const focusRegion = useCallback(
     (n: number, showPanel = true) => {
@@ -633,9 +644,10 @@ export default function Civilization({
             speed={speed}
             weather={weather}
             walker={walker}
-            onAgent={(id) => {
+            inputBlocked={panel !== null}
+            onAgent={(id, instance) => {
               const a = data.agents.find((a) => a.agentId === id);
-              if (a) selectAgent(a);
+              if (a) selectAgent(a, instance);
             }}
             onRegion={(n) => focusRegion(n)}
             onNear={setWalkRegion}
@@ -976,7 +988,13 @@ export default function Civilization({
         }}
         modal={false}
       >
-        <SheetContent className="civilization-sheet">
+        <SheetContent
+          className={
+            panel === 'agent'
+              ? 'civilization-sheet dossier-sheet'
+              : 'civilization-sheet'
+          }
+        >
           {panel === 'directory' ? (
             <>
               <SheetTitle>世界里的 Agent</SheetTitle>
@@ -1175,182 +1193,24 @@ export default function Civilization({
               </a>
             </>
           ) : (
-            <>
-              <button
-                className="back-catalog"
-                onClick={() => setPanel('directory')}
-              >
-                <ArrowLeft size={14} />
-                全部档案
-              </button>
-              <SheetTitle>{agent.name}</SheetTitle>
-              <SheetDescription>
-                {agent.categoryName.join(' · ')} · OKX.AI #{agent.agentId}
-              </SheetDescription>
-              <div className="agent-portrait">
-                <AgentSprite
-                  role={appearanceData.role}
-                  variant={
-                    teamIndex >= 0
-                      ? teamVariants[teamIndex]
-                      : agentVariant(agent)
-                  }
-                />
-                <span>
-                  {selected !== null && selected < 0
-                    ? '协作核心 · 演示角色'
-                    : '演示分身 #' +
-                      String((selected ?? 0) + 1).padStart(3, '0')}
-                  <small>
-                    公开信誉 {agent.score || '暂无评分'} · 本次成长{' '}
-                    {memories.length} 次
-                  </small>
-                </span>
-              </div>
-              <div className="crypto-loadout">
-                <small>能力块与工作道具 · Demo</small>
-                <strong>
-                  {
-                    agentDesigns[
-                      teamIndex >= 0
-                        ? teamVariants[teamIndex]
-                        : agentVariant(agent)
-                    ].name
-                  }{' '}
-                  Agent
-                </strong>
-                <p>
-                  {
-                    agentDesigns[
-                      teamIndex >= 0
-                        ? teamVariants[teamIndex]
-                        : agentVariant(agent)
-                    ].description
-                  }
-                </p>
-                <p className="subtle">
-                  为观察工作分工而设计，不是实际装备或技能认证。
-                </p>
-              </div>
-              <Tabs defaultValue="identity" className="profile-tabs">
-                <TabsList>
-                  <TabsTrigger value="identity">真实档案</TabsTrigger>
-                  <TabsTrigger value="activity">协作与成长</TabsTrigger>
-                  <TabsTrigger value="services">服务</TabsTrigger>
-                </TabsList>
-                <TabsContent value="identity">
-                  <p className="real-description">{agent.description}</p>
-                  <div className="ability-chips">
-                    {appearanceData.modules.map((m) => (
-                      <span key={m}>{m}</span>
-                    ))}
-                  </div>
-                  <dl className="real-metrics">
-                    <div>
-                      <dt>公开评分</dt>
-                      <dd>{agent.score || '—'}</dd>
-                    </div>
-                    <div>
-                      <dt>总已售</dt>
-                      <dd>{agent.usageCount.toLocaleString()}</dd>
-                    </div>
-                    <div>
-                      <dt>好评率</dt>
-                      <dd>{agent.approvalRate || '—'}</dd>
-                    </div>
-                  </dl>
-                  <p className="subtle">
-                    市场列表起价 {agent.startingPrice} {agent.symbol} /{' '}
-                    {agent.priceInterval || '次'}
-                  </p>
-                  <p className="subtle">
-                    资料时间{' '}
-                    {new Date(data.fetchedAt).toLocaleString('zh-CN', {
-                      timeZone: 'Asia/Shanghai',
-                    })}
-                  </p>
-                </TabsContent>
-                <TabsContent value="activity">
-                  <p className="simulation-note">
-                    以下为本次世界演示产生的记录，不是实际合作、收入或技能认证。
-                  </p>
-                  <h3>
-                    {team.some((a) => a.agentId === agent.agentId)
-                      ? stages[stage].title
-                      : '在' +
-                        regions[regionFor(agent, service ?? undefined)].name +
-                        '活动'}
-                  </h3>
-                  <div className="skill-growth">
-                    {skillNames.map((name, i) => (
-                      <div key={name}>
-                        <i style={{ background: skillColors[i] }} />
-                        <span>{name}</span>
-                        <div>
-                          <span
-                            style={{
-                              width: `${Math.min(100, 22 + memories.length * 12 + (i === 0 ? 15 : 0))}%`,
-                              background: skillColors[i],
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <h3>本次协作伙伴</h3>
-                  <div className="partner-list">
-                    {(team.some((a) => a.agentId === agent.agentId) ? team : [])
-                      .filter((a) => a.agentId !== agent.agentId)
-                      .map((a) => (
-                        <button key={a.agentId} onClick={() => selectAgent(a)}>
-                          {a.name}
-                          <ArrowUpRight size={12} />
-                        </button>
-                      ))}
-                  </div>
-                  <h3>记忆</h3>
-                  {memories.length ? (
-                    memories.map((h) => (
-                      <div className="memory-record" key={h.cycle}>
-                        <strong>{h.result}</strong>
-                        <p>协作 #{h.cycle} · 技能经验 +1</p>
-                        <small>演示分配 {(h.reward / 4).toFixed(1)} USDT</small>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="subtle">
-                      完成协作后，结果与成长会留在本次观察中。
-                    </p>
-                  )}
-                </TabsContent>
-                <TabsContent value="services">
-                  <p className="subtle">
-                    {serviceNotice} · 已载入 {service?.services.length ?? 0} /{' '}
-                    {service?.total ?? 0}
-                  </p>
-                  {service?.services.map((s) => (
-                    <div className="actual-service" key={s.serviceId}>
-                      <h3>{s.name}</h3>
-                      <p>{s.description}</p>
-                      <strong>
-                        {s.price} {s.symbol}
-                        {s.priceInterval ? ' / ' + s.priceInterval : ''}
-                      </strong>
-                    </div>
-                  ))}
-                  {!service && <p>服务暂不可用，可打开原始页面。</p>}
-                </TabsContent>
-              </Tabs>
-              <a
-                className="observer-button"
-                href={'https://www.okx.ai/zh-hans/agents/' + agent.agentId}
-                target="_blank"
-                rel="noreferrer"
-              >
-                查看 OKX.AI 原始服务
-                <ArrowUpRight size={16} />
-              </a>
-            </>
+            <AgentDossier
+              key={agent.agentId}
+              agent={agent}
+              data={data}
+              service={service}
+              serviceNotice={serviceNotice}
+              time={time}
+              state={sampleAgents(data.agents, details, time, weather).find(
+                (s) =>
+                  s.agentId === agent.agentId &&
+                  (inspected.current?.agentId !== agent.agentId ||
+                    s.instance === inspected.current.instance),
+              )}
+              memories={memories}
+              team={team}
+              onSelect={selectAgent}
+              onDirectory={() => setPanel('directory')}
+            />
           )}
         </SheetContent>
       </Sheet>

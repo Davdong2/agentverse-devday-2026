@@ -12,9 +12,8 @@ const compile = (p) =>
 const url = (s) =>
   'data:text/javascript;base64,' + Buffer.from(s).toString('base64');
 const design = url(compile('lib/agent-design.ts'));
-const { agentDesigns, agentVariant, teamVariants, avatarMotion, pickAvatar } = await import(
-  design
-);
+const { agentDesigns, agentVariant, teamVariants, avatarMotion, pickAvatar } =
+  await import(design);
 assert.equal(agentDesigns.length, 8);
 assert.equal(new Set(agentDesigns.map((a) => a.color)).size, 8);
 const { agents } = JSON.parse(fs.readFileSync('lib/agents.json', 'utf8'));
@@ -96,10 +95,24 @@ assert.deepEqual(
   working,
   'Identical world time produces identical motion',
 );
+const silhouettes = new Set(),
+  skins = new Set();
 for (let v = 0; v < 8; v++) {
   avatar.update(v, 3, avatarMotion(3, 4, 0, 0, false, false), false);
   assert.ok(avatar.skill.material.color instanceof THREE.Color);
+  skins.add(avatar.head.material.color.getHex());
+  silhouettes.add(
+    avatar.head.geometry.type +
+      avatar.head.scale.toArray().join() +
+      avatar.body.scale.toArray().join(),
+  );
 }
+assert.equal(skins.size, 8, 'All types have distinct body skins');
+assert.equal(
+  silhouettes.size,
+  8,
+  'All types have distinct head and body proportions',
+);
 const hit = {
   x: 100,
   y: 100,

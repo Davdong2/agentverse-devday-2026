@@ -8,7 +8,12 @@ export function createAvatarFactory() {
   const sphere = new THREE.SphereGeometry(1, 8, 6);
   const plane = new THREE.PlaneGeometry(1, 1);
   const disk = new THREE.CylinderGeometry(0.16, 0.16, 0.055, 12);
-  const geos = [rounded, sphere, plane, disk];
+  const chamfer = new RoundedBoxGeometry(1, 1, 1, 1, 0.1);
+  const oval = new THREE.SphereGeometry(0.5, 16, 12);
+  const geos = [rounded, sphere, plane, disk, chamfer, oval];
+  const skins = agentDesigns.map(
+    (d) => new THREE.MeshLambertMaterial({ color: d.skin }),
+  );
   const ivory = new THREE.MeshLambertMaterial({ color: '#F4F0E8' });
   const ink = new THREE.MeshLambertMaterial({ color: '#26343A' });
   const blush = new THREE.MeshLambertMaterial({ color: '#EDB5B2' });
@@ -146,6 +151,7 @@ export function createAvatarFactory() {
     glass,
     gold,
     ...variants,
+    ...skins,
     ...glyphMats,
   ];
   function mesh(
@@ -257,6 +263,10 @@ export function createAvatarFactory() {
         group.position.set((i - 1) * 0.34, 2.16, 0);
         return group;
       });
+      const skinMeshes: THREE.Mesh[] = [];
+      g.traverse((o) => {
+        if (o instanceof THREE.Mesh && o.material === ivory) skinMeshes.push(o);
+      });
       let variant = -1;
       return {
         g,
@@ -278,6 +288,33 @@ export function createAvatarFactory() {
             variant = nextVariant;
             skill.material = variants[variant];
             icon.material = glyphMats[variant];
+            const design = agentDesigns[variant];
+            skinMeshes.forEach((m) => (m.material = skins[variant]));
+            head.geometry = ['round', 'oval', 'orb', 'capsule'].includes(
+              design.shape,
+            )
+              ? oval
+              : design.shape === 'chamfer'
+                ? chamfer
+                : rounded;
+            head.scale.set(0.92 * design.headX, 0.69 * design.headY, 0.65);
+            body.geometry = ['round', 'orb', 'oval'].includes(design.shape)
+              ? oval
+              : rounded;
+            body.scale.set(0.54 * design.bodyX, 0.57 * design.bodyY, 0.43);
+            ears.forEach(
+              (e, i) => (e.position.x = (i ? 1 : -1) * 0.47 * design.headX),
+            );
+            eyes.forEach((e, i) => {
+              e.position.x = (i ? 1 : -1) * 0.175 * design.headX;
+              e.position.z = -0.326;
+            });
+            cheeks.forEach(
+              (e, i) => (e.position.x = (i ? 1 : -1) * 0.27 * design.headX),
+            );
+            limbs.forEach(
+              (l, i) => (l.arm.position.x = (i ? 1 : -1) * 0.34 * design.bodyX),
+            );
           }
           // At distance retain the body, limbs and capability silhouette, without tiny facial accents.
           [...ears, ...cheeks].forEach((m) => (m.visible = detail));
@@ -287,7 +324,10 @@ export function createAvatarFactory() {
           });
           g.position.y = motion.bob;
           head.rotation.z = motion.headTilt;
-          hat.position.y = 1.81 + motion.moduleLift;
+          hat.position.y =
+            1.81 +
+            (agentDesigns[variant].headY - 1) * 0.345 +
+            motion.moduleLift;
           crown.rotation.y = time * 0.3;
           crown.position.y = motion.composite ? 0.88 : 0.37;
           spark.position.y = crown.position.y;

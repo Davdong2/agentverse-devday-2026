@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, type CSSProperties } from 'react';
+import { drawAvatarSprite } from '@/lib/avatar-sprite';
 import { legacyVariant } from '@/lib/agent-design';
 import type { Agent, Detail } from '@/lib/marketplace';
 import {
@@ -20,13 +21,30 @@ export function AgentSprite({
   className?: string;
 }) {
   const index = variant ?? legacyVariant(role);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const image = new Image();
+    let active = true;
+    image.onload = () => {
+      const ctx = canvas.current?.getContext('2d');
+      if (active && ctx) {
+        ctx.clearRect(0, 0, 384, 512);
+        drawAvatarSprite(ctx, image, index, 0, 0, 384, 512);
+      }
+    };
+    image.src = '/agent-diverse-atlas.png';
+    return () => {
+      active = false;
+    };
+  }, [index]);
   return (
-    <span
+    <canvas
+      ref={canvas}
+      width={384}
+      height={512}
       aria-hidden="true"
       className={'agent-sprite reference-agent ' + className}
-      style={{
-        backgroundPosition: `${((index % 4) * 100) / 3}% ${Math.floor(index / 4) * 100}%`,
-      }}
+      style={{ backgroundImage: 'none' }}
     />
   );
 }

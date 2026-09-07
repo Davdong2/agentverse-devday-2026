@@ -1,4 +1,5 @@
 'use client';
+import { drawAvatarSprite } from '@/lib/avatar-sprite';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Agent, Detail } from '@/lib/marketplace';
 import { cryptoTaskState } from '@/lib/crypto-world';
@@ -48,7 +49,7 @@ export default function CivilizationCanvas(props: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const sprite = new Image();
-    sprite.src = '/agent-reference-atlas.png';
+    sprite.src = '/agent-diverse-atlas.png';
     let raf = 0,
       previous = 0;
     let lastFrame = '';
@@ -110,14 +111,10 @@ export default function CivilizationCanvas(props: Props) {
       ctx.translate(x, y - (motion?.bob ?? 0) * 18);
       if (motion) ctx.rotate(motion.stride * 0.04 + motion.headTilt * 0.4);
       if (sprite.complete && sprite.naturalWidth) {
-        const sw = sprite.naturalWidth / 4,
-          sh = sprite.naturalHeight / 2;
-        ctx.drawImage(
+        drawAvatarSprite(
+          ctx,
           sprite,
-          (variant % 4) * sw,
-          Math.floor(variant / 4) * sh,
-          sw,
-          sh,
+          variant,
           -size / 2,
           -size * 1.22,
           size,

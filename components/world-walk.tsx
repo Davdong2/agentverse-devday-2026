@@ -27,7 +27,8 @@ type Props = {
   speed: number;
   weather: Weather;
   walker: MutableRefObject<Walker>;
-  onAgent: (id: string) => void;
+  onAgent: (id: string, instance: number) => void;
+  inputBlocked?: boolean;
   onRegion: (n: number) => void;
   onNear: (n: number) => void;
   onExit: () => void;
@@ -219,6 +220,7 @@ export default function WorldWalk(props: Props) {
       lastY = 0,
       dragDistance = 0;
     const down = (e: KeyboardEvent) => {
+      if (latest.current.inputBlocked) return;
       if ((e.target as HTMLElement)?.closest('input,textarea,[role="dialog"]'))
         return;
       if (
@@ -250,6 +252,7 @@ export default function WorldWalk(props: Props) {
     const ray = new THREE.Raycaster(),
       pointer = new THREE.Vector2();
     const pointerDown = (e: PointerEvent) => {
+      if (latest.current.inputBlocked) return;
       looking = true;
       dragDistance = 0;
       lastX = e.clientX;
@@ -293,7 +296,7 @@ export default function WorldWalk(props: Props) {
             latest.current.time,
             latest.current.weather,
           )[instance];
-          latest.current.onAgent(a.agentId);
+          latest.current.onAgent(a.agentId, instance);
         } else if (obj.userData.region !== undefined)
           latest.current.onRegion(obj.userData.region);
       }
@@ -340,6 +343,13 @@ export default function WorldWalk(props: Props) {
         (keys.has('d') || keys.has('arrowright') ? 1 : 0) -
         (keys.has('a') || keys.has('arrowleft') ? 1 : 0) +
         stick.current.x;
+      if (p.inputBlocked) {
+        forward = 0;
+        strafe = 0;
+        keys.clear();
+        stick.current = { x: 0, y: 0 };
+        looking = false;
+      }
       const length = Math.max(1, Math.hypot(forward, strafe));
       forward /= length;
       strafe /= length;
