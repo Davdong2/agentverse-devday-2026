@@ -4,31 +4,83 @@ import { agentDesigns, type AvatarMotion } from '@/lib/agent-design';
 
 /** Shared geometry and materials, with close-range limbs and expressions. No PBR or large textures. */
 export function createAvatarFactory() {
-  const rounded = new RoundedBoxGeometry(1, 1, 1, 2, 0.18);
-  const sphere = new THREE.SphereGeometry(1, 8, 6);
+  const rounded = new RoundedBoxGeometry(1, 1, 1, 4, 0.23);
+  const sphere = new THREE.SphereGeometry(1, 20, 14);
   const plane = new THREE.PlaneGeometry(1, 1);
   const disk = new THREE.CylinderGeometry(0.16, 0.16, 0.055, 12);
   const chamfer = new RoundedBoxGeometry(1, 1, 1, 1, 0.1);
-  const oval = new THREE.SphereGeometry(0.5, 16, 12);
-  const geos = [rounded, sphere, plane, disk, chamfer, oval];
+  const oval = new THREE.SphereGeometry(0.5, 28, 20);
+  const lowOval = new THREE.SphereGeometry(0.5, 12, 8);
+  const geos: THREE.BufferGeometry[] = [
+    rounded,
+    sphere,
+    plane,
+    disk,
+    chamfer,
+    oval,
+    lowOval,
+  ];
   const skins = agentDesigns.map(
-    (d) => new THREE.MeshLambertMaterial({ color: d.skin }),
+    (d) =>
+      new THREE.MeshPhongMaterial({
+        color: d.skin,
+        specular: '#FFFFFF',
+        shininess: 85,
+      }),
   );
-  const ivory = new THREE.MeshLambertMaterial({ color: '#F4F0E8' });
-  const ink = new THREE.MeshLambertMaterial({ color: '#26343A' });
+  const ivory = new THREE.MeshPhongMaterial({
+    color: '#F4F0E8',
+    specular: '#FFFFFF',
+    shininess: 85,
+  });
+  const ink = new THREE.MeshPhongMaterial({
+    color: '#162937',
+    specular: '#7594A5',
+    shininess: 110,
+  });
   const blush = new THREE.MeshLambertMaterial({ color: '#EDB5B2' });
   const cyan = new THREE.MeshBasicMaterial({ color: '#79DFFA' });
   const pale = new THREE.MeshBasicMaterial({ color: '#E9FCFF' });
-  const glass = new THREE.MeshLambertMaterial({
+  const glass = new THREE.MeshPhongMaterial({
+    shininess: 110,
+    specular: '#FFFFFF',
     color: '#83E5F4',
     transparent: true,
-    opacity: 0.72,
+    opacity: 0.4,
     depthWrite: false,
   });
-  const gold = new THREE.MeshLambertMaterial({ color: '#E4BF64' });
+  const gold = new THREE.MeshPhongMaterial({
+    color: '#E4BF64',
+    specular: '#FFF2C7',
+    shininess: 90,
+  });
   const variants = agentDesigns.map(
-    (d) => new THREE.MeshLambertMaterial({ color: d.color }),
+    (d) =>
+      new THREE.MeshPhongMaterial({
+        color: d.color,
+        shininess: 95,
+        specular: '#FFFFFF',
+        transparent: true,
+        opacity: 0.78,
+        depthWrite: false,
+      }),
   );
+  const outlineGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+  geos.push(outlineGeo);
+  const outlineMat = new THREE.LineBasicMaterial({
+    color: '#DDF8FF',
+    transparent: true,
+    opacity: 0.78,
+  });
+  const shadowMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {},
+    vertexShader:
+      'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:
+      'varying vec2 vUv;void main(){float r=length(vUv-.5)*2.;gl_FragColor=vec4(.22,.29,.37,.18*pow(max(0.,1.-r),2.));}',
+  });
   const textures: THREE.Texture[] = [];
   const glyphMats = agentDesigns.map((_, i) => {
     const c = document.createElement('canvas');
@@ -144,6 +196,8 @@ export function createAvatarFactory() {
   });
   const materials = [
     ivory,
+    outlineMat,
+    shadowMat,
     ink,
     blush,
     cyan,
@@ -178,11 +232,14 @@ export function createAvatarFactory() {
       const body = mesh(g, rounded, ivory, 0, 0.64, 0, 0.54, 0.57, 0.43);
       const head = mesh(g, rounded, ivory, 0, 1.22, 0, 0.92, 0.69, 0.65);
       [body, head].forEach((m) => (m.userData.instance = instance));
+      const shadow = mesh(g, plane, shadowMat, 0, 0.015, 0, 1.6, 1.1, 1);
+      shadow.rotation.x = -Math.PI / 2;
+      const visor = mesh(g, rounded, ink, 0, 1.23, -0.32, 0.58, 0.3, 0.09);
       const ears = [-1, 1].map((s) =>
-        mesh(g, rounded, ivory, s * 0.47, 1.21, 0, 0.09, 0.23, 0.22),
+        mesh(g, sphere, ivory, s * 0.47, 1.21, 0, 0.055, 0.125, 0.125),
       );
       const eyes = [-1, 1].map((s) =>
-        mesh(g, rounded, ink, s * 0.175, 1.25, -0.326, 0.1, 0.19, 0.03),
+        mesh(g, rounded, pale, s * 0.15, 1.25, -0.373, 0.066, 0.155, 0.022),
       );
       const cheeks = [-1, 1].map((s) =>
         mesh(g, sphere, blush, s * 0.27, 1.09, -0.319, 0.063, 0.032, 0.013),
@@ -207,12 +264,44 @@ export function createAvatarFactory() {
       g.add(hat);
       hat.position.y = 1.81;
       const skill = mesh(hat, rounded, variants[0], 0, 0, 0, 0.43, 0.4, 0.4);
+      const skillEdge = new THREE.LineSegments(outlineGeo, outlineMat);
+      skillEdge.scale.set(0.38, 0.35, 0.35);
+      hat.add(skillEdge);
+      const skillCore = mesh(hat, rounded, pale, 0, 0, 0, 0.1, 0.1, 0.1);
       skill.userData.instance = instance;
       const icon = mesh(hat, plane, glyphMats[0], 0, 0, -0.205, 0.28, 0.28, 1);
       icon.rotation.y = Math.PI;
       mesh(hat, rounded, cyan, 0, 0.245, 0, 0.065, 0.12, 0.065);
       const crown = mesh(hat, rounded, glass, 0, 0.37, 0, 0.22, 0.22, 0.22);
       const spark = mesh(hat, rounded, pale, 0, 0.37, 0, 0.085, 0.085, 0.085);
+      const crownEdge = new THREE.LineSegments(outlineGeo, outlineMat);
+      crownEdge.scale.set(0.2, 0.2, 0.2);
+      crownEdge.position.y = 0.37;
+      hat.add(crownEdge);
+      const backpack = mesh(
+        g,
+        rounded,
+        variants[0],
+        0,
+        0.69,
+        0.27,
+        0.32,
+        0.36,
+        0.18,
+      );
+      const shoulderCaps = limbs.map((l, i) =>
+        mesh(
+          l.arm,
+          rounded,
+          variants[0],
+          (i ? 1 : -1) * 0.025,
+          -0.09,
+          0,
+          0.18,
+          0.12,
+          0.21,
+        ),
+      );
       const toolGroup = new THREE.Group();
       limbs[0].arm.add(toolGroup);
       toolGroup.position.set(-0.04, -0.3, -0.13);
@@ -267,11 +356,14 @@ export function createAvatarFactory() {
       g.traverse((o) => {
         if (o instanceof THREE.Mesh && o.material === ivory) skinMeshes.push(o);
       });
+      const farFeet = mesh(g, chamfer, ink, 0, 0.2, 0, 0.38, 0.24, 0.22);
       let variant = -1;
       return {
         g,
         body,
         head,
+        visor,
+        skillEdge,
         skill,
         limbs,
         eyes,
@@ -287,6 +379,9 @@ export function createAvatarFactory() {
           if (nextVariant !== variant) {
             variant = nextVariant;
             skill.material = variants[variant];
+            backpack.material = variants[variant];
+            shoulderCaps.forEach((m) => (m.material = variants[variant]));
+            visor.scale.x = 0.58 * agentDesigns[variant].headX;
             icon.material = glyphMats[variant];
             const design = agentDesigns[variant];
             skinMeshes.forEach((m) => (m.material = skins[variant]));
@@ -306,8 +401,8 @@ export function createAvatarFactory() {
               (e, i) => (e.position.x = (i ? 1 : -1) * 0.47 * design.headX),
             );
             eyes.forEach((e, i) => {
-              e.position.x = (i ? 1 : -1) * 0.175 * design.headX;
-              e.position.z = -0.326;
+              e.position.x = (i ? 1 : -1) * 0.15 * design.headX;
+              e.position.z = -0.373;
             });
             cheeks.forEach(
               (e, i) => (e.position.x = (i ? 1 : -1) * 0.27 * design.headX),
@@ -316,14 +411,51 @@ export function createAvatarFactory() {
               (l, i) => (l.arm.position.x = (i ? 1 : -1) * 0.34 * design.bodyX),
             );
           }
+          const design = agentDesigns[variant];
+          const isRound = ['round', 'oval', 'orb', 'capsule'].includes(
+            design.shape,
+          );
+          head.geometry = isRound
+            ? detail
+              ? oval
+              : lowOval
+            : detail && design.shape !== 'chamfer'
+              ? rounded
+              : chamfer;
+          body.geometry = ['round', 'orb', 'oval'].includes(design.shape)
+            ? detail
+              ? oval
+              : lowOval
+            : detail
+              ? rounded
+              : chamfer;
+          skill.geometry = detail ? rounded : chamfer;
+          limbs.forEach((l) => {
+            l.arm.visible = detail;
+            l.leg.visible = detail;
+          });
+          farFeet.visible = !detail;
+          icon.visible = detail;
+          skillCore.visible = detail;
+          spark.visible = detail;
           // At distance retain the body, limbs and capability silhouette, without tiny facial accents.
           [...ears, ...cheeks].forEach((m) => (m.visible = detail));
           eyes.forEach((m) => {
             m.visible = detail;
-            m.scale.y = 0.19 * motion.blink;
+            m.scale.y = 0.155 * motion.blink;
           });
-          g.position.y = motion.bob;
+          g.position.y = Math.max(0, motion.bob);
+          shadow.position.y = 0.015 - g.position.y;
+          // Face and shell share the same subtle tilt rather than drifting apart.
           head.rotation.z = motion.headTilt;
+          visor.rotation.z = motion.headTilt;
+          visor.visible = detail;
+          skillEdge.visible = detail;
+          crownEdge.visible = detail;
+          shoulderCaps.forEach((m) => (m.visible = detail));
+          backpack.visible = detail;
+          skillCore.rotation.y = time * 0.8;
+          skillCore.scale.setScalar(0.1 * motion.corePulse);
           hat.position.y =
             1.81 +
             (agentDesigns[variant].headY - 1) * 0.345 +
@@ -331,6 +463,8 @@ export function createAvatarFactory() {
           crown.rotation.y = time * 0.3;
           crown.position.y = motion.composite ? 0.88 : 0.37;
           spark.position.y = crown.position.y;
+          crownEdge.position.y = crown.position.y;
+          crownEdge.rotation.y = crown.rotation.y;
           chest.scale.set(
             0.22 * motion.corePulse,
             0.22 * motion.corePulse,
@@ -347,7 +481,7 @@ export function createAvatarFactory() {
           shield.visible = variant === 2;
           pencil.visible = variant === 5 || variant === 6;
           tip.visible = pencil.visible;
-          capability.visible = motion.joining || motion.presenting;
+          capability.visible = detail && (motion.joining || motion.presenting);
           capability.rotation.y = time * 0.8;
           capability.position.y =
             0.88 + (motion.working ? Math.sin(time * 3) * 0.08 : 0);

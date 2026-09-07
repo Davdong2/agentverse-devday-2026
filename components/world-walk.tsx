@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import * as THREE from 'three';
+import { createWorldArchitecture } from '@/components/world-architecture';
 import { createCryptoProps } from '@/components/crypto-props';
 import { createAvatarFactory } from '@/components/agent-avatar';
 import { avatarMotion } from '@/lib/agent-design';
@@ -64,19 +65,24 @@ export default function WorldWalk(props: Props) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#c2e2e6');
-    scene.fog = new THREE.Fog('#c2e2e6', 20, 85);
+    scene.background = new THREE.Color('#DDE5F0');
+    scene.fog = new THREE.Fog('#DDE5F0', 30, 115);
     const camera = new THREE.PerspectiveCamera(
-      65,
+      56,
       host.clientWidth / host.clientHeight,
       0.1,
       120,
     );
     camera.rotation.order = 'YXZ';
-    scene.add(new THREE.HemisphereLight('#fffbea', '#93bfc7', 2.8));
-    const sun = new THREE.DirectionalLight('#fff2d5', 2);
+    scene.add(new THREE.HemisphereLight('#F4F7FF', '#AAB8CD', 1.65));
+    const sun = new THREE.DirectionalLight('#FFF1D8', 2.1);
     sun.position.set(-20, 35, 20);
     scene.add(sun);
+    const rim = new THREE.DirectionalLight('#C4DEFF', 1.1);
+    rim.position.set(15, 12, -25);
+    scene.add(rim);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     const ivory = new THREE.MeshLambertMaterial({ color: '#f3eedb' }),
       edge = new THREE.MeshLambertMaterial({ color: '#c5d9cd' }),
       white = new THREE.MeshLambertMaterial({ color: '#f3f1df' });
@@ -110,79 +116,7 @@ export default function WorldWalk(props: Props) {
       scene.add(m);
       return m;
     }
-    function bridge(a: number, b: number) {
-      const aa = { x: regions[a].x * 100, z: regions[a].y * 100 },
-        bb = { x: regions[b].x * 100, z: regions[b].y * 100 };
-      const length = Math.hypot(bb.x - aa.x, bb.z - aa.z);
-      const m = mesh(
-        boxGeo,
-        ivory,
-        (aa.x + bb.x) / 2,
-        -0.08,
-        (aa.z + bb.z) / 2,
-        2.8,
-        0.35,
-        length,
-      );
-      m.rotation.y = Math.atan2(bb.x - aa.x, bb.z - aa.z);
-    }
-    regionConnections.forEach(([a, b]) => bridge(a, b));
-    const portals: THREE.Object3D[] = [];
-    regions.forEach((r, n) => {
-      const radius = n === 0 ? 11 : 5.5,
-        geo = new THREE.CylinderGeometry(radius, radius * 0.96, 0.6, 32);
-      geometries.push(geo);
-      const platform = mesh(geo, ivory, r.x * 100, -0.32, r.y * 100);
-      platform.userData.region = n;
-      pickable.push(platform);
-      const under = new THREE.ConeGeometry(radius * 0.86, 5, 7);
-      geometries.push(under);
-      const low = mesh(under, edge, r.x * 100, -3.05, r.y * 100);
-      low.rotation.z = Math.PI;
-      const px = r.x * 100,
-        pz = r.y * 100;
-      if (n === 6 || n === 7 || n === 2) {
-        const mat = n === 6 ? mats[5] : ivory;
-        mesh(boxGeo, mat, px - 1.7, 2.1, pz - 2, 0.7, 4.2, 0.8);
-        mesh(boxGeo, mat, px + 1.7, 2.1, pz - 2, 0.7, 4.2, 0.8);
-        const top = mesh(boxGeo, mat, px, 4.25, pz - 2, 4.1, 0.7, 0.8);
-        top.userData.region = n;
-        pickable.push(top);
-        portals.push(top);
-      }
-      if (n === 1 || n === 3 || n === 4) {
-        for (let i = 0; i < 4; i++) {
-          const m = mesh(
-            boxGeo,
-            mats[n === 1 ? 0 : n === 3 ? 2 : 5],
-            px + (i % 2) * 1.7 - 1,
-            1 + (i % 3) * 0.5,
-            pz - 2 - Math.floor(i / 2) * 1.5,
-            1.1,
-            2 + (i % 3),
-            1.1,
-          );
-          m.userData.region = n;
-          pickable.push(m);
-        }
-      }
-      if (n === 5) {
-        const torus = new THREE.TorusGeometry(2.2, 0.13, 8, 48);
-        geometries.push(torus);
-        const ring = mesh(torus, mats[1], px, 2.7, pz - 2);
-        ring.userData.region = n;
-        pickable.push(ring);
-        mesh(boxGeo, ivory, px, 1.25, pz - 2, 1.6, 2.5, 1.6);
-        portals.push(ring);
-      }
-      if (n === 8) {
-        for (let i = 0; i < 2; i++) {
-          const pyramid = new THREE.ConeGeometry(1.6 - i * 0.4, 3.8 - i, 4);
-          geometries.push(pyramid);
-          mesh(pyramid, mats[1], px + i * 3 - 1, 1.9 - i * 0.5, pz - 2);
-        }
-      }
-    });
+    const architecture = createWorldArchitecture(scene, pickable);
     const coreGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
     geometries.push(coreGeo);
     const cryptoProps = createCryptoProps(scene, pickable);
@@ -193,18 +127,6 @@ export default function WorldWalk(props: Props) {
       pickable.push(...avatar.pickable);
       return { ...avatar, positioned: false };
     });
-    const links = Array.from({ length: 4 }, (_, i) => {
-      const mat = new THREE.MeshBasicMaterial({
-        color: skillColors[i],
-        transparent: true,
-        opacity: 0.7,
-      });
-      materials.push(mat);
-      return mesh(boxGeo, mat, 0, 0.6, 0, 1, 0.13, 0.13);
-    });
-    const resultMat = new THREE.MeshBasicMaterial({ color: '#f4d780' });
-    materials.push(resultMat);
-    const result = mesh(boxGeo, resultMat, 0, 1.7, 0, 0.45, 0.45, 0.45);
     const eventGeo = new THREE.TorusGeometry(4.8, 0.045, 5, 48);
     geometries.push(eventGeo);
     const eventMat = new THREE.MeshBasicMaterial({ color: '#89b28a' });
@@ -395,7 +317,9 @@ export default function WorldWalk(props: Props) {
         const moveX = a.x * 100 - actor.g.position.x,
           moveZ = a.y * 100 - actor.g.position.z;
         const moving = actor.positioned && Math.hypot(moveX, moveZ) > 0.002;
-        if (moving) actor.g.rotation.y = Math.atan2(-moveX, -moveZ);
+        if (a.collaborator && phase >= 2 && phase <= 6)
+          actor.g.rotation.y = Math.atan2(a.x - center.x, a.y - center.y);
+        else if (moving) actor.g.rotation.y = Math.atan2(-moveX, -moveZ);
         else if (!actor.positioned) actor.g.rotation.y = i * 0.8;
         actor.positioned = true;
         actor.g.position.set(a.x * 100, 0, a.y * 100);
@@ -419,24 +343,7 @@ export default function WorldWalk(props: Props) {
           Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < 18;
         actor.g.scale.setScalar(motion.composite ? 1.08 : 1);
       });
-      links.forEach((m, i) => {
-        const a = states[i];
-        m.visible = phase >= 2 && phase <= 7;
-        const x = a.x * 100,
-          z = a.y * 100,
-          cx = center.x * 100,
-          cz = center.y * 100;
-        m.position.set((x + cx) / 2, 0.7, (z + cz) / 2);
-        m.scale.set(0.15, 0.15, Math.hypot(x - cx, z - cz));
-        m.rotation.y = Math.atan2(x - cx, z - cz);
-      });
-      result.visible = phase >= 3 && phase <= 6;
-      result.position.set(center.x * 100, 2.75, center.y * 100);
-      result.rotation.y = time * 0.8;
-      if (phase === 5) {
-        result.position.x += (regions[7].x - center.x) * 100 * progress;
-        result.position.z += (regions[7].y - center.y) * 100 * progress;
-      }
+      architecture.update(time, phase, progress, states, level);
       particles.forEach((m, i) => {
         m.visible = level < 1;
         const source = regions[p.weather === 'resources' ? 8 : 7],
@@ -464,7 +371,7 @@ export default function WorldWalk(props: Props) {
           level++;
           renderer.setPixelRatio(level === 1 ? 1 : 0.8);
           setQuality(level === 1 ? '轻量' : '省电');
-          scene.fog = new THREE.Fog('#c2e2e6', 15, level === 1 ? 65 : 45);
+          scene.fog = new THREE.Fog('#DDE5F0', 15, level === 1 ? 65 : 45);
         }
         elapsed = 0;
         frames = 0;
@@ -484,6 +391,7 @@ export default function WorldWalk(props: Props) {
       canvas.removeEventListener('webglcontextlost', onLost);
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
+      architecture.dispose();
       cryptoProps.dispose();
       avatars.dispose();
       renderer.dispose();

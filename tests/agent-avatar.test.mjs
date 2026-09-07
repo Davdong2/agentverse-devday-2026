@@ -69,6 +69,16 @@ assert.ok(
 avatar.update(0, 2, avatarMotion(2, 0, 1, 0.5, true, true), true);
 assert.notEqual(avatar.limbs[0].leg.rotation.x, 0);
 assert.equal(avatar.limbs[0].leg.rotation.x, -avatar.limbs[1].leg.rotation.x);
+assert.equal(
+  avatar.head.material.type,
+  'MeshPhongMaterial',
+  'Shell responds to specular lighting',
+);
+assert.ok(avatar.visor.visible, 'Near camera exposes inset face visor');
+assert.ok(
+  avatar.skillEdge.visible,
+  'Near camera exposes capability edge highlights',
+);
 const working = avatarMotion(8, 0, 4, 0.1, true, false);
 avatar.update(0, 8, working, true);
 avatar.g.updateMatrixWorld(true);
@@ -112,6 +122,12 @@ assert.equal(
   silhouettes.size,
   8,
   'All types have distinct head and body proportions',
+);
+assert.equal(avatar.visor.visible, false, 'Far LOD removes small face details');
+assert.equal(
+  avatar.limbs[0].arm.visible,
+  false,
+  'Far LOD suppresses articulated limb draw calls',
 );
 const hit = {
   x: 100,
