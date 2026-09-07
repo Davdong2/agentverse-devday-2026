@@ -1,11 +1,15 @@
 'use client';
 import {
   createContext,
+  useEffect,
+  useMemo,
   useContext,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
+import ignixSeed from '@/lib/ignix-snapshot.json';
+import { mergeIgnixProfiles, type IgnixData } from '@/lib/ignix';
 import snapshot from '@/lib/agents.json';
 import type { AgentData } from '@/lib/marketplace';
 import type {
@@ -21,6 +25,40 @@ export type WorldEvent = {
   at: number;
 };
 function useStore() {
+  const [ignix, setIgnix] = useState<IgnixData>(ignixSeed as IgnixData);
+  useEffect(() => {
+    const controller = new AbortController();
+    const refresh = () => {
+      if (document.hidden) return;
+      fetch('/api/ignix', { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json() as Promise<IgnixData>;
+        })
+        .then((d) => {
+          if (
+            !controller.signal.aborted &&
+            d.associations &&
+            Array.isArray(d.profiles)
+          )
+            setIgnix(d);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted)
+            setIgnix((previous) => ({
+              ...previous,
+              mode: 'cached',
+              stale: true,
+            }));
+        });
+    };
+    refresh();
+    const timer = setInterval(refresh, 1200000);
+    return () => {
+      controller.abort();
+      clearInterval(timer);
+    };
+  }, []);
   const [data, setData] = useState<AgentData>({
     ...snapshot,
     mode: 'snapshot',
@@ -41,8 +79,20 @@ function useStore() {
     walker = useRef({ x: 46.8, z: 51.5, yaw: 0, pitch: 0 }),
     lastCatalog = useRef<AgentData>({ ...snapshot, mode: 'snapshot' }),
     lastMarket = useRef<number | null>(null);
+  const displayData = useMemo(
+    () => ({
+      ...data,
+      agents: mergeIgnixProfiles(
+        data.agents,
+        ignix.profiles,
+        ignix.associations,
+      ),
+    }),
+    [data, ignix],
+  );
   return {
-    data,
+    data: displayData,
+    ignix,
     setData,
     time,
     setTime,

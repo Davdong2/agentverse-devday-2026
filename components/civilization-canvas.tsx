@@ -27,6 +27,7 @@ import {
 export type Hit = AvatarHit;
 type Props = {
   agents: Agent[];
+  ignixIds: string[];
   details: Record<string, Detail>;
   time: number;
   paused: boolean;
@@ -405,6 +406,19 @@ export default function CivilizationCanvas(props: Props) {
           avatarMotion(t, a.instance, phase, 0, false, a.activity === '移动中'),
         );
 
+        if (p.ignixIds.includes(a.agentId)) {
+          ctx.fillStyle = '#254E41';
+          ctx.beginPath();
+          ctx.roundRect(x + actorSize * 0.18, y - actorSize * 1.18, 15, 13, 4);
+          ctx.fill();
+          text(
+            'ig',
+            x + actorSize * 0.18 + 7.5,
+            y - actorSize * 1.18 + 10,
+            '#EFF7D6',
+            10,
+          );
+        }
         if (chosen) {
           ctx.strokeStyle = '#aa8241';
           ctx.lineWidth = 1.5;

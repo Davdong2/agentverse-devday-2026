@@ -46,6 +46,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { IgnixBadge } from '@/components/ignix-profile';
 import AgentDossier from '@/components/agent-dossier';
 import { AgentSprite } from '@/components/world-scene';
 import CivilizationCanvas, { type Hit } from '@/components/civilization-canvas';
@@ -88,6 +89,7 @@ export default function Civilization({
   const router = useRouter();
   const {
     data,
+    ignix,
     setData,
     time,
     setTime,
@@ -637,6 +639,7 @@ export default function Civilization({
       {viewMode === 'walk' ? (
         <Suspense fallback={<div className="walk-loading">正在进入世界…</div>}>
           <WorldWalk
+            ignixIds={Object.keys(ignix.associations)}
             agents={data.agents}
             details={details}
             time={time}
@@ -685,6 +688,7 @@ export default function Civilization({
               draggable={false}
             />
             <CivilizationCanvas
+              ignixIds={Object.keys(ignix.associations)}
               agents={data.agents}
               details={details}
               time={time}
@@ -1029,7 +1033,12 @@ export default function Civilization({
                       variant={agentVariant(a)}
                     />
                     <span>
-                      <strong>{a.name}</strong>
+                      <strong>
+                        {a.name}{' '}
+                        {ignix.associations[a.agentId]?.tokens.length ? (
+                          <IgnixBadge />
+                        ) : null}
+                      </strong>
                       <small>
                         {a.categoryName.join(' · ')} · {a.score || '暂无'}评分
                       </small>
@@ -1125,7 +1134,12 @@ export default function Civilization({
                             variant={agentVariant(a)}
                           />
                           <span>
-                            <strong>{a.name}</strong>
+                            <strong>
+                              {a.name}{' '}
+                              {ignix.associations[a.agentId]?.tokens.length ? (
+                                <IgnixBadge />
+                              ) : null}
+                            </strong>
                             <small>{a.categoryName[0]}</small>
                           </span>
                           <ChevronRight size={14} />
@@ -1196,6 +1210,7 @@ export default function Civilization({
             <AgentDossier
               key={agent.agentId}
               agent={agent}
+              ignix={ignix}
               data={data}
               service={service}
               serviceNotice={serviceNotice}

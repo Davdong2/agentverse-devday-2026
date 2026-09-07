@@ -1,4 +1,6 @@
 'use client';
+import IgnixProfile, { IgnixBadge } from '@/components/ignix-profile';
+import type { IgnixData } from '@/lib/ignix';
 import { useState, type CSSProperties } from 'react';
 import {
   ArrowUpRight,
@@ -46,6 +48,7 @@ const sequence = [
 const phaseMap = [0, 1, 2, 3, 3, 4, 4, 5, 5];
 export default function AgentDossier({
   agent,
+  ignix,
   data,
   service,
   serviceNotice,
@@ -57,6 +60,7 @@ export default function AgentDossier({
   onDirectory,
 }: {
   agent: Agent;
+  ignix: IgnixData;
   data: AgentData;
   service: Detail | null;
   serviceNotice: string;
@@ -110,7 +114,12 @@ export default function AgentDossier({
       <aside className="dossier-left">
         <section className="dossier-card identity-card">
           <small>OKX.AI · AGENT #{agent.agentId}</small>
-          <SheetTitle>{agent.name}</SheetTitle>
+          <SheetTitle>
+            {agent.name}{' '}
+            {ignix.associations[agent.agentId]?.tokens.length ? (
+              <IgnixBadge />
+            ) : null}
+          </SheetTitle>
           <SheetDescription>
             {agent.categoryName.join(' · ')} · {design.name}型分身
           </SheetDescription>
@@ -193,6 +202,9 @@ export default function AgentDossier({
           style={{ transform: `translateY(${Math.sin(time * 2) * 4}px)` }}
         >
           <AgentSprite role={visual.role} variant={variant} />
+          {ignix.associations[agent.agentId]?.tokens.length ? (
+            <IgnixBadge />
+          ) : null}
         </div>
         <div className="dossier-capabilities">
           {abilities.map((name, i) => (
@@ -210,7 +222,12 @@ export default function AgentDossier({
           ))}
         </div>
         <div className="dossier-nameplate">
-          <strong>{agent.name}</strong>
+          <strong>
+            {agent.name}{' '}
+            {ignix.associations[agent.agentId]?.tokens.length ? (
+              <IgnixBadge />
+            ) : null}
+          </strong>
           <span>
             <i />
             {collab ? '正在协作' : '正在世界中活动'} · Demo
@@ -218,6 +235,7 @@ export default function AgentDossier({
         </div>
       </section>
       <aside className="dossier-right">
+        <IgnixProfile data={ignix} agentId={agent.agentId} />
         <section className="dossier-card">
           <h3>
             当前状态 <span className="dossier-demo">Demo</span>

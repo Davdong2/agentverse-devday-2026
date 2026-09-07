@@ -46,7 +46,7 @@ const factory = createAgentLabels(),
 first.update(name, 8, 900, 56, false, true);
 other.update(name, 20, 900, 56, false, true);
 assert.equal(
-  written.join(''),
+  written.filter((t) => t !== 'ig').join(''),
   name,
   'Wrapped label preserves the complete source name',
 );
@@ -89,3 +89,16 @@ assert.ok(disposed);
 console.log(
   'PASS: exact real names, Unicode wrapping, billboard sprites, shared textures, distance scaling, composite clearance, actor picking and disposal. No GPU assertion.',
 );
+
+const markedFactory = createAgentLabels(),
+  marked = markedFactory.create(24);
+marked.update('Xstocks', 10, 900, 56, false, true, true);
+assert.equal(marked.badge.visible, true);
+assert.equal(marked.badge.userData.instance, 24);
+marked.update('Other', 10, 900, 56, false, true, false);
+assert.equal(
+  marked.badge.visible,
+  false,
+  'No IG mark without an exact association',
+);
+markedFactory.dispose();

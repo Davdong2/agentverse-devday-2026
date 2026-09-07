@@ -23,6 +23,7 @@ import type { Agent, Detail } from '@/lib/marketplace';
 type Walker = { x: number; z: number; yaw: number; pitch: number };
 type Props = {
   agents: Agent[];
+  ignixIds: string[];
   details: Record<string, Detail>;
   time: number;
   paused: boolean;
@@ -126,9 +127,9 @@ export default function WorldWalk(props: Props) {
     const actors = Array.from({ length: 50 }, (_, i) => {
       const avatar = avatars.create(i);
       const label = labels.create(i);
-      avatar.g.add(label.sprite);
+      avatar.g.add(label.sprite, label.badge);
       scene.add(avatar.g);
-      pickable.push(...avatar.pickable, label.sprite);
+      pickable.push(...avatar.pickable, label.sprite, label.badge);
       return { ...avatar, label, positioned: false };
     });
     const eventGeo = new THREE.TorusGeometry(4.8, 0.045, 5, 48);
@@ -354,6 +355,7 @@ export default function WorldWalk(props: Props) {
           camera.fov,
           motion.composite,
           actor.g.visible,
+          p.ignixIds.includes(a.agentId),
         );
       });
       architecture.update(time, phase, progress, states, level);

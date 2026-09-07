@@ -2,6 +2,31 @@ import * as THREE from 'three';
 
 /** Text-only atlas cache: nameplates use the source Agent name and face the camera. */
 export function createAgentLabels() {
+  const badgeCanvas = document.createElement('canvas');
+  badgeCanvas.width = 64;
+  badgeCanvas.height = 64;
+  const badgeCtx = badgeCanvas.getContext('2d')!;
+  badgeCtx.fillStyle = '#254E41';
+  badgeCtx.beginPath();
+  badgeCtx.roundRect(2, 2, 60, 60, 18);
+  badgeCtx.fill();
+  badgeCtx.strokeStyle = '#BBDCB2';
+  badgeCtx.lineWidth = 3;
+  badgeCtx.stroke();
+  badgeCtx.fillStyle = '#F1F8D7';
+  badgeCtx.font = '700 36px system-ui';
+  badgeCtx.textAlign = 'center';
+  badgeCtx.textBaseline = 'middle';
+  badgeCtx.fillText('ig', 32, 32);
+  const badgeTexture = new THREE.CanvasTexture(badgeCanvas);
+  badgeTexture.colorSpace = THREE.SRGBColorSpace;
+  const badgeMaterial = new THREE.SpriteMaterial({
+    map: badgeTexture,
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+    toneMapped: false,
+  });
   const cache = new Map<
     string,
     {
@@ -71,10 +96,15 @@ export function createAgentLabels() {
       const sprite = new THREE.Sprite();
       sprite.userData.instance = instance;
       sprite.name = 'agent-nameplate';
+      const badge = new THREE.Sprite(badgeMaterial);
+      badge.userData.instance = instance;
+      badge.visible = false;
+      badge.name = 'ignix-linked-mark';
       let current = '';
       let label: ReturnType<typeof entry> | undefined;
       return {
         sprite,
+        badge,
         update(
           name: string,
           distance: number,
@@ -82,6 +112,7 @@ export function createAgentLabels() {
           fov: number,
           composite: boolean,
           visible: boolean,
+          ignix = false,
         ) {
           if (current !== name || !label) {
             if (!label) sprite.material.dispose();
@@ -105,6 +136,9 @@ export function createAgentLabels() {
             0,
           );
           sprite.visible = visible;
+          badge.visible = visible && ignix;
+          badge.position.set(0.43, composite ? 2.9 : 2.2, 0);
+          badge.scale.setScalar(Math.max(0.25, Math.min(0.45, scale * 0.18)));
         },
       };
     },
@@ -114,6 +148,8 @@ export function createAgentLabels() {
         v.material.dispose();
       });
       cache.clear();
+      badgeTexture.dispose();
+      badgeMaterial.dispose();
     },
     get cacheSize() {
       return cache.size;
