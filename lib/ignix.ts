@@ -20,8 +20,47 @@ export type IgnixData = {
   stale?: boolean;
   associations: Record<string, IgnixAssociation>;
   profiles: Agent[];
+  profileSources?: Record<
+    string,
+    { mode: 'fresh' | 'cached'; fetchedAt: string }
+  >;
   message?: string;
 };
+// Preserve independently verified OKX profiles when that upstream is unavailable.
+// Association membership always comes from the current successful IGNIX response.
+export function retainIgnixProfiles(
+  associations: Record<string, IgnixAssociation>,
+  current: Agent[],
+  previous: IgnixData | null,
+  snapshot: IgnixData,
+  checkedAt: string,
+) {
+  const profiles = new Map<string, Agent>();
+  const profileSources: NonNullable<IgnixData['profileSources']> = {};
+  for (const source of [snapshot, previous]) {
+    if (!source) continue;
+    for (const agent of source.profiles) {
+      if (!associations[agent.agentId]?.tokens.length) continue;
+      profiles.set(agent.agentId, agent);
+      profileSources[agent.agentId] = {
+        mode: 'cached',
+        fetchedAt:
+          source.profileSources?.[agent.agentId]?.fetchedAt ?? source.fetchedAt,
+      };
+    }
+  }
+  for (const agent of current) {
+    if (!associations[agent.agentId]?.tokens.length) continue;
+    profiles.set(agent.agentId, agent);
+    profileSources[agent.agentId] = { mode: 'fresh', fetchedAt: checkedAt };
+  }
+  return {
+    profiles: [...profiles.values()].sort(
+      (a, b) => Number(a.agentId) - Number(b.agentId),
+    ),
+    profileSources,
+  };
+}
 const address = /^0x[\da-fA-F]{40}$/;
 export function normalizeIgnix(
   payload: unknown,

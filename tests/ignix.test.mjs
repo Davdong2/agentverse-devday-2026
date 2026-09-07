@@ -7,9 +7,10 @@ const source = ts.transpileModule(fs.readFileSync('lib/ignix.ts', 'utf8'), {
     target: ts.ScriptTarget.ES2022,
   },
 }).outputText;
-const { normalizeIgnix, mergeIgnixProfiles } = await import(
-  'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
-);
+const { normalizeIgnix, mergeIgnixProfiles, retainIgnixProfiles } =
+  await import(
+    'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
+  );
 const seed = JSON.parse(fs.readFileSync('lib/ignix-snapshot.json'));
 const token = '0x' + 'a'.repeat(40),
   second = '0x' + 'b'.repeat(40);
@@ -78,6 +79,68 @@ assert.ok(
   'Unavailable OKX identity is never fabricated',
 );
 assert.equal(mergeIgnixProfiles([], seed.profiles, {}).length, 0);
+const checkedAt = '2026-09-07T16:00:00.000Z';
+const unavailable = { ...seed, profiles: [], fetchedAt: checkedAt };
+const restored = retainIgnixProfiles(
+  seed.associations,
+  [],
+  unavailable,
+  seed,
+  checkedAt,
+);
+assert.equal(
+  restored.profiles.length,
+  3,
+  'Cloud OKX failure retains independently verified profiles',
+);
+assert.ok(
+  !restored.profiles.some((a) => a.agentId === '11192'),
+  'Missing identity stays absent',
+);
+assert.equal(restored.profileSources['11025'].mode, 'cached');
+assert.equal(
+  restored.profileSources['11025'].fetchedAt,
+  seed.fetchedAt,
+  'Association refresh never refreshes old profile timestamps',
+);
+const previous = { ...seed, ...restored, fetchedAt: checkedAt };
+const fresh = {
+  ...seed.profiles.find((a) => a.agentId === '11025'),
+  name: 'Updated OKX name',
+};
+const partial = retainIgnixProfiles(
+  seed.associations,
+  [fresh],
+  previous,
+  seed,
+  checkedAt,
+);
+assert.equal(
+  partial.profiles.find((a) => a.agentId === '11025').name,
+  fresh.name,
+);
+assert.equal(partial.profileSources['11025'].mode, 'fresh');
+assert.equal(partial.profileSources['11025'].fetchedAt, checkedAt);
+assert.equal(partial.profileSources['11110'].mode, 'cached');
+assert.equal(partial.profileSources['11110'].fetchedAt, seed.fetchedAt);
+const removed = retainIgnixProfiles({}, [], previous, seed, checkedAt);
+assert.deepEqual(
+  removed,
+  { profiles: [], profileSources: {} },
+  'Successful association removal overrides every fallback',
+);
+const repeated = retainIgnixProfiles(
+  seed.associations,
+  [],
+  { ...previous, ...partial },
+  seed,
+  '2026-09-07T17:00:00.000Z',
+);
+assert.equal(
+  repeated.profileSources['11025'].fetchedAt,
+  checkedAt,
+  'Repeated failures keep the last successful profile time',
+);
 console.log(
   'PASS: exact linked IDs, no fuzzy identity matching, strict contract URLs, zero vs missing revenue, no double counting, removal semantics and independently sourced profiles.',
 );

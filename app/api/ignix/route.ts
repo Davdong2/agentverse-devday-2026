@@ -1,5 +1,9 @@
 import seed from '@/lib/ignix-snapshot.json';
-import { normalizeIgnix, type IgnixData } from '@/lib/ignix';
+import {
+  normalizeIgnix,
+  retainIgnixProfiles,
+  type IgnixData,
+} from '@/lib/ignix';
 import { readPublicPage, normalizeAgent, type Agent } from '@/lib/marketplace';
 import { worldStore } from '@/lib/server-store';
 let cached: IgnixData | null = null,
@@ -31,6 +35,17 @@ async function sync(): Promise<IgnixData> {
       }
     } catch {}
   }
+  if (cached)
+    cached = {
+      ...cached,
+      ...retainIgnixProfiles(
+        cached.associations,
+        [],
+        cached,
+        seed as IgnixData,
+        cached.fetchedAt,
+      ),
+    };
   if (cached && Date.now() - Date.parse(cached.fetchedAt) < TTL)
     return { ...cached, mode: 'cached' };
   if (Date.now() < retryAfter)
@@ -74,13 +89,19 @@ async function sync(): Promise<IgnixData> {
         }),
       );
     }
-    profiles.sort((a, b) => Number(a.agentId) - Number(b.agentId));
+    const fetchedAt = new Date().toISOString();
     const data: IgnixData = {
       source: seed.source,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
       mode: 'fresh',
       associations,
-      profiles,
+      ...retainIgnixProfiles(
+        associations,
+        profiles,
+        cached,
+        seed as IgnixData,
+        fetchedAt,
+      ),
     };
     cached = data;
     if (store)

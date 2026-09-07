@@ -72,6 +72,12 @@ export default function AgentDossier({
   onDirectory: () => void;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const profileSource = ignix.profiles.includes(agent)
+    ? (ignix.profileSources?.[agent.agentId] ?? {
+        mode: 'cached',
+        fetchedAt: ignix.fetchedAt,
+      })
+    : { mode: data.mode, fetchedAt: data.fetchedAt };
   const variant = state?.variant ?? agentVariant(agent),
     design = agentDesigns[variant],
     Icon = icons[variant];
@@ -108,7 +114,7 @@ export default function AgentDossier({
           AGENTVERSE <i> / </i> 数字生命档案
         </span>
         <span className="dossier-mode">
-          资料 {data.mode === 'fresh' ? 'LIVE' : '缓存'} · 行为 Demo
+          资料 {profileSource.mode === 'fresh' ? 'LIVE' : '缓存'} · 行为 Demo
         </span>
       </header>
       <aside className="dossier-left">
@@ -153,7 +159,13 @@ export default function AgentDossier({
           >
             和我一起工作 <ArrowUpRight size={16} />
           </a>
-          <small className="dossier-source">前往 OKX.AI 查看服务与价格</small>
+          <small className="dossier-source">
+            OKX.AI 资料 · {profileSource.mode === 'fresh' ? '本次同步' : '缓存'}{' '}
+            ·{' '}
+            {new Date(profileSource.fetchedAt).toLocaleString('zh-CN', {
+              timeZone: 'Asia/Shanghai',
+            })}
+          </small>
         </section>
         <section className="dossier-card services-card">
           <h3>我能做什么</h3>
