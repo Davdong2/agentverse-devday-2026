@@ -84,9 +84,8 @@ export function createWorldArchitecture(
       new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.48,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
       }),
     ),
   );
@@ -409,9 +408,39 @@ export function createWorldArchitecture(
     length: number;
     group: THREE.Group;
   }[] = [];
+  const routeMaterial = mat(
+    new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      uniforms: { uTime: { value: 0 } },
+      vertexShader:
+        'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: `varying vec2 vUv;uniform float uTime;
+    void main(){float lane=floor(vUv.x*3.);float across=abs(fract(vUv.x*3.)-.5);
+    float line=exp(-across*across*1500.);float haze=exp(-across*across*100.);
+    float travel=fract(vUv.y*5.-uTime*.38+lane*.29);
+    float packet=smoothstep(.65,.96,travel)*(1.-smoothstep(.96,1.,travel));
+    vec3 color=lane<1.?vec3(.28,.65,.9):lane<2.?vec3(.35,.73,.61):vec3(.84,.67,.33);
+    float ends=smoothstep(0.,.03,vUv.y)*(1.-smoothstep(.97,1.,vUv.y));
+    gl_FragColor=vec4(color,ends*(line*(.15+packet*.6)+haze*packet*.12));}`,
+    }),
+  );
   regionConnections.forEach(([a, b], i) => {
-    const A = new THREE.Vector3(regions[a].x * 100, 0, regions[a].y * 100),
-      B = new THREE.Vector3(regions[b].x * 100, 0, regions[b].y * 100),
+    // Bridges meet the island rims. Center-to-center rails used to cut through every plaza.
+    const centerA = new THREE.Vector3(
+        regions[a].x * 100,
+        0,
+        regions[a].y * 100,
+      ),
+      centerB = new THREE.Vector3(regions[b].x * 100, 0, regions[b].y * 100),
+      direction = centerB.clone().sub(centerA).normalize(),
+      A = centerA
+        .clone()
+        .addScaledVector(direction, (a === 0 ? 11 : 5.5) - 0.3),
+      B = centerB
+        .clone()
+        .addScaledVector(direction, -(b === 0 ? 11 : 5.5) + 0.3),
       length = A.distanceTo(B);
     const g = new THREE.Group();
     g.position.copy(A).lerp(B, 0.5);
@@ -422,12 +451,7 @@ export function createWorldArchitecture(
       mesh(box, gold, side * 1.36, -0.025, 0, 0.05, 0.045, length, g);
       mesh(box, stone, side * 1.42, -0.44, 0, 0.1, 0.2, length, g);
     });
-    // Curved supports below the flat walkway form the arched bridge silhouette.
-    const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(0, -3.5, -length * 0.4),
-      new THREE.Vector3(0, -0.6, 0),
-      new THREE.Vector3(0, -3.5, length * 0.4),
-    );
+    // Curved supports belong only to the span between the two islands.
     const bridgeShape = new THREE.Shape();
     bridgeShape.moveTo(-length * 0.46, -0.36);
     bridgeShape.lineTo(length * 0.46, -0.36);
@@ -456,18 +480,18 @@ export function createWorldArchitecture(
       }
       mesh(box, stone, side * 1.35, 0.59, 0, 0.1, 0.085, length, g);
     }
-    for (let lane = 0; lane < 3; lane++)
-      mesh(
-        box,
-        glow[lane],
-        (lane - 1) * 0.42,
-        0.018,
-        0,
-        0.045,
-        0.018,
-        length,
-        g,
-      );
+    const stream = mesh(
+      geo(new THREE.PlaneGeometry(2.1, length)),
+      routeMaterial,
+      0,
+      0.021,
+      0,
+      1,
+      1,
+      1,
+      g,
+    );
+    stream.rotation.x = -Math.PI / 2;
     if (i % 3 === 0 && length > 15) mesh(archGeo, stone, 0, 0, 0, 1, 1, 1, g);
     const laneSegments = Math.floor(length / 1.35);
     for (let k = 1; k < laneSegments; k++) {
@@ -503,8 +527,7 @@ export function createWorldArchitecture(
     new THREE.MeshBasicMaterial({
       color: '#D9F4FF',
       transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.6,
       depthWrite: false,
     }),
   );
@@ -515,6 +538,10 @@ export function createWorldArchitecture(
   const center = regions[0],
     cx = center.x * 100,
     cz = center.y * 100;
+  // A recessed, layered oculus anchors the floating modules in a clear working space.
+  mesh(cylinder, edge, cx, -0.04, cz, 1.3, 0.1, 1.3);
+  mesh(cylinder, stone, cx, 0.025, cz, 1.18, 0.07, 1.18);
+  ring(cx, 0.064, cz, 1.03, gold);
   [1.3, 2.1, 3.2, 4.4].forEach((r, i) => {
     ring(cx, 0.03 + i * 0.006, cz, r, i % 2 ? gold : glow[0]);
   });
@@ -635,6 +662,7 @@ export function createWorldArchitecture(
       flow = 1,
     ) {
       beamMat.uniforms.uTime.value = time;
+      routeMaterial.uniforms.uTime.value = time * flow;
       waterfalls.forEach((o, i) => (o.visible = quality < 2 || i === 0));
       pulses.count = routes.length * (quality > 0 ? 3 : 6);
       for (let i = 0; i < pulses.count; i++) {
@@ -642,7 +670,7 @@ export function createWorldArchitecture(
           u = (time * 0.09 * flow + (i % 6) / 6) % 1;
         dummy.position.copy(route.a).lerp(route.b, u);
         dummy.position.y = 0.07;
-        dummy.scale.set(0.085, 0.035, 0.25 * flow);
+        dummy.scale.set(0.045, 0.018, 0.14 * flow);
         dummy.rotation.set(0, route.group.rotation.y, 0);
         dummy.updateMatrix();
         pulses.setMatrixAt(i, dummy.matrix);

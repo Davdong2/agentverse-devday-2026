@@ -1467,6 +1467,8 @@ footer {
   margin-top: 5px;
 }
 .universe-header nav {
+  height: auto;
+  align-items: center;
   display: flex;
   gap: 4px;
   padding: 5px;
@@ -4418,39 +4420,47 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   top: 25%;
 }
 
+/* Scene overlays stay secondary; news expands only when requested. */
 .walk-signal-card {
   position: absolute;
   right: 24px;
   top: 105px;
-  width: 260px;
-  padding: 16px 18px;
-  background: rgba(248, 250, 246, 0.87);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 18px;
+  z-index: 8;
+  width: 244px;
+  padding: 12px 16px;
   color: #315366;
+  background: rgba(248, 250, 246, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid #ffffffbd;
+  border-radius: 14px;
   box-shadow: 0 8px 35px #4962780b;
-  pointer-events: auto;
 }
-.walk-signal-card > span {
+.walk-signal-card summary {
+  list-style: none;
+  cursor: pointer;
+  position: relative;
+}
+.walk-signal-card summary::-webkit-details-marker {
+  display: none;
+}
+.walk-signal-card summary > span {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  letter-spacing: 0.06em;
+  gap: 10px;
+  font-size: 12px;
 }
 .walk-signal-card small {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 10px;
   color: #658a86;
+  font-weight: 400;
 }
 .walk-signal-card strong {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 24px;
+  margin-top: 6px;
+  font-size: 21px;
   font-weight: 500;
-  margin-top: 9px;
 }
 .walk-signal-card em {
   font-size: 12px;
@@ -4460,10 +4470,19 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
 .walk-signal-card em.negative {
   color: #ad775f;
 }
+.signal-chevron {
+  position: absolute;
+  right: 0;
+  top: 1px;
+  transition: transform 0.2s;
+}
+.walk-signal-card[open] .signal-chevron {
+  transform: rotate(180deg);
+}
 .walk-signal-card p {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.7;
-  margin: 6px 0;
+  margin: 12px 0 0;
   color: #718594;
 }
 .walk-signal-card a {
@@ -4474,28 +4493,512 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   padding-top: 10px;
   border-top: 1px solid #cfdbdd;
   color: #4b687b;
-  max-height: 105px;
+  max-height: 140px;
   overflow: auto;
 }
 .walk-signal-card a small {
   display: block;
   margin-top: 5px;
 }
+.walk-mode .collaboration-dock {
+  bottom: 82px;
+  max-width: 280px;
+}
+.walk-mode .walk-location {
+  color: #456474;
+  text-shadow: 0 1px 8px #fff;
+}
 @media (max-width: 760px) {
+  .walk-mode .walk-location {
+    top: 117px;
+    left: 16px;
+    gap: 5px;
+    font-size: 12px;
+    max-width: calc(100% - 32px);
+  }
+  .walk-location .walk-task-action {
+    font-size: 11px;
+    margin-left: 3px;
+  }
+  .walk-mode .walk-location small {
+    display: none;
+  }
   .walk-signal-card {
-    top: 95px;
-    right: 12px;
-    width: 185px;
-    padding: 11px 12px;
+    top: 150px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    padding: 9px 11px;
+    border-radius: 10px;
+  }
+  .walk-signal-card summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-right: 17px;
+  }
+  .walk-signal-card summary > span {
+    gap: 5px;
+    font-size: 10px;
   }
   .walk-signal-card strong {
-    font-size: 18px;
+    margin: 0;
+    gap: 6px;
+    font-size: 14px;
   }
-  .walk-signal-card a {
-    max-height: 80px;
+  .walk-signal-card em {
+    font-size: 10px;
+  }
+  .signal-chevron {
+    top: 3px;
+  }
+  .walk-mode .collaboration-dock {
+    bottom: 134px;
+    left: 16px;
+    right: auto;
+    width: auto;
+    max-width: calc(100% - 32px);
+    transform: none;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+  .walk-mode .dock-title {
+    gap: 8px;
+    min-height: 24px;
+  }
+  .walk-mode .dock-title .dock-symbol {
+    width: 25px;
+    height: 25px;
+  }
+  .walk-mode .dock-title small {
+    font-size: 9px;
+    margin-bottom: 3px;
+  }
+  .walk-mode .dock-title strong {
     font-size: 12px;
   }
-  .walk-signal-card p {
+  .walk-mode .walk-actions {
+    right: 16px;
+    bottom: 26px;
+  }
+  .walk-mode .walk-actions button:first-child {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .walk-mode .walk-actions button:first-child span,
+  .walk-mode .walk-actions button:last-child {
+    display: none;
+  }
+  .walk-mode .world-controls {
+    display: flex;
+    right: 16px;
+    left: auto;
+    transform: none;
+    bottom: 81px;
+  }
+  .walk-mode .walk-joystick {
+    left: 16px;
+    bottom: 24px;
+    width: 88px;
+    height: 88px;
+  }
+  .walk-mode .walk-instructions {
+    width: min(320px, calc(100% - 32px));
+    max-width: calc(100% - 32px);
+    padding: 22px 16px;
+  }
+}
+@media (max-height: 550px) and (max-width: 760px) {
+  .walk-mode .universe-header .universe-brand {
+    display: none;
+  }
+  .walk-mode .walk-location {
+    top: 63px;
+  }
+  .walk-mode .walk-location .walk-task-action {
+    display: none;
+  }
+  .walk-mode .universe-header .source-light {
+    position: absolute;
+    right: 16px;
+    top: 56px;
+    padding: 0;
+  }
+  .walk-mode .walk-signal-card {
+    top: 92px;
+  }
+  .walk-mode .collaboration-dock {
+    bottom: 127px;
+  }
+}
+
+/* Mars observation deck: a cinematic, data-aware entry to the same world. */
+.home-mars {
+  color: #f3eee8;
+  background: #101115;
+}
+.home-mars .universe-viewport {
+  background: #101115;
+}
+.home-mars .civilization-art {
+  object-fit: cover;
+  mix-blend-mode: normal;
+  filter: saturate(0.94) contrast(1.04) brightness(0.88);
+}
+.home-mars .civilization-canvas {
+  display: none;
+}
+.home-mars .universe-vignette {
+  background:
+    linear-gradient(
+      90deg,
+      #1111178c 0%,
+      transparent 24%,
+      transparent 75%,
+      #060b14a6 100%
+    ),
+    linear-gradient(
+      180deg,
+      #080e1a73 0%,
+      transparent 26%,
+      transparent 74%,
+      #0b0909ba 100%
+    );
+  box-shadow: inset 0 0 100px #05070b66;
+}
+.home-mars .universe-header {
+  background: linear-gradient(#0b101bcf, transparent);
+}
+.home-mars .universe-brand > span,
+.home-mars .universe-brand > svg {
+  color: #f4f2ef;
+}
+.home-mars .universe-brand small {
+  color: #bbb8bc;
+}
+.home-mars .universe-header nav {
+  padding: 4px;
+  background: rgba(235, 234, 227, 0.91);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: 0 12px 36px #05070b24;
+}
+.home-mars .universe-header nav button {
+  color: #5f6673;
+}
+.home-mars .universe-header nav button.active,
+.home-mars .universe-header nav button:hover {
+  color: #f8f9fb;
+  background: #7c8ba7;
+}
+.home-mars .universe-header .source-light {
+  color: #e2e2e3;
+}
+.home-mars .data-mode-badge,
+.home-mars .demo-mode-badge {
+  color: #eee;
+  background: #171b2480;
+  border-color: #eef1f044;
+}
+.home-mars .demo-mode-badge {
+  color: #f4d5ad;
+  border-color: #dcb78c55;
+}
+.home-mars-intro {
+  position: absolute;
+  z-index: 12;
+  top: 106px;
+  left: 30px;
+  color: #f5efec;
+  text-shadow: 0 3px 20px #0a0c11b8;
+  pointer-events: none;
+}
+.home-mars-intro small {
+  display: block;
+  font-size: 15px;
+  letter-spacing: 0.26em;
+  color: #d8c2b4;
+}
+.home-mars-intro h1 {
+  max-width: 340px;
+  margin: 7px 0 8px;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+.home-mars-intro p {
+  margin: 0;
+  font-size: 13px;
+  color: #c7b9b4;
+}
+.home-market-card {
+  position: absolute;
+  z-index: 13;
+  top: 218px;
+  left: 30px;
+  width: 254px;
+  padding: 14px 16px 12px;
+  color: #f2efec;
+  background: linear-gradient(145deg, #201d1cce, #14171ebf);
+  border: 1px solid #eed8ca38;
+  border-radius: 13px;
+  box-shadow: 0 16px 45px #08070842;
+  backdrop-filter: blur(15px);
+}
+.home-market-card > strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f2e6df1f;
+  font-size: 14px;
+  font-weight: 500;
+}
+.home-market-card > div {
+  display: grid;
+  grid-template-columns: 20px 55px 1fr auto;
+  align-items: center;
+  min-height: 35px;
+  gap: 7px;
+  font-size: 12px;
+}
+.home-market-card b {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.home-market-card em {
+  color: #6bd3a3;
+  font-style: normal;
+  text-align: right;
+}
+.home-market-card em.down {
+  color: #f1a37d;
+}
+.home-market-card small {
+  font-size: 10px;
+  color: #b7bbc1;
+}
+.market-asset {
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+}
+.market-asset.bitcoin {
+  color: #fff;
+  background: #f39a1e;
+}
+.market-asset.agents {
+  color: #d4f6ff;
+  background: #587b9d;
+}
+.market-asset.ignix {
+  color: #ecf6d5;
+  background: #446d5d;
+  border-radius: 5px;
+}
+.market-spark {
+  width: 31px;
+  height: 11px;
+  border-top: 2px solid #62c895;
+  border-radius: 50%;
+  transform: skewY(-18deg);
+  opacity: 0.8;
+}
+.home-mars .region-label {
+  min-width: 142px;
+  gap: 10px;
+  padding: 9px 13px;
+  color: #f5f2ef;
+  background: linear-gradient(130deg, #201d1ed4, #141821bb);
+  border-color: #f2dfd02e;
+  border-radius: 9px;
+  box-shadow: 0 7px 22px #07090c38;
+  backdrop-filter: blur(10px);
+}
+.home-mars .region-label > svg {
+  flex: 0 0 auto;
+  color: #fff;
+}
+.home-mars .region-label span {
+  font-size: 15px;
+  color: #fff;
+}
+.home-mars .region-label small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: #b8b6b8;
+  letter-spacing: 0;
+}
+.home-mars .region-label.selected,
+.home-mars .region-label:hover {
+  color: #fff;
+  background: #3a302fdf;
+  border-color: #f4c79066;
+  transform-origin: center;
+}
+.home-mars .world-happenings,
+.home-mars .world-summary {
+  display: none;
+}
+.home-mars .world-weather {
+  top: auto;
+  bottom: 22px;
+  left: 27px;
+  width: auto;
+}
+.home-mars .weather-eyebrow {
+  padding: 9px 13px;
+  color: #f0efed;
+  background: #171921b8;
+  border-color: #ece3dc42;
+  box-shadow: 0 7px 24px #06070a3d;
+}
+.home-mars .collaboration-dock {
+  top: 57%;
+  bottom: auto;
+  max-width: 280px;
+  padding: 11px 15px;
+  background: #19191dc9;
+  border-color: #f1d8c237;
+  border-radius: 10px;
+  box-shadow: 0 12px 35px #08070a50;
+}
+.home-mars .dock-title,
+.home-mars .dock-title strong {
+  color: #fff;
+}
+.home-mars .dock-title small {
+  color: #b8b7b9;
+}
+.home-mars .dock-title .dock-symbol {
+  color: #ffd49b;
+  background: #f5bd6b20;
+  border-color: #f3cb9944;
+}
+.home-mars .phase-line {
+  background: #ffffff1c;
+}
+.home-mars .phase-line > span {
+  background: #f1bc77;
+}
+.home-mars .world-controls {
+  bottom: 19px;
+  padding: 7px;
+  color: #f6f2ed;
+  background: #17171dbc;
+  border-color: #eae5e03b;
+  box-shadow: 0 9px 30px #06070a45;
+}
+.home-mars .world-controls button,
+.home-mars .world-controls span {
+  color: #f2efeb;
+}
+.home-mars .world-controls button:hover {
+  background: #ffffff14;
+}
+.home-mars .world-controls > b {
+  background: #ffffff22;
+}
+.home-mars .world-caption {
+  right: 27px;
+  bottom: 24px;
+  color: #e9e6e3;
+  text-align: right;
+  text-shadow: 0 2px 12px #07080b;
+}
+.home-mars .world-caption > span,
+.home-mars .world-caption p {
+  justify-content: flex-end;
+  color: #e9e6e3;
+}
+
+@media (max-width: 900px) {
+  .home-mars .region-label {
+    min-width: 125px;
+  }
+  .home-mars .region-label small {
+    display: none;
+  }
+  .home-mars-intro h1 {
+    max-width: 280px;
+    font-size: 22px;
+  }
+}
+@media (max-width: 700px) {
+  .home-mars .universe-header {
+    background: linear-gradient(#090e18e8, transparent);
+  }
+  .home-mars .universe-brand > span {
+    font-size: 12px;
+  }
+  .home-mars .universe-header nav button {
+    padding: 8px 10px;
+  }
+  .home-mars .universe-header .source-light {
+    font-size: 10px;
+  }
+  .home-mars-intro {
+    top: 122px;
+    left: 18px;
+  }
+  .home-mars-intro small {
+    font-size: 12px;
+  }
+  .home-mars-intro h1 {
+    max-width: 250px;
+    margin-top: 5px;
+    font-size: 20px;
+  }
+  .home-mars-intro p {
+    font-size: 12px;
+  }
+  .home-market-card {
+    top: 211px;
+    left: 17px;
+    width: 215px;
+    padding: 10px 12px;
+  }
+  .home-market-card > strong {
+    padding-bottom: 8px;
+  }
+  .home-market-card > div {
+    grid-template-columns: 18px 48px 1fr auto;
+    min-height: 31px;
+    gap: 5px;
+  }
+  .home-mars .region-label {
+    min-width: 0;
+    padding: 8px 10px;
+  }
+  .home-mars .region-label span {
+    font-size: 13px;
+  }
+  .home-mars .region-label > svg {
+    width: 15px;
+  }
+  .home-mars .collaboration-dock {
+    top: 56%;
+    bottom: auto;
+    width: 230px;
+  }
+  .home-mars .world-weather {
+    bottom: 84px !important;
+    left: 17px;
+  }
+  .home-mars .world-caption {
+    right: 17px;
+    bottom: 88px;
+  }
+  .home-mars .world-caption p {
     display: none;
   }
 }

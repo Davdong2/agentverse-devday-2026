@@ -32,6 +32,14 @@ import {
   Orbit,
   ChevronDown,
   X,
+  Search,
+  Database,
+  Cpu,
+  ChartNoAxesColumnIncreasing,
+  ShieldCheck,
+  Link2,
+  Zap,
+  CirclePlus,
 } from 'lucide-react';
 import {
   Sheet,
@@ -82,6 +90,42 @@ import {
 const details = detailsSnapshot as Record<string, Detail>;
 type CameraState = { x: number; y: number; z: number };
 const initialCamera = { x: 0.5, y: 0.47, z: 1 };
+const homeRegionPositions = [
+  { x: 0.49, y: 0.52 },
+  { x: 0.23, y: 0.73 },
+  { x: 0.2, y: 0.48 },
+  { x: 0.49, y: 0.78 },
+  { x: 0.75, y: 0.72 },
+  { x: 0.82, y: 0.47 },
+  { x: 0.65, y: 0.36 },
+  { x: 0.9, y: 0.64 },
+  { x: 0.34, y: 0.35 },
+  { x: 0.1, y: 0.62 },
+];
+const homeRegionIcons = [
+  Network,
+  Search,
+  CirclePlus,
+  Database,
+  Cpu,
+  ChartNoAxesColumnIncreasing,
+  ShieldCheck,
+  Link2,
+  Zap,
+  Orbit,
+];
+const homeRegionSubtitles = [
+  '能力汇聚 · 结果生成',
+  '发现机会 · 深度分析',
+  '创建智能体 · 组合能力',
+  '任务结果 · 经验沉淀',
+  'GPU 集群 · 模型推理',
+  '流动性 · 资产交换',
+  '风险监控 · 权限审计',
+  '接入地球 · 返回结果',
+  '能源转化 · 算力供给',
+  '新节点 · 更多可能',
+];
 export default function Civilization({
   regionIndex,
   profileId,
@@ -167,7 +211,10 @@ export default function Civilization({
       distance: 0,
       moved: false,
     });
-  const fit = Math.min(size.w / 1600, (size.h - 105) / 900) * 1.03,
+  const homeView = regionIndex === undefined && viewMode === 'observe';
+  const fit = homeView
+      ? Math.max(size.w / 1600, size.h / 900)
+      : Math.min(size.w / 1600, (size.h - 105) / 900) * 1.03,
     scale = fit * cam.z;
   const activeNews =
     signalMode === 'live' && newsReaction && newsReaction.until > Date.now()
@@ -390,8 +437,9 @@ export default function Civilization({
   );
   const focusRegion = useCallback(
     (n: number, showPanel = true) => {
+      const position = homeView ? homeRegionPositions[n] : regions[n];
       setRegion(n);
-      setCam({ x: regions[n].x, y: regions[n].y, z: 2.65 });
+      setCam({ x: position.x, y: position.y, z: 2.65 });
       if (regionIndex === n) {
         if (showPanel) setPanel('region');
         return;
@@ -404,7 +452,7 @@ export default function Civilization({
         viewMode === 'observe' ? 650 : 0,
       );
     },
-    [regionIndex, router, viewMode],
+    [homeView, regionIndex, router, viewMode],
   );
   const worldView = () => {
     setCam(initialCamera);
@@ -427,6 +475,8 @@ export default function Civilization({
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel);
   }, [viewMode]);
+  const selectionRef = useRef({ agents: data.agents, selectAgent });
+  selectionRef.current = { agents: data.agents, selectAgent };
   useEffect(() => {
     const ctx = (
       document as unknown as {
@@ -448,9 +498,11 @@ export default function Civilization({
           additionalProperties: false,
         },
         execute: async (input: { agentId: string }) => {
-          const a = data.agents.find((a) => a.agentId === input.agentId);
+          const a = selectionRef.current.agents.find(
+            (a) => a.agentId === input.agentId,
+          );
           if (!a) throw new Error('Unknown Agent');
-          selectAgent(a);
+          selectionRef.current.selectAgent(a);
           return {
             content: [
               {
@@ -468,7 +520,7 @@ export default function Civilization({
       { signal: c.signal },
     );
     return () => c.abort();
-  }, [data.agents, selectAgent]);
+  }, []);
   const startGesture = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) return;
     viewport.current?.setPointerCapture(e.pointerId);
@@ -631,6 +683,7 @@ export default function Civilization({
     <main
       className={
         'universe-shell soft-world ' +
+        (homeView ? 'home-mars ' : '') +
         (regionIndex !== undefined ? 'region-page ' : '') +
         (viewMode === 'walk' ? 'walk-mode ' : '') +
         (transitioning ? 'camera-transition' : '')
@@ -690,8 +743,16 @@ export default function Civilization({
           >
             <img
               className="civilization-art"
-              src="/civilization.webp"
-              alt="协作核心居中，九个功能区域悬浮在云海中的 Agent 文明"
+              src={
+                homeView
+                  ? '/agentverse-mars-civilization.jpg'
+                  : '/civilization.webp'
+              }
+              alt={
+                homeView
+                  ? '协作中心与九个功能站点通过发光桥梁连接的火星 Agent 文明'
+                  : '协作核心居中，九个功能区域悬浮在云海中的 Agent 文明'
+              }
               draggable={false}
             />
             <CivilizationCanvas
@@ -714,9 +775,15 @@ export default function Civilization({
               }
             />
             {regions
-              .filter((r, i) => regionIndex === undefined || i === regionIndex)
+              .filter(
+                (r, i) =>
+                  (regionIndex === undefined || i === regionIndex) &&
+                  (!homeView || i !== 0),
+              )
               .map((r) => {
                 const i = regions.indexOf(r);
+                const position = homeView ? homeRegionPositions[i] : r;
+                const RegionIcon = homeRegionIcons[i];
                 return (
                   <button
                     key={r.name}
@@ -725,16 +792,31 @@ export default function Civilization({
                       (region === i && cam.z > 1 ? 'selected' : '')
                     }
                     style={{
-                      left: r.x * 1600,
-                      top: r.y * 900 + (i === 0 ? 105 : i === 9 ? -42 : 64),
+                      left: position.x * 1600,
+                      top:
+                        position.y * 900 +
+                        (homeView
+                          ? i === 0
+                            ? 50
+                            : -20
+                          : i === 0
+                            ? 105
+                            : i === 9
+                              ? -42
+                              : 64),
                       transform: `translate(-50%,0) scale(${Math.max(0.55, Math.min(1.35, 1 / scale))})`,
                     }}
                     onClick={() => focusRegion(i)}
+                    aria-label={`进入${r.name}`}
                   >
-                    <i style={{ background: r.color }} />
+                    {homeView ? (
+                      <RegionIcon size={18} strokeWidth={1.8} />
+                    ) : (
+                      <i style={{ background: r.color }} />
+                    )}
                     <span>
                       {r.name}
-                      <small>{r.en}</small>
+                      <small>{homeView ? homeRegionSubtitles[i] : r.en}</small>
                     </span>
                     {i === 0 && <ChevronRight size={13} />}
                   </button>
@@ -778,6 +860,7 @@ export default function Civilization({
           </button>
           <button aria-label="Agent 名录" onClick={() => setPanel('directory')}>
             <Users size={16} />
+            <span>我的智能体</span>
           </button>
         </nav>
         <button className="source-light" onClick={() => setHelp(true)}>
@@ -790,6 +873,42 @@ export default function Civilization({
           <Info size={14} />
         </button>
       </header>
+      {homeView && (
+        <>
+          <section className="home-mars-intro" aria-label="Agentverse 介绍">
+            <small>从火星出发</small>
+            <h1>让智能体创造更大的价值</h1>
+            <p>连接现实世界 · 协作 · 创造 · 进化</p>
+          </section>
+          <section className="home-market-card" aria-label="现实数据概览">
+            <strong>
+              现实数据 <ArrowUpRight size={16} />
+            </strong>
+            <div>
+              <span className="market-asset bitcoin">₿</span>
+              <b>BTC</b>
+              <em className={signal && signal.change < 0 ? 'down' : ''}>
+                {signal
+                  ? `${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%`
+                  : '等待中'}
+              </em>
+              <i className="market-spark" />
+            </div>
+            <div>
+              <span className="market-asset agents">A</span>
+              <b>OKX.AI</b>
+              <em>{data.agents.length} 个档案</em>
+              <small>{data.mode === 'fresh' ? 'LIVE' : '缓存'}</small>
+            </div>
+            <div>
+              <span className="market-asset ignix">ig</span>
+              <b>IGNIX</b>
+              <em>{Object.keys(ignix.associations).length} 个关联</em>
+              <small>已核实</small>
+            </div>
+          </section>
+        </>
+      )}
       {regionIndex !== undefined && (
         <div className="region-heading">
           <button onClick={worldView}>
@@ -938,14 +1057,18 @@ export default function Civilization({
       <div className="world-caption">
         <span>
           <Sparkles size={14} />
-          资料 {data.mode === 'fresh' ? 'LIVE' : '缓存'} · 动画 Demo
+          {homeView
+            ? '火星基地 · Agentverse'
+            : `资料 ${data.mode === 'fresh' ? 'LIVE' : '缓存'} · 动画 Demo`}
         </span>
         <p>
-          {signalMode === 'live'
-            ? signal
-              ? `${signal.mode === 'stale' ? '行情已过期 · ' : ''}OKX · ${new Date(signal.ts).toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit' })} 更新`
-              : signalError || '正在读取现实行情'
-            : '拖动探索 · 滚轮或双指缩放'}
+          {homeView
+            ? `${signal ? '连接现实数据中' : '等待现实信号'} · ${new Date().toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit' })} 更新`
+            : signalMode === 'live'
+              ? signal
+                ? `${signal.mode === 'stale' ? '行情已过期 · ' : ''}OKX · ${new Date(signal.ts).toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit' })} 更新`
+                : signalError || '正在读取现实行情'
+              : '拖动探索 · 滚轮或双指缩放'}
         </p>
       </div>
       <div className="world-controls">

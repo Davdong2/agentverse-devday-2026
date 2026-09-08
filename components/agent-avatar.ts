@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { agentDesigns, type AvatarMotion } from '@/lib/agent-design';
 
@@ -8,7 +9,7 @@ export function createAvatarFactory() {
   const sphere = new THREE.SphereGeometry(1, 20, 14);
   const plane = new THREE.PlaneGeometry(1, 1);
   const disk = new THREE.CylinderGeometry(0.16, 0.16, 0.055, 12);
-  const chamfer = new RoundedBoxGeometry(1, 1, 1, 1, 0.1);
+  const chamfer = new RoundedBoxGeometry(1, 1, 1, 2, 0.17);
   const oval = new THREE.SphereGeometry(0.5, 28, 20);
   const lowOval = new THREE.SphereGeometry(0.5, 12, 8);
   const geos: THREE.BufferGeometry[] = [
@@ -237,6 +238,81 @@ export function createAvatarFactory() {
     g.add(m);
     return m;
   }
+  const distantForms = agentDesigns.map((d) => {
+    const parts: THREE.BufferGeometry[][] = [[], [], []];
+    const add = (
+      bucket: number,
+      geometry: THREE.BufferGeometry,
+      x: number,
+      y: number,
+      z: number,
+      sx: number,
+      sy: number,
+      sz: number,
+    ) => {
+      const t = new THREE.Matrix4().compose(
+        new THREE.Vector3(x, y, z),
+        new THREE.Quaternion(),
+        new THREE.Vector3(sx, sy, sz),
+      );
+      const copy = geometry.index ? geometry.toNonIndexed() : geometry.clone();
+      parts[bucket].push(copy.applyMatrix4(t));
+    };
+    add(
+      0,
+      ['round', 'oval', 'orb', 'capsule'].includes(d.shape) ? lowOval : chamfer,
+      0,
+      1.22,
+      0,
+      0.92 * d.headX,
+      0.69 * d.headY,
+      0.65,
+    );
+    add(
+      0,
+      ['round', 'orb', 'oval'].includes(d.shape) ? lowOval : chamfer,
+      0,
+      0.64,
+      0,
+      0.54 * d.bodyX,
+      0.57 * d.bodyY,
+      0.43,
+    );
+    for (const side of [-1, 1]) {
+      add(0, chamfer, side * 0.15, 0.265, 0, 0.18, 0.27, 0.22);
+      add(
+        0,
+        chamfer,
+        side * (0.34 * d.bodyX + 0.025),
+        0.68,
+        0,
+        0.16,
+        0.31,
+        0.19,
+      );
+      add(0, lowOval, side * 0.47 * d.headX, 1.21, 0, 0.11, 0.25, 0.25);
+      add(1, chamfer, side * 0.15, 0.145, -0.018, 0.19, 0.075, 0.24);
+      add(
+        1,
+        lowOval,
+        side * (0.34 * d.bodyX + 0.04),
+        0.53,
+        0,
+        0.15,
+        0.16,
+        0.15,
+      );
+      add(2, chamfer, side * 0.15 * d.headX, 1.25, -0.373, 0.066, 0.155, 0.022);
+    }
+    add(1, chamfer, 0, 1.23, -0.32, 0.58 * d.headX, 0.3, 0.09);
+    add(2, chamfer, 0, 0.66, -0.237, 0.18, 0.18, 0.026);
+    return parts.map((pieces) => {
+      const merged = mergeGeometries(pieces)!;
+      pieces.forEach((p) => p.dispose());
+      geos.push(merged);
+      return merged;
+    });
+  });
   return {
     setPanelAtlas(texture: THREE.Texture) {
       panelMats.forEach((m, i) => {
@@ -269,7 +345,17 @@ export function createAvatarFactory() {
         mesh(g, sphere, blush, s * 0.27, 1.09, -0.319, 0.063, 0.032, 0.013),
       );
       const chest = mesh(g, rounded, cyan, 0, 0.66, -0.222, 0.22, 0.22, 0.025);
-      mesh(g, rounded, ivory, 0, 0.66, -0.238, 0.155, 0.155, 0.02);
+      const chestInset = mesh(
+        g,
+        rounded,
+        ivory,
+        0,
+        0.66,
+        -0.238,
+        0.155,
+        0.155,
+        0.02,
+      );
       const limbs = [-1, 1].map((s) => {
         const leg = new THREE.Group();
         leg.position.set(s * 0.15, 0.38, 0);
@@ -428,7 +514,12 @@ export function createAvatarFactory() {
       g.traverse((o) => {
         if (o instanceof THREE.Mesh && o.material === ivory) skinMeshes.push(o);
       });
-      const farFeet = mesh(g, chamfer, ink, 0, 0.2, 0, 0.38, 0.24, 0.22);
+      const farShell = new THREE.Group();
+      g.add(farShell);
+      const farParts = distantForms[0].map((geo, i) =>
+        mesh(farShell, geo, [skins[0], ink, pale][i], 0, 0, 0),
+      );
+      farParts.forEach((m) => (m.userData.instance = instance));
       let variant = -1;
       return {
         g,
@@ -441,7 +532,8 @@ export function createAvatarFactory() {
         eyes,
         capability,
         extra,
-        pickable: [body, head, skill],
+        farShell,
+        pickable: [body, head, skill, ...farParts],
         update(
           nextVariant: number,
           time: number,
@@ -450,6 +542,8 @@ export function createAvatarFactory() {
         ) {
           if (nextVariant !== variant) {
             variant = nextVariant;
+            farParts.forEach((m, i) => (m.geometry = distantForms[variant][i]));
+            farParts[0].material = skins[variant];
             skill.material = variants[variant];
             backpack.material = variants[variant];
             shoulderCaps.forEach((m) => (m.material = variants[variant]));
@@ -506,11 +600,15 @@ export function createAvatarFactory() {
             l.arm.visible = detail;
             l.leg.visible = detail;
           });
-          farFeet.visible = !detail;
+          farShell.visible = !detail;
+          body.visible = detail;
+          head.visible = detail;
+          chest.visible = detail;
+          chestInset.visible = detail;
           icon.visible = detail;
           skillCore.visible = detail;
           spark.visible = detail;
-          // At distance retain the body, limbs and capability silhouette, without tiny facial accents.
+          // The merged distant form keeps the same face, fingers, ears and split legs in three draw calls.
           [...ears, ...cheeks].forEach((m) => (m.visible = detail));
           eyes.forEach((m) => {
             m.visible = detail;

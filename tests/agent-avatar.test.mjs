@@ -33,6 +33,9 @@ const source = compile('components/agent-avatar.ts')
       import.meta.resolve('three/addons/geometries/RoundedBoxGeometry.js'),
     ),
   )
+  .replace(/(['"])(three\/addons\/[^'"]+)\1/g, (_, q, m) =>
+    JSON.stringify(import.meta.resolve(m)),
+  )
   .replace(/(['"])@\/lib\/agent-design\1/g, JSON.stringify(design));
 globalThis.document = {
   createElement() {
@@ -123,7 +126,30 @@ assert.equal(
   8,
   'All types have distinct head and body proportions',
 );
-assert.equal(avatar.visor.visible, false, 'Far LOD removes small face details');
+assert.equal(
+  avatar.visor.visible,
+  false,
+  'Far LOD replaces separate face meshes',
+);
+assert.equal(
+  avatar.farShell.visible,
+  true,
+  'Distant body retains a complete silhouette',
+);
+assert.equal(
+  avatar.farShell.children.length,
+  3,
+  'Cached shell, dark insets and eyes require only three draw calls',
+);
+const bounds = new THREE.Box3().setFromObject(avatar.farShell);
+assert.ok(
+  bounds.min.y < 0.12 && bounds.max.y > 1.5,
+  'Distant silhouette includes separate feet, torso and head',
+);
+assert.ok(
+  avatar.farShell.children.every((m) => avatar.pickable.includes(m)),
+  'Distant figures keep the same clickable identity',
+);
 assert.equal(
   avatar.limbs[0].arm.visible,
   false,

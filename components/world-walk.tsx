@@ -11,7 +11,14 @@ import { createAgentLabels } from '@/components/agent-labels';
 import { createAvatarFactory } from '@/components/agent-avatar';
 import { avatarMotion } from '@/lib/agent-design';
 import { cryptoTaskState } from '@/lib/crypto-world';
-import { ArrowUp, Globe2, MapPin, Navigation, RotateCcw } from 'lucide-react';
+import {
+  ArrowUp,
+  ChevronDown,
+  Globe2,
+  MapPin,
+  Navigation,
+  RotateCcw,
+} from 'lucide-react';
 import {
   regions,
   regionConnections,
@@ -54,6 +61,22 @@ export default function WorldWalk(props: Props) {
     [quality, setQuality] = useState('标准'),
     [knob, setKnob] = useState({ x: 0, y: 0 }),
     [hint, setHint] = useState(true);
+  const dismissHint = () => {
+    setHint(false);
+    try {
+      sessionStorage.setItem('agentverse-walk-introduction', 'seen');
+    } catch {
+      /* Optional preference. */
+    }
+  };
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('agentverse-walk-introduction') === 'seen')
+        setHint(false);
+    } catch {
+      /* Keep the introduction available. */
+    }
+  }, []);
   useEffect(() => {
     const host = mount.current;
     if (!host) return;
@@ -72,6 +95,9 @@ export default function WorldWalk(props: Props) {
     renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.3 : 1.8));
     renderer.setSize(host.clientWidth, host.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;
     host.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
     scene.background = new THREE.Color('#DDE5F0');
@@ -83,51 +109,30 @@ export default function WorldWalk(props: Props) {
       240,
     );
     camera.rotation.order = 'YXZ';
-    scene.add(new THREE.HemisphereLight('#F4F7FF', '#AAB8CD', 1.65));
+    scene.add(new THREE.HemisphereLight('#F4F7FF', '#AAB8CD', 1.1));
     const sun = new THREE.DirectionalLight('#FFF1D8', 2.1);
     sun.position.set(-20, 35, 20);
-    scene.add(sun);
-    const rim = new THREE.DirectionalLight('#C4DEFF', 1.1);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(mobile ? 768 : 1536, mobile ? 768 : 1536);
+    Object.assign(sun.shadow.camera, {
+      left: -23,
+      right: 23,
+      top: 23,
+      bottom: -23,
+      near: 1,
+      far: 95,
+    });
+    sun.shadow.bias = -0.00015;
+    sun.shadow.normalBias = 0.025;
+    sun.shadow.radius = 2;
+    scene.add(sun, sun.target);
+    const rim = new THREE.DirectionalLight('#C4DEFF', 0.65);
     rim.position.set(15, 12, -25);
     scene.add(rim);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
-    const ivory = new THREE.MeshLambertMaterial({ color: '#f3eedb' }),
-      edge = new THREE.MeshLambertMaterial({ color: '#c5d9cd' }),
-      white = new THREE.MeshLambertMaterial({ color: '#f3f1df' });
-    const mats = [
-      '#94c4df',
-      '#dabd7e',
-      '#c0b7db',
-      '#c2d0df',
-      '#bdace0',
-      '#a6d0b8',
-    ].map((c) => new THREE.MeshLambertMaterial({ color: c }));
-    const geometries: THREE.BufferGeometry[] = [],
-      materials: THREE.Material[] = [ivory, edge, white, ...mats],
-      pickable: THREE.Object3D[] = [];
-    const boxGeo = new THREE.BoxGeometry(1, 1, 1),
-      sphere = new THREE.SphereGeometry(0.14, 8, 6);
-    geometries.push(boxGeo, sphere);
-    function mesh(
-      geo: THREE.BufferGeometry,
-      mat: THREE.Material,
-      x: number,
-      y: number,
-      z: number,
-      sx = 1,
-      sy = 1,
-      sz = 1,
-    ) {
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(x, y, z);
-      m.scale.set(sx, sy, sz);
-      scene.add(m);
-      return m;
-    }
+    const pickable: THREE.Object3D[] = [];
     const architecture = createWorldArchitecture(scene, pickable);
-    const coreGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-    geometries.push(coreGeo);
     const cryptoProps = createCryptoProps(scene, pickable);
     const avatars = createAvatarFactory();
     const labels = createAgentLabels();
@@ -140,6 +145,19 @@ export default function WorldWalk(props: Props) {
       return { ...avatar, label, positioned: false };
     });
     const effects = createWorldEffects(scene);
+    scene.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const m = object.material;
+      if (
+        !Array.isArray(m) &&
+        (m instanceof THREE.MeshPhongMaterial ||
+          m instanceof THREE.MeshLambertMaterial) &&
+        !m.transparent
+      ) {
+        object.castShadow = true;
+        object.receiveShadow = true;
+      }
+    });
     let disposed = false;
     const surfaceTexture = new THREE.TextureLoader().load(
       '/world-limestone.jpg',
@@ -209,7 +227,7 @@ export default function WorldWalk(props: Props) {
       ) {
         keys.add(e.key.toLowerCase());
         e.preventDefault();
-        setHint(false);
+        dismissHint();
       }
     };
     const up = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
@@ -241,7 +259,7 @@ export default function WorldWalk(props: Props) {
       w.pitch = Math.max(-0.7, Math.min(0.6, w.pitch - dy * 0.003));
       lastX = e.clientX;
       lastY = e.clientY;
-      setHint(false);
+      dismissHint();
     };
     const pointerUp = (e: PointerEvent) => {
       if (latest.current.inputBlocked) return;
@@ -302,7 +320,11 @@ export default function WorldWalk(props: Props) {
       elapsed = 0,
       frames = 0,
       level = 0,
-      near = -1;
+      near = -1,
+      shadowStamp = 0,
+      slowWindows = 0,
+      fastWindows = 0;
+    const warmedAt = performance.now() + 6000;
     function frame(now: number) {
       raf = requestAnimationFrame(frame);
       const frameSeconds = (now - last) / 1000;
@@ -365,6 +387,7 @@ export default function WorldWalk(props: Props) {
         phase = stageAt(time),
         progress = phaseProgress(time),
         center = regions[0];
+      cryptoProps.setMarketSignal(p.signal);
       cryptoProps.update(time, level);
       actors.forEach((actor, i) => {
         if (i >= states.length) {
@@ -440,16 +463,46 @@ export default function WorldWalk(props: Props) {
         p.weather,
         p.activeEventRegion,
       );
+      // One bounded sunlight map, refreshed at 12 Hz instead of every frame.
+      if (level < 2 && now - shadowStamp > (level ? 160 : 80)) {
+        sun.position.set(w.x - 17, 30, w.z + 18);
+        sun.target.position.set(w.x, 0, w.z);
+        sun.target.updateMatrixWorld();
+        renderer.shadowMap.needsUpdate = true;
+        shadowStamp = now;
+      }
       renderer.render(scene, camera);
       elapsed += frameSeconds;
       frames++;
       if (elapsed > 3) {
         const fps = frames / elapsed;
-        if (fps < 32 && level < 2) {
-          level++;
-          renderer.setPixelRatio(level === 1 ? 1 : 0.8);
-          setQuality(level === 1 ? '轻量' : '省电');
-          scene.fog = new THREE.Fog('#DDE5F0', 15, level === 1 ? 65 : 45);
+        if (now > warmedAt) {
+          slowWindows = fps < 30 ? slowWindows + 1 : 0;
+          fastWindows = fps > 55 ? fastWindows + 1 : 0;
+          const nextLevel =
+            slowWindows >= 2
+              ? Math.min(2, level + 1)
+              : fastWindows >= 3
+                ? Math.max(0, level - 1)
+                : level;
+          if (nextLevel !== level) {
+            level = nextLevel;
+            slowWindows = fastWindows = 0;
+            renderer.setPixelRatio(
+              level === 0
+                ? Math.min(devicePixelRatio, mobile ? 1.3 : 1.8)
+                : level === 1
+                  ? 1
+                  : 0.8,
+            );
+            renderer.shadowMap.enabled = level < 2;
+            setQuality(['标准', '轻量', '省电'][level]);
+            scene.fog = new THREE.Fog(
+              fogColor,
+              level ? 15 : 30,
+              level === 0 ? 115 : level === 1 ? 65 : 45,
+            );
+          }
         }
         elapsed = 0;
         frames = 0;
@@ -467,8 +520,6 @@ export default function WorldWalk(props: Props) {
       canvas.removeEventListener('pointerup', pointerUp);
       canvas.removeEventListener('pointercancel', blur);
       canvas.removeEventListener('webglcontextlost', onLost);
-      geometries.forEach((g) => g.dispose());
-      materials.forEach((m) => m.dispose());
       disposed = true;
       surfaceTexture.dispose();
       panelTexture.dispose();
@@ -480,6 +531,7 @@ export default function WorldWalk(props: Props) {
       cryptoProps.dispose();
       avatars.dispose();
       labels.dispose();
+      sun.shadow.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();
@@ -493,7 +545,7 @@ export default function WorldWalk(props: Props) {
       len = Math.max(36, Math.hypot(dx, dy));
     stick.current = { x: dx / len, y: dy / len };
     setKnob({ x: (dx / len) * 30, y: (dy / len) * 30 });
-    setHint(false);
+    dismissHint();
   };
   return (
     <div className="world-walk">
@@ -509,28 +561,31 @@ export default function WorldWalk(props: Props) {
       ) : (
         <>
           <div className="walk-reticle" />
-          <div className="walk-signal-card">
-            <span>
-              BTC / USDT{' '}
-              <small>
-                {props.signal
-                  ? props.signal.mode === 'fresh'
-                    ? 'LIVE'
-                    : '缓存'
-                  : '暂无行情'}
-              </small>
-            </span>
-            {props.signal && (
-              <strong>
-                {props.signal.last.toLocaleString('en-US', {
-                  maximumFractionDigits: 2,
-                })}
-                <em className={props.signal.change < 0 ? 'negative' : ''}>
-                  {props.signal.change >= 0 ? '+' : ''}
-                  {props.signal.change.toFixed(2)}%
-                </em>
-              </strong>
-            )}
+          <details className="walk-signal-card">
+            <summary aria-label="查看行情与新闻">
+              <span>
+                BTC / USDT{' '}
+                <small>
+                  {props.signal
+                    ? props.signal.mode === 'fresh'
+                      ? 'LIVE'
+                      : '缓存'
+                    : '暂无行情'}
+                </small>
+              </span>
+              {props.signal && (
+                <strong>
+                  {props.signal.last.toLocaleString('en-US', {
+                    maximumFractionDigits: 2,
+                  })}
+                  <em className={props.signal.change < 0 ? 'negative' : ''}>
+                    {props.signal.change >= 0 ? '+' : ''}
+                    {props.signal.change.toFixed(2)}%
+                  </em>
+                </strong>
+              )}
+              <ChevronDown className="signal-chevron" size={14} />
+            </summary>
             <p>24h 行情映射环境 · 世界响应为演示</p>
             {props.activeNews && (
               <a href={props.activeNews.url} target="_blank" rel="noreferrer">
@@ -551,7 +606,7 @@ export default function WorldWalk(props: Props) {
                 </small>
               </a>
             )}
-          </div>
+          </details>
           <div className="walk-location">
             <MapPin size={15} />
             {regions[area].name}
@@ -560,13 +615,13 @@ export default function WorldWalk(props: Props) {
             </span>
             <small>文明观察者 · {quality}画质</small>
           </div>
-          {hint && (
+          {hint && !props.inputBlocked && (
             <div className="walk-instructions">
               <Navigation size={20} />
               <strong>走进世界</strong>
               <p>WASD 移动 · 拖动转向 · 点击角色或节点</p>
               <small>手机使用左侧摇杆，右侧拖动转向</small>
-              <button onClick={() => setHint(false)}>开始探索</button>
+              <button onClick={dismissHint}>开始探索</button>
             </div>
           )}
           <div
@@ -591,6 +646,8 @@ export default function WorldWalk(props: Props) {
           </div>
           <div className="walk-actions">
             <button
+              aria-label="回到协作中心"
+              title="回到协作中心"
               onClick={() => {
                 props.walker.current = {
                   x: regions[0].x * 100,
@@ -601,7 +658,7 @@ export default function WorldWalk(props: Props) {
               }}
             >
               <RotateCcw size={15} />
-              回到协作中心
+              <span>回到协作中心</span>
             </button>
             <button onClick={props.onExit}>
               <Globe2 size={15} />

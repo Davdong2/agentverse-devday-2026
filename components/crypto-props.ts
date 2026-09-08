@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { regions } from '@/lib/civilization-model';
+import { regions, type MarketSignal } from '@/lib/civilization-model';
 import {
   cryptoTaskState,
   cryptoTasks,
@@ -158,6 +158,10 @@ export function createCryptoProps(
     }),
   );
   const roots: THREE.Group[] = [];
+  let researchDisplay:
+    | { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture }
+    | undefined;
+  let lastMarketKey = '';
   function part(
     g: THREE.Group,
     geometry: THREE.BufferGeometry,
@@ -311,9 +315,54 @@ export function createCryptoProps(
       1,
       true,
     );
+    if (n === 1) researchDisplay = { canvas: c, texture: t };
     screen.userData.region = n;
     pickable.push(screen);
     return screen;
+  }
+  function medallion(
+    g: THREE.Group,
+    glyph: string,
+    ticker: string,
+    color: string,
+  ) {
+    const coin = new THREE.Group();
+    coin.position.set(0, 4.65, -0.82);
+    g.add(coin);
+    const rim = part(coin, cylinder, gold, 0, 0, 0, 0.62, 0.09, 0.62);
+    rim.rotation.x = Math.PI / 2;
+    const c = document.createElement('canvas');
+    c.width = c.height = 384;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(192, 192, 176, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#F4E9CD';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(192, 192, 160, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFFDF4';
+    ctx.font = '500 164px system-ui';
+    ctx.fillText(glyph, 192, 219);
+    ctx.font = '500 30px system-ui';
+    ctx.fillText(ticker, 192, 285);
+    const texture = new THREE.CanvasTexture(c);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    textures.push(texture);
+    const face = mat(
+      new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    part(coin, plane, face, 0, 0, 0.05, 1.24, 1.24, 1, true);
+    hoop(g, 0, 4.65, -0.82, 0.78, gold, true);
+    part(g, box, stone, 0, 3.93, -0.9, 0.15, 0.5, 0.18);
   }
   const stations = regions.map((r, n) => {
     const g = new THREE.Group();
@@ -321,6 +370,9 @@ export function createCryptoProps(
     g.position.set(r.x * 100 + (n === 0 ? 5.5 : 0), 0, r.y * 100 - 2.3);
     scene.add(g);
     roots.push(g);
+    if (n === 1) medallion(g, '₿', 'BITCOIN', '#BA945B');
+    if (n === 5) medallion(g, '◇', 'ETH / USDC', '#799EAD');
+    if (n === 9) medallion(g, 'X', 'X LAYER', '#6D9187');
     const accent = accents[n],
       moving: THREE.Object3D[] = [];
     // Recessed plinth, trimmed base and lit toe-kick unify otherwise different machinery.
@@ -648,6 +700,24 @@ export function createCryptoProps(
     roots,
     stations,
     textures,
+    setMarketSignal(signal?: MarketSignal | null) {
+      if (!researchDisplay) return;
+      const key = signal
+        ? `${signal.last}:${signal.change}:${signal.mode}`
+        : 'none';
+      if (key === lastMarketKey) return;
+      lastMarketKey = key;
+      const ctx = researchDisplay.canvas.getContext('2d')!;
+      ctx.fillStyle = '#EDF4F6';
+      ctx.fillRect(22, 482, 1002, 94);
+      ctx.fillStyle = '#315B69';
+      ctx.font = '500 30px sans-serif';
+      const line = signal
+        ? `BTC $${signal.last.toLocaleString('en-US', { maximumFractionDigits: 2 })}  ${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%  · OKX ${signal.mode === 'fresh' ? 'LIVE' : '缓存'}`
+        : 'BTC / ETH 研究工作台 · 等待行情信号';
+      ctx.fillText(line, 54, 538, 930);
+      researchDisplay.texture.needsUpdate = true;
+    },
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;

@@ -51,6 +51,22 @@ world.regionPlatforms.forEach((p, i) => {
     'All walkable platform tops remain at y=0',
   );
 });
+world.routes.forEach((route, i) => {
+  const [a, b] = regionConnections[i];
+  const centerA = new THREE.Vector3(regions[a].x * 100, 0, regions[a].y * 100);
+  const centerB = new THREE.Vector3(regions[b].x * 100, 0, regions[b].y * 100);
+  assert.ok(
+    route.a.distanceTo(centerA) >= (a === 0 ? 10.6 : 5.1),
+    'Bridge starts at the platform rim, keeping plazas free of rails',
+  );
+  assert.ok(
+    route.b.distanceTo(centerB) >= (b === 0 ? 10.6 : 5.1),
+    'Bridge ends at the opposite rim',
+  );
+  assert.ok(
+    route.length > 0 && route.length < centerA.distanceTo(centerB) - 10,
+  );
+});
 const states = sampleAgents(agents, details, 6, 'calm');
 world.update(6, 2, 0.1, states, 0);
 const spread = world.cubes[0].position.length();

@@ -29,6 +29,7 @@ const source = compile('components/crypto-props.ts')
   .replace(/(['"])@\/lib\/civilization-model\1/g, JSON.stringify(model))
   .replace(/(['"])@\/lib\/crypto-world\1/g, JSON.stringify(crypto));
 // Text-only canvas stand-in; checks Three scene state, not WebGL rendering or browser pixels.
+const drawn = [];
 globalThis.document = {
   createElement() {
     return {
@@ -37,11 +38,15 @@ globalThis.document = {
       getContext() {
         return {
           fillRect() {},
-          fillText() {},
+          fillText(text) {
+            drawn.push(text);
+          },
+          arc() {},
           beginPath() {},
           moveTo() {},
           lineTo() {},
           stroke() {},
+          fill() {},
         };
       },
     };
@@ -52,6 +57,15 @@ const scene = new THREE.Scene(),
   picks = [];
 const stations = createCryptoProps(scene, picks);
 assert.equal(scene.children.length, 10);
+stations.setMarketSignal({ last: 65000.5, change: 1.25, mode: 'fresh' });
+assert.ok(
+  drawn.at(-1).includes('65,000.5') && drawn.at(-1).includes('OKX LIVE'),
+);
+stations.setMarketSignal(null);
+assert.ok(
+  drawn.at(-1).includes('等待行情信号'),
+  'Removing a signal clears the old live price',
+);
 assert.ok(picks.length >= 20);
 assert.ok(picks.every((p) => Number.isInteger(p.userData.region)));
 const market = stations.stations[5],
