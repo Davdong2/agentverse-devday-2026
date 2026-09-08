@@ -11,14 +11,7 @@ import { createAgentLabels } from '@/components/agent-labels';
 import { createAvatarFactory } from '@/components/agent-avatar';
 import { avatarMotion } from '@/lib/agent-design';
 import { cryptoTaskState } from '@/lib/crypto-world';
-import {
-  ArrowUp,
-  ChevronDown,
-  Globe2,
-  MapPin,
-  Navigation,
-  RotateCcw,
-} from 'lucide-react';
+import { ArrowUp, ChevronDown, Globe2, MapPin, RotateCcw } from 'lucide-react';
 import {
   regions,
   regionConnections,
@@ -59,24 +52,7 @@ export default function WorldWalk(props: Props) {
   const [error, setError] = useState(''),
     [area, setArea] = useState(0),
     [quality, setQuality] = useState('标准'),
-    [knob, setKnob] = useState({ x: 0, y: 0 }),
-    [hint, setHint] = useState(true);
-  const dismissHint = () => {
-    setHint(false);
-    try {
-      sessionStorage.setItem('agentverse-walk-introduction', 'seen');
-    } catch {
-      /* Optional preference. */
-    }
-  };
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem('agentverse-walk-introduction') === 'seen')
-        setHint(false);
-    } catch {
-      /* Keep the introduction available. */
-    }
-  }, []);
+    [knob, setKnob] = useState({ x: 0, y: 0 });
   useEffect(() => {
     const host = mount.current;
     if (!host) return;
@@ -219,7 +195,6 @@ export default function WorldWalk(props: Props) {
       ) {
         keys.add(e.key.toLowerCase());
         e.preventDefault();
-        dismissHint();
       }
     };
     const up = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
@@ -251,7 +226,6 @@ export default function WorldWalk(props: Props) {
       w.pitch = Math.max(-0.7, Math.min(0.6, w.pitch - dy * 0.003));
       lastX = e.clientX;
       lastY = e.clientY;
-      dismissHint();
     };
     const pointerUp = (e: PointerEvent) => {
       if (latest.current.inputBlocked) return;
@@ -531,7 +505,6 @@ export default function WorldWalk(props: Props) {
       len = Math.max(36, Math.hypot(dx, dy));
     stick.current = { x: dx / len, y: dy / len };
     setKnob({ x: (dx / len) * 30, y: (dy / len) * 30 });
-    dismissHint();
   };
   return (
     <div className="world-walk">
@@ -601,15 +574,6 @@ export default function WorldWalk(props: Props) {
             </span>
             <small>GPU 内部 · 文明观察者 · {quality}画质</small>
           </div>
-          {hint && !props.inputBlocked && (
-            <div className="walk-instructions">
-              <Navigation size={20} />
-              <strong>走进算力主机</strong>
-              <p>在主板与 GPU 上移动 · 点击 Agent 或算力节点</p>
-              <small>手机使用左侧摇杆，右侧拖动转向</small>
-              <button onClick={dismissHint}>开始探索</button>
-            </div>
-          )}
           <div
             className="walk-joystick"
             onPointerDown={joystick}

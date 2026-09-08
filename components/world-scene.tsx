@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, type CSSProperties } from 'react';
-import { drawVectorAgent } from '@/lib/vector-agent';
+import { drawAvatarSprite } from '@/lib/avatar-sprite';
 import { legacyVariant } from '@/lib/agent-design';
 import type { Agent, Detail } from '@/lib/marketplace';
 import {
@@ -23,10 +23,19 @@ export function AgentSprite({
   const index = variant ?? legacyVariant(role);
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const ctx = canvas.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 384, 512);
-    drawVectorAgent(ctx, index, 0, 0, 384, 512);
+    const image = new Image();
+    let active = true;
+    image.onload = () => {
+      const ctx = canvas.current?.getContext('2d');
+      if (active && ctx) {
+        ctx.clearRect(0, 0, 384, 512);
+        drawAvatarSprite(ctx, image, index, 0, 0, 384, 512);
+      }
+    };
+    image.src = '/agent-diverse-atlas.png';
+    return () => {
+      active = false;
+    };
   }, [index]);
   return (
     <canvas
