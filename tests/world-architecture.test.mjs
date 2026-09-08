@@ -66,6 +66,13 @@ assert.equal(
 );
 assert.equal(world.towers.count, 60);
 assert.equal(
+  world.ventSlots.count,
+  160,
+  'Every compute module has sixteen machined side vents',
+);
+assert.equal(world.mountingScrews.count, 60);
+assert.equal(world.coolingRings.count, 6);
+assert.equal(
   world.skylineBands.count,
   180,
   'Distant compute stacks retain three luminous hardware seams each',
@@ -100,6 +107,8 @@ world.update(6, 2, 0.1, states, 0);
 const earthRotation = world.earth.children[0].rotation.y;
 const firstBlade = new THREE.Matrix4();
 world.coolingBlades.getMatrixAt(0, firstBlade);
+const firstCoolingRing = new THREE.Matrix4();
+world.coolingRings.getMatrixAt(0, firstCoolingRing);
 world.update(12, 2, 0.1, states, 0);
 assert.notEqual(
   world.earth.children[0].rotation.y,
@@ -112,6 +121,13 @@ assert.notDeepEqual(
   firstBlade.elements,
   movedBlade.elements,
   'GPU cooling turbines rotate with shared world time',
+);
+const movedCoolingRing = new THREE.Matrix4();
+world.coolingRings.getMatrixAt(0, movedCoolingRing);
+assert.notDeepEqual(
+  firstCoolingRing.elements,
+  movedCoolingRing.elements,
+  'GPU cooling airflow rises with shared world time',
 );
 const spread = world.cubes[0].position.length();
 world.update(6, 2, 0.9, states, 0);
@@ -146,6 +162,9 @@ assert.equal(
 assert.equal(world.towers.count, 28);
 assert.equal(world.skylineBands.count, 84);
 assert.equal(world.skylineCaps.count, 28);
+assert.equal(world.ventSlots.count, 64);
+assert.equal(world.mountingScrews.count, 24);
+assert.equal(world.coolingRings.count, 0);
 scene.updateMatrixWorld(true);
 scene.traverse((o) =>
   assert.ok(

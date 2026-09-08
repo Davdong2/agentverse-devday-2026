@@ -214,6 +214,23 @@ export function createWorldArchitecture(
     }),
   );
   const curtain = geo(new THREE.CylinderGeometry(1, 1, 1, 32, 1, true));
+  const ventsPerRegion = 16,
+    screwsPerRegion = 6;
+  const ventSlots = new THREE.InstancedMesh(
+    box,
+    edge,
+    regions.length * ventsPerRegion,
+  );
+  const mountingScrews = new THREE.InstancedMesh(
+    cylinder,
+    gold,
+    regions.length * screwsPerRegion,
+  );
+  ventSlots.name = 'module-machined-vents';
+  mountingScrews.name = 'module-mounting-screws';
+  root.add(ventSlots, mountingScrews);
+  let ventIndex = 0,
+    screwIndex = 0;
   regions.forEach((r, n) => {
     const x = r.x * 100,
       z = r.y * 100,
@@ -226,6 +243,30 @@ export function createWorldArchitecture(
     regionPlatforms.push(floor);
     mesh(cylinder, edge, x, -0.86, z, R * 0.96, 0.18, R * 0.96);
     mesh(cylinder, stone, x, -1.12, z, R * 0.83, 0.35, R * 0.83);
+    for (let slot = 0; slot < ventsPerRegion; slot++) {
+      const angle = (slot * Math.PI * 2) / ventsPerRegion + n * 0.07;
+      dummy.position.set(
+        x + Math.cos(angle) * R * 0.985,
+        -0.62,
+        z + Math.sin(angle) * R * 0.985,
+      );
+      dummy.scale.set(0.055, 0.24, 0.34);
+      dummy.rotation.set(0, -angle, 0);
+      dummy.updateMatrix();
+      ventSlots.setMatrixAt(ventIndex++, dummy.matrix);
+    }
+    for (let screw = 0; screw < screwsPerRegion; screw++) {
+      const angle = (screw * Math.PI * 2) / screwsPerRegion + 0.31;
+      dummy.position.set(
+        x + Math.cos(angle) * R * 0.8,
+        0.035,
+        z + Math.sin(angle) * R * 0.8,
+      );
+      dummy.scale.set(0.075, 0.025, 0.075);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      mountingScrews.setMatrixAt(screwIndex++, dummy.matrix);
+    }
     for (let k = 0; k < 3; k++)
       mesh(
         cylinder,
@@ -418,6 +459,8 @@ export function createWorldArchitecture(
       }
     }
   });
+  ventSlots.instanceMatrix.needsUpdate = true;
+  mountingScrews.instanceMatrix.needsUpdate = true;
   // Shared SMD packages make every platform read as one continuous motherboard.
   // They are instanced so the added close-range detail costs only two draw calls.
   const componentsPerRegion = 14;
@@ -481,6 +524,11 @@ export function createWorldArchitecture(
   coolingBlades.name = 'gpu-cooling-turbines';
   coolingBlades.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   root.add(coolingBlades);
+  const coolingRings = new THREE.InstancedMesh(ringGeo, glow[0], 6);
+  coolingRings.name = 'gpu-cooling-airflow';
+  coolingRings.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  coolingRings.frustumCulled = false;
+  root.add(coolingRings);
   // A high open rotunda gives the collaboration center a distinct skyline.
   const rotundaX = regions[0].x * 100,
     rotundaZ = regions[0].y * 100;
@@ -936,6 +984,9 @@ export function createWorldArchitecture(
     smdBodies,
     smdLights,
     coolingBlades,
+    coolingRings,
+    ventSlots,
+    mountingScrews,
     towers,
     skylineBands,
     skylineCaps,
@@ -964,6 +1015,8 @@ export function createWorldArchitecture(
       skylineGlow.opacity =
         (quality === 2 ? 0.12 : 0.2) +
         Math.pow(0.5 + Math.sin(time * 0.45) * 0.5, 5) * 0.1;
+      ventSlots.count = quality === 2 ? 64 : quality === 1 ? 112 : 160;
+      mountingScrews.count = quality === 2 ? 24 : quality === 1 ? 42 : 60;
       fiberMaterials.forEach((material, i) => {
         material.opacity =
           (quality > 1 && i % 3 ? 0.08 : 0.18) +
@@ -998,6 +1051,18 @@ export function createWorldArchitecture(
         }
       });
       coolingBlades.instanceMatrix.needsUpdate = true;
+      coolingRings.count = quality === 2 ? 0 : quality === 1 ? 2 : 6;
+      for (let i = 0; i < coolingRings.count; i++) {
+        const center = fanCenters[i % 2],
+          layer = Math.floor(i / 2),
+          pulse = (time * 0.32 + layer * 0.22 + (i % 2) * 0.11) % 1;
+        dummy.position.set(center.x, 0.28 + pulse * 1.15, center.z);
+        dummy.scale.setScalar(0.45 + pulse * 0.82);
+        dummy.rotation.set(-Math.PI / 2, 0, time * 0.12 * (i % 2 ? -1 : 1));
+        dummy.updateMatrix();
+        coolingRings.setMatrixAt(i, dummy.matrix);
+      }
+      coolingRings.instanceMatrix.needsUpdate = true;
       const joined = phase >= 2 && phase <= 6;
       coop.visible = joined;
       coreBeam.visible = joined;

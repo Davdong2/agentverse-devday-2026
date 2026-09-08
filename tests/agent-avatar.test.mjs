@@ -119,8 +119,11 @@ assert.ok(
 assert.ok(avatar.chestRing.visible && avatar.neckCollar.visible);
 assert.equal(avatar.shoulderRings.length, 2);
 assert.equal(avatar.sidePorts.length, 2);
+assert.equal(avatar.earPorts.length, 2);
+assert.equal(avatar.soleLights.length, 2);
 assert.ok(
   avatar.shoulderRings.every((m) => m.visible) &&
+    avatar.earPorts.every((m) => m.visible) &&
     avatar.sidePorts.every((m) => m.visible) &&
     avatar.backCore.visible,
   'Close range exposes physical joints and interface hardware',
@@ -206,6 +209,7 @@ assert.equal(
 );
 assert.ok(
   avatar.eyeGlints.every((m) => !m.visible) &&
+    avatar.earPorts.every((m) => !m.visible) &&
     avatar.sidePorts.every((m) => !m.visible) &&
     !avatar.chestRing.visible,
   'Fine facial and connector details are culled by the distant LOD',
