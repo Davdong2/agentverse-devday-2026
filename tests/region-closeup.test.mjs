@@ -25,6 +25,10 @@ for (const blueprint of regionCloseupBlueprints) {
   assert.equal(blueprint.assets.length, 4);
   assert.ok(blueprint.deck.length > 6);
   assert.ok(blueprint.status.length > 6);
+  assert.ok(blueprint.landmark.length >= 4);
+  assert.equal(blueprint.activity.length, 3);
+  assert.equal(blueprint.skyline.length, 3);
+  assert.ok(blueprint.skyline.every((height) => height >= 16));
 }
 
 const slots = Array.from({ length: 6 }, (_, index) => closeupSlot(index));
@@ -50,6 +54,8 @@ assert.match(
   canvasSource,
   /regionFor\(source, p\.details\[source\.agentId\]\)/,
 );
+assert.match(canvasSource, /drawHabitatCity\(regionIndex, t\)/);
+assert.match(canvasSource, /drawHabitatFloor\(regionIndex, t, focusX\)/);
 
 console.log(
   'PASS: ten distinct Agent-first habitats, resident-first staging, six non-overlapping close-range actors and a 2× vector canvas.',

@@ -78,6 +78,12 @@ assert.equal(
   'Distant compute stacks retain three luminous hardware seams each',
 );
 assert.equal(world.skylineCaps.count, 60);
+assert.equal(
+  world.shuttles.count,
+  12,
+  'Upper compute city starts with twelve aerial couriers',
+);
+assert.equal(world.shuttleLights.count, 24);
 world.regionPlatforms.forEach((p, i) => {
   assert.equal(p.userData.region, i);
   assert.equal(
@@ -109,6 +115,8 @@ const firstBlade = new THREE.Matrix4();
 world.coolingBlades.getMatrixAt(0, firstBlade);
 const firstCoolingRing = new THREE.Matrix4();
 world.coolingRings.getMatrixAt(0, firstCoolingRing);
+const firstShuttle = new THREE.Matrix4();
+world.shuttles.getMatrixAt(0, firstShuttle);
 world.update(12, 2, 0.1, states, 0);
 assert.notEqual(
   world.earth.children[0].rotation.y,
@@ -128,6 +136,13 @@ assert.notDeepEqual(
   firstCoolingRing.elements,
   movedCoolingRing.elements,
   'GPU cooling airflow rises with shared world time',
+);
+const movedShuttle = new THREE.Matrix4();
+world.shuttles.getMatrixAt(0, movedShuttle);
+assert.notDeepEqual(
+  firstShuttle.elements,
+  movedShuttle.elements,
+  'Aerial couriers orbit through the upper city with shared world time',
 );
 const spread = world.cubes[0].position.length();
 world.update(6, 2, 0.9, states, 0);
@@ -165,6 +180,8 @@ assert.equal(world.skylineCaps.count, 28);
 assert.equal(world.ventSlots.count, 64);
 assert.equal(world.mountingScrews.count, 24);
 assert.equal(world.coolingRings.count, 0);
+assert.equal(world.shuttles.count, 4);
+assert.equal(world.shuttleLights.count, 8);
 scene.updateMatrixWorld(true);
 scene.traverse((o) =>
   assert.ok(

@@ -85,8 +85,8 @@ export default function WorldWalk(props: Props) {
       240,
     );
     camera.rotation.order = 'YXZ';
-    scene.add(new THREE.HemisphereLight('#D8ECFF', '#55382D', 0.92));
-    const sun = new THREE.DirectionalLight('#FFD7AC', 2.1);
+    scene.add(new THREE.HemisphereLight('#DDF2FF', '#68452F', 1.08));
+    const sun = new THREE.DirectionalLight('#FFD9B3', 2.28);
     sun.position.set(-20, 35, 20);
     sun.castShadow = true;
     sun.shadow.mapSize.set(mobile ? 768 : 1536, mobile ? 768 : 1536);
@@ -102,7 +102,7 @@ export default function WorldWalk(props: Props) {
     sun.shadow.normalBias = 0.025;
     sun.shadow.radius = 2;
     scene.add(sun, sun.target);
-    const rim = new THREE.DirectionalLight('#7BDFFF', 0.78);
+    const rim = new THREE.DirectionalLight('#7BDFFF', 0.96);
     rim.position.set(15, 12, -25);
     scene.add(rim);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;

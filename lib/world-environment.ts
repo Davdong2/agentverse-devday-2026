@@ -21,13 +21,13 @@ export function environmentFor(weather: Weather, change = 0) {
         : expansion
           ? '#17302E'
           : information
-            ? '#142A38'
+            ? '#193448'
             : up > 0.25
-              ? '#30241C'
-              : '#18212C',
-    fog: down > 0.25 ? '#2F2930' : up > 0.25 ? '#4A3329' : '#34333A',
-    sun: 1.95 + up * 0.7 - down * 0.82,
-    exposure: 1.08 + up * 0.1 - down * 0.18,
+              ? '#382A20'
+              : '#1D2B3A',
+    fog: down > 0.25 ? '#312B34' : up > 0.25 ? '#51392F' : '#3B4149',
+    sun: 2.12 + up * 0.72 - down * 0.82,
+    exposure: 1.14 + up * 0.11 - down * 0.18,
     flow:
       1 + up * 0.75 - down * 0.35 + (information ? 0.2 : expansion ? 0.35 : 0),
     clouds: 0.25 + down * 0.28,

@@ -839,6 +839,18 @@ export function createWorldArchitecture(
       );
     }
   });
+  // Lightweight aerial couriers make the upper city feel inhabited without
+  // introducing another simulation. Their motion remains part of Demo mode.
+  const shuttleCount = 12;
+  const shuttles = new THREE.InstancedMesh(box, stone, shuttleCount);
+  const shuttleLights = new THREE.InstancedMesh(box, glow[0], shuttleCount * 2);
+  shuttles.name = 'aerial-agent-couriers';
+  shuttleLights.name = 'aerial-agent-courier-lights';
+  shuttles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  shuttleLights.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  shuttles.frustumCulled = false;
+  shuttleLights.frustumCulled = false;
+  root.add(shuttles, shuttleLights);
   // A lightweight rotating Earth keeps the real world visible beyond the machine.
   const earth = new THREE.Group();
   earth.position.set(84, 46, -55);
@@ -990,6 +1002,8 @@ export function createWorldArchitecture(
     towers,
     skylineBands,
     skylineCaps,
+    shuttles,
+    shuttleLights,
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;
@@ -1012,6 +1026,35 @@ export function createWorldArchitecture(
       towers.count = quality === 2 ? 28 : quality === 1 ? 44 : 60;
       skylineBands.count = towers.count * 3;
       skylineCaps.count = towers.count;
+      shuttles.count = quality === 2 ? 4 : quality === 1 ? 8 : shuttleCount;
+      shuttleLights.count = shuttles.count * 2;
+      for (let i = 0; i < shuttles.count; i++) {
+        const lane = i % 3,
+          radius = 20 + lane * 11,
+          angle = time * (0.045 + lane * 0.013) + i * 2.399963,
+          x = cx + Math.cos(angle) * radius,
+          z = cz + Math.sin(angle) * radius,
+          y = 9 + lane * 4.8 + Math.sin(time * 0.32 + i) * 1.4;
+        dummy.position.set(x, y, z);
+        dummy.scale.set(1.45 + (i % 2) * 0.45, 0.27, 0.56);
+        dummy.rotation.set(0, -angle + Math.PI / 2, 0);
+        dummy.updateMatrix();
+        shuttles.setMatrixAt(i, dummy.matrix);
+        for (let side = 0; side < 2; side++) {
+          const lateral = side ? 0.42 : -0.42;
+          dummy.position.set(
+            x + Math.cos(angle) * lateral,
+            y - 0.11,
+            z + Math.sin(angle) * lateral,
+          );
+          dummy.scale.set(0.22, 0.035, 0.16 + lane * 0.035);
+          dummy.rotation.set(0, -angle + Math.PI / 2, 0);
+          dummy.updateMatrix();
+          shuttleLights.setMatrixAt(i * 2 + side, dummy.matrix);
+        }
+      }
+      shuttles.instanceMatrix.needsUpdate = true;
+      shuttleLights.instanceMatrix.needsUpdate = true;
       skylineGlow.opacity =
         (quality === 2 ? 0.12 : 0.2) +
         Math.pow(0.5 + Math.sin(time * 0.45) * 0.5, 5) * 0.1;

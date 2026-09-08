@@ -41,11 +41,11 @@ export function createAgentLabels() {
     if (existing) return existing;
     const canvas = document.createElement('canvas'),
       ctx = canvas.getContext('2d')!;
-    ctx.font = '600 26px system-ui, sans-serif';
+    ctx.font = '600 20px system-ui, sans-serif';
     const lines: string[] = [];
     let line = '';
     for (const char of Array.from(name)) {
-      if (ctx.measureText(line + char).width > 310 && line) {
+      if (ctx.measureText(line + char).width > 238 && line) {
         lines.push(line);
         line = char;
       } else line += char;
@@ -53,22 +53,32 @@ export function createAgentLabels() {
     if (line) lines.push(line);
     if (!lines.length) lines.push('Agent');
     const width =
-      Math.ceil(Math.max(...lines.map((t) => ctx.measureText(t).width))) + 34;
+      Math.ceil(Math.max(...lines.map((t) => ctx.measureText(t).width))) + 30;
     canvas.width = width;
-    canvas.height = lines.length * 34 + 22;
-    ctx.fillStyle = 'rgba(250,252,255,0.91)';
+    canvas.height = lines.length * 28 + 20;
+    ctx.fillStyle = 'rgba(7,20,29,0.91)';
     ctx.beginPath();
-    ctx.roundRect(0, 0, canvas.width, canvas.height, 14);
+    ctx.roundRect(1, 1, canvas.width - 2, canvas.height - 2, 12);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(169,229,241,0.62)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
-    ctx.font = '600 26px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(130,220,236,0.72)';
+    ctx.beginPath();
+    ctx.roundRect(
+      10,
+      canvas.height - 4,
+      Math.max(18, canvas.width * 0.26),
+      2,
+      1,
+    );
+    ctx.fill();
+    ctx.font = '600 20px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#35495D';
+    ctx.fillStyle = '#EDF9FB';
     lines.forEach((text, i) =>
-      ctx.fillText(text, canvas.width / 2, 28 + i * 34),
+      ctx.fillText(text, canvas.width / 2, 23 + i * 28),
     );
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -120,11 +130,11 @@ export function createAgentLabels() {
             label = entry(name);
             sprite.material = label.material;
           }
-          const pixelWidth = Math.min(185, label.width * 0.55);
+          const pixelWidth = Math.min(118, label.width * 0.5);
           const scale = Math.max(
-            0.9,
+            0.58,
             Math.min(
-              4.5,
+              3.25,
               (pixelWidth * 2 * Math.tan((fov * Math.PI) / 360) * distance) /
                 Math.max(360, viewportHeight),
             ),
@@ -132,13 +142,13 @@ export function createAgentLabels() {
           sprite.scale.set(scale, scale / label.aspect, 1);
           sprite.position.set(
             0,
-            (composite ? 3.35 : 2.85) + (instance < 4 ? instance * 0.12 : 0),
+            (composite ? 3.18 : 2.62) + (instance % 3) * 0.08,
             0,
           );
           sprite.visible = visible;
           badge.visible = visible && ignix;
-          badge.position.set(0.43, composite ? 2.9 : 2.2, 0);
-          badge.scale.setScalar(Math.max(0.25, Math.min(0.45, scale * 0.18)));
+          badge.position.set(0.36, composite ? 2.82 : 2.1, 0);
+          badge.scale.setScalar(Math.max(0.2, Math.min(0.36, scale * 0.15)));
         },
       };
     },
