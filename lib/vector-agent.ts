@@ -40,7 +40,7 @@ export function drawVectorAgent(
   const shell = ctx.createLinearGradient(18, 28, 83, 111);
   shell.addColorStop(0, '#FCFCFB');
   shell.addColorStop(0.48, design.skin);
-  shell.addColorStop(1, '#AEB8C1');
+  shell.addColorStop(1, '#DCE3E7');
   const metal = ctx.createLinearGradient(0, 0, 0, 30);
   metal.addColorStop(0, '#F7F9FA');
   metal.addColorStop(1, '#87939E');
@@ -94,34 +94,30 @@ export function drawVectorAgent(
   ctx.strokeStyle = '#FFFFFFB8';
   ctx.stroke();
 
-  const visorWidth = Math.min(56, headWidth - 15),
-    visorX = 50 - visorWidth / 2;
-  ctx.fillStyle = '#111A22';
-  rounded(
-    ctx,
-    visorX,
-    headY + headHeight * 0.3,
-    visorWidth,
-    headHeight * 0.38,
-    10,
-  );
-  ctx.fill();
-  const visorGlow = ctx.createLinearGradient(visorX, 0, visorX + visorWidth, 0);
-  visorGlow.addColorStop(0, '#75D4E8');
-  visorGlow.addColorStop(0.5, '#E9FCFF');
-  visorGlow.addColorStop(1, '#75D4E8');
-  ctx.fillStyle = visorGlow;
+  ctx.fillStyle = '#111417';
   for (const eyeX of [41, 59]) {
-    rounded(ctx, eyeX - 3, headY + headHeight * 0.39, 6, headHeight * 0.18, 3);
+    rounded(
+      ctx,
+      eyeX - 3.6,
+      headY + headHeight * 0.37,
+      7.2,
+      headHeight * 0.27,
+      4,
+    );
     ctx.fill();
   }
+  ctx.fillStyle = '#F2B8B8';
+  ctx.globalAlpha = 0.72;
+  for (const cheekX of [30, 70]) {
+    ctx.beginPath();
+    ctx.ellipse(cheekX, headY + headHeight * 0.68, 4.4, 2.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 
-  ctx.fillStyle = '#26313A';
-  rounded(ctx, 31, 71, 38, 28, 10);
-  ctx.fill();
   ctx.strokeStyle = design.color;
-  ctx.lineWidth = 2;
-  rounded(ctx, 40, 78, 20, 15, 4);
+  ctx.lineWidth = 3;
+  rounded(ctx, 40, 78, 20, 16, 5);
   ctx.stroke();
   ctx.fillStyle = design.color + '55';
   ctx.fill();

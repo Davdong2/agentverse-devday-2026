@@ -38,6 +38,10 @@ globalThis.document = {
       getContext() {
         return {
           fillRect() {},
+          strokeRect() {},
+          createLinearGradient() {
+            return { addColorStop() {} };
+          },
           fillText(text) {
             drawn.push(text);
           },

@@ -157,6 +157,35 @@ export function createCryptoProps(
       depthWrite: false,
     }),
   );
+  const bitcoin = mat(
+    new THREE.MeshPhongMaterial({
+      color: '#E7A64A',
+      shininess: 105,
+      specular: '#FFF2CA',
+    }),
+  );
+  const ethereum = mat(
+    new THREE.MeshPhongMaterial({
+      color: '#91A8DF',
+      shininess: 110,
+      specular: '#F2F6FF',
+    }),
+  );
+  const usdc = mat(
+    new THREE.MeshPhongMaterial({
+      color: '#4B9DDF',
+      shininess: 100,
+      specular: '#E8F6FF',
+    }),
+  );
+  const okb = mat(
+    new THREE.MeshPhongMaterial({
+      color: '#D9E1E7',
+      shininess: 115,
+      specular: '#FFFFFF',
+    }),
+  );
+  const assetMaterials = [bitcoin, ethereum, usdc, okb];
   const roots: THREE.Group[] = [];
   let researchDisplay:
     | { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture }
@@ -204,26 +233,49 @@ export function createCryptoProps(
     width = 2.4,
     height = 0.56,
   ) {
+    part(g, box, ink, x, y, z, width + 0.22, height + 0.18, 0.14);
+    part(
+      g,
+      box,
+      gold,
+      x,
+      y - height / 2 - 0.075,
+      z + 0.02,
+      width * 0.34,
+      0.025,
+      0.18,
+    );
     const c = document.createElement('canvas');
     c.width = 768;
     c.height = 192;
     const ctx = c.getContext('2d')!;
-    ctx.fillStyle = '#F7F9F5';
+    const background = ctx.createLinearGradient(0, 0, 768, 192);
+    background.addColorStop(0, '#0B1721');
+    background.addColorStop(0.58, '#102630');
+    background.addColorStop(1, '#0A141D');
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, 768, 192);
-    ctx.fillStyle = '#274557';
+    ctx.strokeStyle = '#497886';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(8, 8, 752, 176);
+    ctx.fillStyle = '#F3FAFB';
     ctx.textAlign = 'center';
     ctx.font = '600 46px sans-serif';
     ctx.fillText(title, 384, 77, 720);
     ctx.font = '27px sans-serif';
-    ctx.fillStyle = '#768D9C';
+    ctx.fillStyle = '#8FD5DE';
     ctx.fillText(sub, 384, 137, 720);
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     textures.push(t);
     const lm = mat(
-      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({
+        map: t,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }),
     );
-    return part(g, plane, lm, x, y, z, width, height, 1, true);
+    return part(g, plane, lm, x, y, z + 0.075, width, height, 1, true);
   }
   function display(
     g: THREE.Group,
@@ -234,28 +286,49 @@ export function createCryptoProps(
     width = 3.4,
     height = 1.85,
   ) {
-    part(g, box, stone, x, y, z, width + 0.14, height + 0.14, 0.16);
-    part(g, box, gold, x, y - height / 2 - 0.1, z, 0.8, 0.025, 0.18);
+    part(g, box, stone, x, y, z, width + 0.34, height + 0.34, 0.24);
+    part(g, box, ink, x, y, z + 0.13, width + 0.1, height + 0.1, 0.055);
+    part(g, box, gold, x, y - height / 2 - 0.16, z + 0.03, 0.8, 0.035, 0.22);
+    for (const sideX of [-1, 1])
+      for (const sideY of [-1, 1])
+        part(
+          g,
+          sphere,
+          gold,
+          x + sideX * (width / 2 + 0.105),
+          y + sideY * (height / 2 + 0.105),
+          z + 0.145,
+          0.035,
+          0.035,
+          0.018,
+        );
     const c = document.createElement('canvas');
     c.width = 1024;
     c.height = 576;
     const ctx = c.getContext('2d')!;
     const row = exhibitContent[n];
-    ctx.fillStyle = '#EDF4F6';
+    const background = ctx.createLinearGradient(0, 0, 1024, 576);
+    background.addColorStop(0, '#08131C');
+    background.addColorStop(0.5, '#102630');
+    background.addColorStop(1, '#071018');
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, 1024, 576);
-    ctx.fillStyle = '#C5DCE5';
+    ctx.fillStyle = cryptoTasks[n].color;
     ctx.fillRect(0, 0, 12, 576);
-    ctx.fillStyle = '#27475E';
+    ctx.strokeStyle = '#335A66';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(21, 21, 982, 534);
+    ctx.fillStyle = '#EEF8FA';
     ctx.font = '600 45px sans-serif';
     ctx.fillText(row[0], 52, 73);
     ctx.font = '25px sans-serif';
-    ctx.fillStyle = '#698392';
+    ctx.fillStyle = '#8CB8C2';
     ctx.fillText(row[1], 54, 120);
-    ctx.fillStyle = '#536F75';
+    ctx.fillStyle = '#C9A96E';
     ctx.fillText('DEMO / 流程演示', 730, 73);
     if (n === 1) {
       // A labelled, dimensionless illustration of a candlestick research signal.
-      ctx.strokeStyle = '#D2E1E7';
+      ctx.strokeStyle = '#234451';
       ctx.lineWidth = 1;
       for (let j = 0; j < 4; j++) {
         ctx.beginPath();
@@ -275,17 +348,17 @@ export function createCryptoProps(
         ctx.fillRect(63 + i * 32, y0 - h / 2, 18, h);
       }
       ctx.font = '24px sans-serif';
-      ctx.fillStyle = '#78909E';
+      ctx.fillStyle = '#8EBAC4';
       ctx.fillText('示意走势 · 无价格刻度 · 非实时行情', 54, 457);
     } else {
       for (let i = 0; i < 3; i++) {
         const xx = 52 + i * 309;
-        ctx.fillStyle = '#DFEAF0';
+        ctx.fillStyle = '#142C36';
         ctx.fillRect(xx, 170, 280, 235);
         ctx.fillStyle = cryptoTasks[n].color;
         ctx.font = '300 84px sans-serif';
         ctx.fillText('0' + (i + 1), xx + 24, 267);
-        ctx.fillStyle = '#31566B';
+        ctx.fillStyle = '#D8EEF1';
         ctx.font = '32px sans-serif';
         ctx.fillText(row[i + 3], xx + 24, 341, 235);
         if (i < 2) {
@@ -293,11 +366,11 @@ export function createCryptoProps(
           ctx.fillText('→', xx + 281, 290);
         }
       }
-      ctx.fillStyle = '#78909E';
+      ctx.fillStyle = '#8EBAC4';
       ctx.font = '24px sans-serif';
       ctx.fillText('概念流程 · 世界动作不代表真实链上执行', 54, 457);
     }
-    ctx.fillStyle = '#54727D';
+    ctx.fillStyle = '#A6CED5';
     ctx.font = '28px sans-serif';
     ctx.fillText(row[2], 54, 525, 930);
     const t = new THREE.CanvasTexture(c);
@@ -306,10 +379,16 @@ export function createCryptoProps(
     const screen = part(
       g,
       plane,
-      mat(new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide })),
+      mat(
+        new THREE.MeshBasicMaterial({
+          map: t,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      ),
       x,
       y,
-      z + 0.091,
+      z + 0.162,
       width,
       height,
       1,
@@ -388,6 +467,45 @@ export function createCryptoProps(
       2.8,
       0.4,
     );
+    // Every module exposes the same on-chain backplane: validator sockets, asset
+    // capsules and a moving block make the crypto system part of the machine.
+    part(g, box, ink, 0, 0.31, -2.02, 7.8, 0.18, 0.34);
+    part(g, box, gold, 0, 0.415, -2.02, 7.25, 0.024, 0.09);
+    for (let i = 0; i < 5; i++) {
+      const x = -3.1 + i * 1.55,
+        material = assetMaterials[(n + i) % assetMaterials.length];
+      const socket = part(g, cylinder, stone, x, 0.48, -2.02, 0.34, 0.12, 0.34);
+      socket.rotation.x = Math.PI / 2;
+      const asset = part(
+        g,
+        i % 2 ? prism : box,
+        material,
+        x,
+        0.69,
+        -2.02,
+        0.2,
+        0.2,
+        0.2,
+        false,
+      );
+      asset.rotation.y = i % 2 ? Math.PI / 4 : 0;
+      hoop(g, x, 0.47, -2.02, 0.3, accents[(n + i) % accents.length]);
+    }
+    for (const side of [-1, 1]) {
+      const validator = part(
+        g,
+        box,
+        side > 0 ? glass : luminous,
+        side * 4.1,
+        0.68,
+        -1.6,
+        0.24,
+        0.7,
+        0.24,
+      );
+      validator.rotation.y = Math.PI / 4;
+      hoop(g, side * 4.1, 0.33, -1.6, 0.34, gold);
+    }
     if (n !== 5 && n !== 6 && n !== 9) display(g, n, 0, 2.85, -0.83, 3.6, 1.92);
     if (n === 0) {
       for (let i = 0; i < 3; i++) {
@@ -655,7 +773,7 @@ export function createCryptoProps(
         0.46,
       );
     }
-    const receipt = part(g, box, ivory, 0, 1.75, 0.9, 0.48, 0.08, 0.6, true);
+    const receipt = part(g, box, glass, 0, 1.75, 0.9, 0.48, 0.22, 0.48, true);
     const status = part(
       g,
       box,
@@ -708,9 +826,9 @@ export function createCryptoProps(
       if (key === lastMarketKey) return;
       lastMarketKey = key;
       const ctx = researchDisplay.canvas.getContext('2d')!;
-      ctx.fillStyle = '#EDF4F6';
+      ctx.fillStyle = '#0A1821';
       ctx.fillRect(22, 482, 1002, 94);
-      ctx.fillStyle = '#315B69';
+      ctx.fillStyle = '#C6EDF1';
       ctx.font = '500 30px sans-serif';
       const line = signal
         ? `BTC $${signal.last.toLocaleString('en-US', { maximumFractionDigits: 2 })}  ${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%  · OKX ${signal.mode === 'fresh' ? 'LIVE' : '缓存'}`

@@ -24,6 +24,15 @@ assert.ok(!canvasSource.includes('agent-diverse-atlas.png'));
 assert.ok(!spriteSource.includes('agent-diverse-atlas.png'));
 assert.ok(!walkSource.includes('setPanelAtlas'));
 assert.ok(
+  !fs.readFileSync('components/agent-avatar.ts', 'utf8').includes('heartPlate'),
+);
+assert.ok(
+  !fs.readFileSync('components/agent-avatar.ts', 'utf8').includes('backPlate'),
+);
+assert.ok(
+  !fs.readFileSync('lib/vector-agent.ts', 'utf8').includes('visorWidth'),
+);
+assert.ok(
   canvasSource.includes('drawVectorAgent') &&
     spriteSource.includes('drawVectorAgent'),
   'Overview and profile surfaces share the texture-free Agent renderer',
@@ -91,7 +100,11 @@ assert.equal(
   'MeshPhongMaterial',
   'Shell responds to specular lighting',
 );
-assert.ok(avatar.visor.visible, 'Near camera exposes inset face visor');
+assert.equal(
+  avatar.eyes[0].material.color.getHexString(),
+  '162937',
+  'Near camera restores two independent dark oval eyes',
+);
 assert.ok(
   avatar.skillEdge.visible,
   'Near camera exposes capability edge highlights',
@@ -139,11 +152,6 @@ assert.equal(
   silhouettes.size,
   8,
   'All types have distinct head and body proportions',
-);
-assert.equal(
-  avatar.visor.visible,
-  false,
-  'Far LOD replaces separate face meshes',
 );
 assert.equal(
   avatar.farShell.visible,

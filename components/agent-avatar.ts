@@ -83,17 +83,6 @@ export function createAvatarFactory() {
       'varying vec2 vUv;void main(){float r=length(vUv-.5)*2.;gl_FragColor=vec4(.22,.29,.37,.18*pow(max(0.,1.-r),2.));}',
   });
   const textures: THREE.Texture[] = [];
-  const panelMats = Array.from(
-    { length: 4 },
-    () =>
-      new THREE.MeshPhongMaterial({
-        color: '#F5F2E9',
-        shininess: 95,
-        specular: '#FFFFFF',
-        side: THREE.DoubleSide,
-      }),
-  );
-
   const glyphMats = agentDesigns.map((_, i) => {
     const c = document.createElement('canvas');
     c.width = 128;
@@ -219,7 +208,6 @@ export function createAvatarFactory() {
     ...variants,
     ...skins,
     ...glyphMats,
-    ...panelMats,
   ];
   function mesh(
     g: THREE.Group,
@@ -302,9 +290,8 @@ export function createAvatarFactory() {
         0.16,
         0.15,
       );
-      add(2, chamfer, side * 0.15 * d.headX, 1.25, -0.373, 0.066, 0.155, 0.022);
+      add(1, lowOval, side * 0.15 * d.headX, 1.25, -0.342, 0.075, 0.17, 0.035);
     }
-    add(1, chamfer, 0, 1.23, -0.32, 0.58 * d.headX, 0.3, 0.09);
     add(2, chamfer, 0, 0.66, -0.237, 0.18, 0.18, 0.026);
     return parts.map((pieces) => {
       const merged = mergeGeometries(pieces)!;
@@ -314,18 +301,6 @@ export function createAvatarFactory() {
     });
   });
   return {
-    setPanelAtlas(texture: THREE.Texture) {
-      panelMats.forEach((m, i) => {
-        const t = texture.clone();
-        t.colorSpace = THREE.SRGBColorSpace;
-        t.repeat.set(0.493, 0.47);
-        t.offset.set(i % 2 === 0 ? 0.003 : 0.503, i < 2 ? 0.525 : 0.008);
-        t.needsUpdate = true;
-        textures.push(t);
-        m.map = t;
-        m.needsUpdate = true;
-      });
-    },
     create(instance: number) {
       const g = new THREE.Group();
       g.userData.instance = instance;
@@ -334,12 +309,11 @@ export function createAvatarFactory() {
       [body, head].forEach((m) => (m.userData.instance = instance));
       const shadow = mesh(g, plane, shadowMat, 0, 0.015, 0, 1.6, 1.1, 1);
       shadow.rotation.x = -Math.PI / 2;
-      const visor = mesh(g, rounded, ink, 0, 1.23, -0.32, 0.58, 0.3, 0.09);
       const ears = [-1, 1].map((s) =>
         mesh(g, sphere, ivory, s * 0.47, 1.21, 0, 0.055, 0.125, 0.125),
       );
       const eyes = [-1, 1].map((s) =>
-        mesh(g, rounded, pale, s * 0.15, 1.25, -0.373, 0.066, 0.155, 0.022),
+        mesh(g, oval, ink, s * 0.15, 1.25, -0.342, 0.075, 0.17, 0.035),
       );
       const cheeks = [-1, 1].map((s) =>
         mesh(g, sphere, blush, s * 0.27, 1.09, -0.319, 0.063, 0.032, 0.013),
@@ -399,54 +373,6 @@ export function createAvatarFactory() {
         0.36,
         0.18,
       );
-      const detailPlates = new THREE.Group();
-      g.add(detailPlates);
-      const heartPlate = mesh(
-        detailPlates,
-        plane,
-        panelMats[0],
-        0,
-        0.66,
-        -0.26,
-        0.275,
-        0.275,
-        1,
-      );
-      heartPlate.rotation.y = Math.PI;
-      const backPlate = mesh(
-        detailPlates,
-        plane,
-        panelMats[1],
-        0,
-        0.7,
-        0.371,
-        0.27,
-        0.29,
-        1,
-      );
-      const backCover = mesh(
-        detailPlates,
-        rounded,
-        panelMats[3],
-        0,
-        0.48,
-        0.25,
-        0.23,
-        0.1,
-        0.06,
-      );
-      const coupling = mesh(
-        detailPlates,
-        rounded,
-        ink,
-        0,
-        0.72,
-        0.27,
-        0.37,
-        0.42,
-        0.08,
-      );
-      coupling.position.z = 0.245;
       const shoulderCaps = limbs.map((l, i) =>
         mesh(
           l.arm,
@@ -517,7 +443,7 @@ export function createAvatarFactory() {
       const farShell = new THREE.Group();
       g.add(farShell);
       const farParts = distantForms[0].map((geo, i) =>
-        mesh(farShell, geo, [skins[0], ink, pale][i], 0, 0, 0),
+        mesh(farShell, geo, [skins[0], ink, cyan][i], 0, 0, 0),
       );
       farParts.forEach((m) => (m.userData.instance = instance));
       let variant = -1;
@@ -525,7 +451,6 @@ export function createAvatarFactory() {
         g,
         body,
         head,
-        visor,
         skillEdge,
         skill,
         limbs,
@@ -547,7 +472,6 @@ export function createAvatarFactory() {
             skill.material = variants[variant];
             backpack.material = variants[variant];
             shoulderCaps.forEach((m) => (m.material = variants[variant]));
-            visor.scale.x = 0.58 * agentDesigns[variant].headX;
             icon.material = glyphMats[variant];
             const design = agentDesigns[variant];
             skinMeshes.forEach((m) => (m.material = skins[variant]));
@@ -568,7 +492,7 @@ export function createAvatarFactory() {
             );
             eyes.forEach((e, i) => {
               e.position.x = (i ? 1 : -1) * 0.15 * design.headX;
-              e.position.z = -0.373;
+              e.position.z = -0.342;
             });
             cheeks.forEach(
               (e, i) => (e.position.x = (i ? 1 : -1) * 0.27 * design.headX),
@@ -618,16 +542,10 @@ export function createAvatarFactory() {
           shadow.position.y = 0.015 - g.position.y;
           // Face and shell share the same subtle tilt rather than drifting apart.
           head.rotation.z = motion.headTilt;
-          visor.rotation.z = motion.headTilt;
-          visor.visible = detail;
           skillEdge.visible = detail;
           crownEdge.visible = detail;
           shoulderCaps.forEach((m) => (m.visible = detail));
           backpack.visible = detail;
-          detailPlates.visible = detail;
-          heartPlate.scale.setScalar(
-            0.275 * (1 + (motion.corePulse - 1) * 0.1),
-          );
           skillCore.rotation.y = time * 0.8;
           skillCore.scale.setScalar(0.1 * motion.corePulse);
           hat.position.y =
