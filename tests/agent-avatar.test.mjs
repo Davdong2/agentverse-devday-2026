@@ -14,6 +14,20 @@ const url = (s) =>
 const design = url(compile('lib/agent-design.ts'));
 const { agentDesigns, agentVariant, teamVariants, avatarMotion, pickAvatar } =
   await import(design);
+const canvasSource = fs.readFileSync(
+    'components/civilization-canvas.tsx',
+    'utf8',
+  ),
+  spriteSource = fs.readFileSync('components/world-scene.tsx', 'utf8'),
+  walkSource = fs.readFileSync('components/world-walk.tsx', 'utf8');
+assert.ok(!canvasSource.includes('agent-diverse-atlas.png'));
+assert.ok(!spriteSource.includes('agent-diverse-atlas.png'));
+assert.ok(!walkSource.includes('setPanelAtlas'));
+assert.ok(
+  canvasSource.includes('drawVectorAgent') &&
+    spriteSource.includes('drawVectorAgent'),
+  'Overview and profile surfaces share the texture-free Agent renderer',
+);
 assert.equal(agentDesigns.length, 8);
 assert.equal(new Set(agentDesigns.map((a) => a.color)).size, 8);
 const { agents } = JSON.parse(fs.readFileSync('lib/agents.json', 'utf8'));

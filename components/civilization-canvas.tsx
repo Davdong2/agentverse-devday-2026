@@ -1,12 +1,11 @@
 'use client';
-import { drawAvatarSprite } from '@/lib/avatar-sprite';
+import { drawVectorAgent } from '@/lib/vector-agent';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Agent, Detail } from '@/lib/marketplace';
 import { cryptoTaskState } from '@/lib/crypto-world';
 import {
   avatarMotion,
   teamVariants,
-  agentDesigns,
   type AvatarMotion,
   type AvatarHit,
 } from '@/lib/agent-design';
@@ -39,6 +38,7 @@ type Props = {
   hits: MutableRefObject<Hit[]>;
   population: number;
   activeEventRegion?: number;
+  regionIndex?: number;
 };
 export default function CivilizationCanvas(props: Props) {
   const el = useRef<HTMLCanvasElement>(null),
@@ -49,8 +49,6 @@ export default function CivilizationCanvas(props: Props) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const sprite = new Image();
-    sprite.src = '/agent-diverse-atlas.png';
     let raf = 0,
       previous = 0;
     let lastFrame = '';
@@ -101,6 +99,317 @@ export default function CivilizationCanvas(props: Props) {
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
     };
+    const drawComputeWorld = (t: number, focus?: number) => {
+      const background = ctx.createLinearGradient(0, 0, 0, 900);
+      background.addColorStop(0, '#07101C');
+      background.addColorStop(0.46, '#101B25');
+      background.addColorStop(1, '#181311');
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, 1600, 900);
+
+      const horizon = ctx.createRadialGradient(800, 260, 10, 800, 260, 820);
+      horizon.addColorStop(0, '#8FCDE926');
+      horizon.addColorStop(0.42, '#31546D18');
+      horizon.addColorStop(1, '#02060A00');
+      ctx.fillStyle = horizon;
+      ctx.fillRect(0, 0, 1600, 900);
+
+      for (let i = 0; i < 180; i++) {
+        const x = (i * 197) % 1600,
+          y = 38 + ((i * 83) % 280),
+          flicker = 0.24 + 0.22 * Math.sin(t * 0.35 + i);
+        dot(x, y, i % 9 === 0 ? 1.4 : 0.7, `rgba(204,235,255,${flicker})`);
+      }
+
+      ctx.save();
+      ctx.strokeStyle = '#78BFD51F';
+      ctx.lineWidth = 1;
+      const vanishingX = 800,
+        vanishingY = 245;
+      for (let x = -500; x <= 2100; x += 95) {
+        ctx.beginPath();
+        ctx.moveTo(vanishingX, vanishingY);
+        ctx.lineTo(x, 900);
+        ctx.stroke();
+      }
+      for (let row = 1; row <= 17; row++) {
+        const y = vanishingY + Math.pow(row / 17, 1.72) * 655;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1600, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Repeated horizon modules continue beyond the navigable map.
+      for (let i = 0; i < 17; i++) {
+        const x = -80 + i * 108,
+          y = 315 + (i % 3) * 18,
+          w = 64 + (i % 2) * 18;
+        ctx.globalAlpha = 0.2 + (i % 4) * 0.035;
+        ctx.fillStyle = '#9EA9AF';
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, 27, 7);
+        ctx.fill();
+        ctx.fillStyle = '#071019';
+        ctx.fillRect(x + 9, y + 9, w - 18, 8);
+      }
+      ctx.globalAlpha = 1;
+
+      const center = regions[0];
+      regions.slice(1).forEach((region, index) => {
+        const startX = center.x * 1600,
+          startY = center.y * 900 - 70,
+          endX = region.x * 1600,
+          endY = region.y * 900;
+        for (let strand = 0; strand < 5; strand++) {
+          ctx.beginPath();
+          ctx.moveTo(startX + (strand - 2) * 3, startY);
+          ctx.bezierCurveTo(
+            startX + (endX - startX) * 0.24,
+            startY - 120 - strand * 4,
+            startX + (endX - startX) * 0.72,
+            endY - 90 + strand * 5,
+            endX + (strand - 2) * 3,
+            endY,
+          );
+          ctx.strokeStyle = [
+            '#8DE5FF66',
+            '#DDFBFF78',
+            '#8CE8CA66',
+            '#FFD29166',
+            '#8DE5FF55',
+          ][(index + strand) % 5];
+          ctx.lineWidth = strand === 1 ? 1.8 : 0.8;
+          ctx.stroke();
+        }
+      });
+
+      const drawModule = (n: number) => {
+        const region = regions[n],
+          x = region.x * 1600,
+          y = region.y * 900,
+          radius = n === 0 ? 112 : 69,
+          selected = focus === n;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.shadowColor = selected ? region.color : '#00000099';
+        ctx.shadowBlur = selected ? 34 : 18;
+        ctx.fillStyle = '#02070BBB';
+        ctx.beginPath();
+        ctx.ellipse(
+          0,
+          radius * 0.48,
+          radius * 1.08,
+          radius * 0.38,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+
+        const alloy = ctx.createLinearGradient(
+          -radius,
+          -radius,
+          radius,
+          radius,
+        );
+        alloy.addColorStop(0, '#F5F6F5');
+        alloy.addColorStop(0.34, '#AAB2B7');
+        alloy.addColorStop(0.72, '#59636B');
+        alloy.addColorStop(1, '#1C252D');
+        ctx.fillStyle = alloy;
+        ctx.beginPath();
+        ctx.roundRect(
+          -radius,
+          -radius * 0.48,
+          radius * 2,
+          radius * 0.92,
+          radius * 0.24,
+        );
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#111C22';
+        ctx.beginPath();
+        ctx.roundRect(
+          -radius * 0.83,
+          -radius * 0.62,
+          radius * 1.66,
+          radius * 0.78,
+          radius * 0.2,
+        );
+        ctx.fill();
+        ctx.strokeStyle = '#EAF7FF55';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        const board = ctx.createRadialGradient(
+          0,
+          -radius * 0.23,
+          2,
+          0,
+          0,
+          radius,
+        );
+        board.addColorStop(0, region.color + '55');
+        board.addColorStop(0.45, '#173330');
+        board.addColorStop(1, '#0A1719');
+        ctx.fillStyle = board;
+        ctx.beginPath();
+        ctx.ellipse(
+          0,
+          -radius * 0.2,
+          radius * 0.7,
+          radius * 0.34,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.strokeStyle = region.color + 'AA';
+        ctx.lineWidth = selected ? 2.4 : 1.3;
+        ctx.stroke();
+
+        for (let i = 0; i < 12; i++) {
+          const a = (i * Math.PI * 2) / 12,
+            px = Math.cos(a) * radius * 0.58,
+            py = -radius * 0.2 + Math.sin(a) * radius * 0.25;
+          ctx.fillStyle = i % 3 ? '#18252C' : region.color;
+          ctx.beginPath();
+          ctx.roundRect(px - 4, py - 3, 8, 6, 2);
+          ctx.fill();
+        }
+
+        ctx.strokeStyle = region.color + 'AA';
+        ctx.fillStyle = '#050B10';
+        ctx.lineWidth = 1.5;
+        if (n === 3) {
+          for (let i = -2; i <= 2; i++) {
+            ctx.beginPath();
+            ctx.roundRect(i * 15 - 6, -radius * 0.55, 12, radius * 0.55, 3);
+            ctx.fill();
+            ctx.stroke();
+          }
+        } else if (n === 4) {
+          for (const px of [-22, 22])
+            for (const py of [-radius * 0.34, -radius * 0.02]) {
+              ctx.beginPath();
+              ctx.arc(px, py, 11, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              for (let blade = 0; blade < 6; blade++) {
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(
+                  px + Math.cos(blade * 1.047 + t * 0.12) * 8,
+                  py + Math.sin(blade * 1.047 + t * 0.12) * 8,
+                );
+                ctx.stroke();
+              }
+            }
+        } else if (n === 5) {
+          for (const px of [-23, 23]) {
+            ctx.beginPath();
+            ctx.arc(px, -radius * 0.2, 17, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.beginPath();
+          ctx.moveTo(-6, -radius * 0.2);
+          ctx.lineTo(6, -radius * 0.2);
+          ctx.stroke();
+        } else if (n === 6) {
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 0.57);
+          ctx.lineTo(23, -radius * 0.42);
+          ctx.lineTo(17, -radius * 0.08);
+          ctx.lineTo(0, 3);
+          ctx.lineTo(-17, -radius * 0.08);
+          ctx.lineTo(-23, -radius * 0.42);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (n === 7 || n === 9) {
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.ellipse(
+              0,
+              -radius * 0.25,
+              17 + i * 10,
+              8 + i * 5,
+              0,
+              0,
+              Math.PI * 2,
+            );
+            ctx.stroke();
+          }
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 0.72);
+          ctx.lineTo(0, 5);
+          ctx.stroke();
+        } else if (n === 8) {
+          for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.ellipse(
+              0,
+              -radius * 0.2,
+              12 + i * 8,
+              5 + i * 4,
+              0,
+              0,
+              Math.PI * 2,
+            );
+            ctx.stroke();
+          }
+        } else {
+          const cells = n === 0 ? 9 : 4;
+          for (let i = 0; i < cells; i++) {
+            const cols = n === 0 ? 3 : 2,
+              px = (i % cols) * 18 - ((cols - 1) * 18) / 2,
+              py = Math.floor(i / cols) * 13 - radius * 0.42;
+            ctx.fillStyle = i % 2 ? region.color + 'CC' : '#071018';
+            ctx.beginPath();
+            ctx.roundRect(px - 7, py - 5, 14, 10, 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+
+        ctx.fillStyle = '#0B1116';
+        for (let i = 0; i < 10; i++) {
+          ctx.fillRect(
+            -radius * 0.72 + i * radius * 0.16,
+            radius * 0.23,
+            radius * 0.07,
+            3,
+          );
+        }
+        ctx.restore();
+      };
+      const depthOrder = regions
+        .map((_, index) => index)
+        .sort((a, b) => regions[a].y - regions[b].y);
+      depthOrder.forEach(drawModule);
+
+      const coreX = center.x * 1600,
+        coreY = center.y * 900 - 58;
+      for (let strand = 0; strand < 24; strand++) {
+        ctx.beginPath();
+        ctx.moveTo(coreX + (strand - 12) * 1.4, coreY + 30);
+        ctx.bezierCurveTo(
+          coreX + Math.sin(strand * 1.7) * 24,
+          coreY - 120,
+          coreX + Math.cos(strand * 1.2) * 34,
+          135,
+          coreX + (strand - 12) * 3.2,
+          -20,
+        );
+        ctx.strokeStyle = strand % 4 === 0 ? '#FFE0A788' : '#A9EEFF66';
+        ctx.lineWidth = strand % 5 === 0 ? 2 : 0.8;
+        ctx.stroke();
+      }
+    };
     const actor = (
       x: number,
       y: number,
@@ -111,31 +420,15 @@ export default function CivilizationCanvas(props: Props) {
       ctx.save();
       ctx.translate(x, y - (motion?.bob ?? 0) * 18);
       if (motion) ctx.rotate(motion.stride * 0.04 + motion.headTilt * 0.4);
-      if (sprite.complete && sprite.naturalWidth) {
-        drawAvatarSprite(
-          ctx,
-          sprite,
-          variant,
-          -size / 2,
-          -size * 1.22,
-          size,
-          (size * 4) / 3,
-        );
-      } else dot(0, 0, size / 5, agentDesigns[variant].color);
-      if (motion?.composite) {
-        [2, 1, 3].forEach((v, j) => {
-          ctx.fillStyle = agentDesigns[v].color;
-          ctx.beginPath();
-          ctx.roundRect(-15 + j * 10, -size * 1.02, 9, 9, 2);
-          ctx.fill();
-        });
-      }
-      if (motion?.joining || motion?.presenting) {
-        ctx.fillStyle = '#91e5f5';
-        ctx.fillRect(-4, -size * 0.39, 8, 8);
-        ctx.strokeStyle = '#e6fdff';
-        ctx.strokeRect(-4, -size * 0.39, 8, 8);
-      }
+      drawVectorAgent(
+        ctx,
+        variant,
+        -size / 2,
+        -size * 1.22,
+        size,
+        (size * 4) / 3,
+        motion,
+      );
       ctx.restore();
     };
     const text = (
@@ -172,12 +465,13 @@ export default function CivilizationCanvas(props: Props) {
         p.zoom,
         p.selected,
         p.activeEventRegion,
-        sprite.complete,
+        p.regionIndex,
       ].join(':');
       if (lastFrame === frameKey && lastAgents === p.agents) return;
       lastFrame = frameKey;
       lastAgents = p.agents;
       ctx.clearRect(0, 0, 1600, 900);
+      if (p.regionIndex !== undefined) drawComputeWorld(t, p.regionIndex);
       p.hits.current = [];
       if (p.activeEventRegion !== undefined) {
         const r = regions[p.activeEventRegion];
@@ -382,7 +676,7 @@ export default function CivilizationCanvas(props: Props) {
             ctx.fillStyle = j === task.step ? task.color : task.color + '44';
             ctx.fillRect(x - 16 + j * 12, y + 17, 8, j === task.step ? 4 : 2);
           }
-          text(task.label + ' · Demo', x, y + 38, '#4e7278', 12);
+          text(task.label + ' · Demo', x, y + 38, '#A9C3CA', 12);
         }
         ctx.restore();
       });
@@ -425,7 +719,7 @@ export default function CivilizationCanvas(props: Props) {
           ctx.beginPath();
           ctx.ellipse(x, y + 7, 18, 8, 0, 0, Math.PI * 2);
           ctx.stroke();
-          text(a.name, x, y - 38, '#466b73', 14);
+          text(a.name, x, y - 38, '#EAF7FA', 14);
         }
         p.hits.current.push({
           x,
@@ -477,7 +771,7 @@ export default function CivilizationCanvas(props: Props) {
             skillNamesLocal[i],
             x,
             y + 30,
-            working ? '#183347' : skillColors[i],
+            working ? '#F4FBFD' : skillColors[i],
             12,
           );
         if (p.selected === i) {
@@ -498,7 +792,7 @@ export default function CivilizationCanvas(props: Props) {
           });
       }
       if (phase === 0 || phase === 1) {
-        text('需要风险 · 审计 · 执行能力', cx, cy - 63, '#314a5a', 15);
+        text('需要风险 · 审计 · 执行能力', cx, cy - 63, '#DCEFF4', 15);
         glow(cx, cy, 40, '#d1b163', 0.25);
       }
       if (phase >= 3 && phase <= 6) {
@@ -511,7 +805,7 @@ export default function CivilizationCanvas(props: Props) {
         ctx.shadowBlur = 25;
         ctx.fillRect(-12, -12, 24, 24);
         ctx.restore();
-        text('STRATEGY AGENT', cx, cy - 68, '#355263', 14);
+        text('STRATEGY AGENT', cx, cy - 68, '#DFF7FA', 14);
       }
       if (phase === 5) {
         const u = (ct - 48) / 7,
@@ -544,7 +838,7 @@ export default function CivilizationCanvas(props: Props) {
           ctx.fillStyle = skillColors[(i + 1) % 4];
           ctx.fillRect(x - 5, y - 5, 10, 10);
         }
-        text('经验 +1 · 技能积累', cx, cy + 22, '#355263', 15);
+        text('经验 +1 · 技能积累', cx, cy + 22, '#DFF7FA', 15);
       }
       if (p.weather !== 'calm')
         text(weather.asset, mx, my - 27, weather.color, 14);

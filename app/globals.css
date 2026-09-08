@@ -18,6 +18,225 @@
   --radius-lg: 12px;
   --font-sans: Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
+
+/* Region camera: one continuous compute interior, drawn by the live Canvas. */
+.soft-world.region-page {
+  --ink: #eef6f8;
+  --muted: #9fb0b8;
+  --line: #d9f7ff25;
+  --glass: #111920d9;
+  color: #eef6f8;
+  background: #07101a;
+}
+.soft-world.region-page .universe-viewport {
+  background:
+    radial-gradient(circle at 50% 28%, #29465c, transparent 35%),
+    linear-gradient(#07101b, #14100e);
+}
+.soft-world.region-page .civilization-art {
+  display: none;
+}
+.soft-world.region-page .civilization-canvas {
+  display: block;
+  filter: saturate(0.94) contrast(1.05);
+}
+.soft-world.region-page .universe-vignette {
+  background:
+    linear-gradient(
+      90deg,
+      #040a12c7 0%,
+      transparent 18%,
+      transparent 82%,
+      #040911b8 100%
+    ),
+    linear-gradient(
+      180deg,
+      #030812a8 0%,
+      transparent 22%,
+      transparent 68%,
+      #080708d6 100%
+    );
+  box-shadow: inset 0 0 130px #0103098c;
+}
+.soft-world.region-page .universe-header {
+  background: linear-gradient(#060d16e8, #060d169c 58%, transparent);
+}
+.soft-world.region-page .universe-brand > span,
+.soft-world.region-page .universe-brand > svg {
+  color: #f3f7f8;
+}
+.soft-world.region-page .universe-brand small {
+  color: #8ea2ab;
+}
+.soft-world.region-page .universe-header nav {
+  color: #dce5e8;
+  background: linear-gradient(180deg, #303941e8, #151c23df);
+  border: 1px solid #e6f6ff25;
+  box-shadow:
+    inset 0 1px #ffffff1c,
+    0 16px 40px #00060b66;
+  backdrop-filter: blur(22px) saturate(1.15);
+}
+.soft-world.region-page .universe-header nav button {
+  color: #aebbc1;
+}
+.soft-world.region-page .universe-header nav button.active,
+.soft-world.region-page .universe-header nav button:hover {
+  color: #fff;
+  background: linear-gradient(180deg, #62707bd9, #39454fd9);
+  box-shadow: inset 0 1px #ffffff38;
+}
+.soft-world.region-page .source-light {
+  color: #cfd8dc;
+}
+.soft-world.region-page .data-mode-badge,
+.soft-world.region-page .demo-mode-badge {
+  color: #dce6e9;
+  background: #131a21bf;
+  border-color: #d9eff827;
+}
+.soft-world.region-page .demo-mode-badge {
+  color: #f2c984;
+}
+.soft-world.region-page .region-heading {
+  width: 272px;
+  max-width: 272px;
+  padding: 17px 18px 18px;
+  background: linear-gradient(145deg, #101820d9, #080e14b5);
+  border: 1px solid #ddf5ff22;
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px #ffffff16,
+    0 18px 50px #00060c61;
+  backdrop-filter: blur(20px) saturate(1.15);
+}
+.soft-world.region-page .region-heading button {
+  color: #9eb0b7;
+}
+.soft-world.region-page .region-heading button:hover {
+  color: #fff;
+}
+.soft-world.region-page .region-heading h1 {
+  margin: 15px 0 9px;
+  color: #f5f8f8;
+  font-size: 30px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 24px
+    color-mix(in srgb, var(--region-accent) 42%, transparent);
+}
+.soft-world.region-page .region-heading p {
+  color: #9babb2;
+  font-size: 13px;
+  line-height: 1.75;
+}
+.soft-world.region-page .region-heading::after {
+  content: '';
+  display: block;
+  width: 74px;
+  height: 2px;
+  margin-top: 14px;
+  background: linear-gradient(90deg, var(--region-accent), transparent);
+  box-shadow: 0 0 12px var(--region-accent);
+}
+.soft-world.region-page .region-label {
+  color: #edf6f8;
+  background: #0e171ed1;
+  border-color: #e8f7ff24;
+  box-shadow:
+    inset 0 1px #ffffff17,
+    0 8px 30px #00091075;
+  backdrop-filter: blur(16px);
+}
+.soft-world.region-page .region-label span {
+  color: #edf6f8;
+}
+.soft-world.region-page .region-label > i {
+  box-shadow: 0 0 12px var(--region-accent);
+}
+.soft-world.region-page .collaboration-dock {
+  color: #e7eff1;
+  background: linear-gradient(145deg, #171f26e8, #0a1016dc);
+  border-color: #deeff72b;
+  box-shadow:
+    inset 0 1px #ffffff14,
+    0 18px 60px #00070d82;
+  backdrop-filter: blur(24px) saturate(1.15);
+}
+.soft-world.region-page .dock-title,
+.soft-world.region-page .dock-title strong {
+  color: #f4f7f8;
+}
+.soft-world.region-page .dock-title small,
+.soft-world.region-page .stage-explanation {
+  color: #95a6ad;
+}
+.soft-world.region-page .dock-title .dock-symbol {
+  color: var(--region-accent);
+  background: color-mix(in srgb, var(--region-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--region-accent) 35%, transparent);
+}
+.soft-world.region-page .stage-track button {
+  color: #6f7e84;
+}
+.soft-world.region-page .stage-track button > span {
+  color: #91a0a6;
+  background: #172129;
+  border-color: #d8edf522;
+}
+.soft-world.region-page .stage-track button.current,
+.soft-world.region-page .stage-track button.past {
+  color: #d6e2e5;
+}
+.soft-world.region-page .stage-track button.current > span {
+  color: #061015;
+  background: var(--region-accent);
+  border-color: #ffffff73;
+  box-shadow: 0 0 17px color-mix(in srgb, var(--region-accent) 60%, transparent);
+}
+.soft-world.region-page .stage-track button:after,
+.soft-world.region-page .phase-line {
+  background: #d8edf51c;
+}
+.soft-world.region-page .phase-line > span {
+  background: var(--region-accent);
+  box-shadow: 0 0 10px var(--region-accent);
+}
+.soft-world.region-page .world-controls,
+.soft-world.region-page .weather-eyebrow {
+  color: #dce5e8;
+  background: #10171dc9;
+  border-color: #e0f3fb28;
+  box-shadow:
+    inset 0 1px #ffffff17,
+    0 10px 32px #00070c70;
+  backdrop-filter: blur(18px);
+}
+.soft-world.region-page .world-controls button,
+.soft-world.region-page .world-controls span,
+.soft-world.region-page .world-caption > span,
+.soft-world.region-page .world-caption p {
+  color: #c9d5d9;
+}
+.soft-world.region-page .world-controls > b {
+  background: #e2f1f52b;
+}
+.soft-world.region-page .world-caption {
+  text-shadow: 0 2px 13px #000;
+}
+.soft-world.region-page .weather-eyebrow:hover {
+  background: #1b252ddb;
+}
+@media (max-width: 700px) {
+  .soft-world.region-page .region-heading {
+    top: 112px;
+    left: 16px;
+    width: min(250px, calc(100% - 32px));
+    padding: 13px 14px;
+  }
+  .soft-world.region-page .region-heading h1 {
+    font-size: 24px;
+  }
+}
 :root,
 .dark {
   --background: #f5f6f5;
@@ -1054,9 +1273,7 @@ footer {
 }
 .agent-sprite {
   display: block;
-  background-image: url('/agent-sprites.png');
-  background-repeat: no-repeat;
-  background-size: 600% 100%;
+  background: transparent;
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 5px 3px #40554735);
@@ -3654,9 +3871,7 @@ body:has(.soft-world) .memory-record strong {
 
 /* Shared ivory robot with capability cubes, based on the supplied character references. */
 .agent-sprite.reference-agent {
-  background-image: url('/agent-reference-atlas.png');
-  background-size: 400% 200%;
-  background-repeat: no-repeat;
+  background: transparent;
   filter: drop-shadow(0 4px 3px #637f8a20);
 }
 .civilization-sheet .agent-portrait > .reference-agent {

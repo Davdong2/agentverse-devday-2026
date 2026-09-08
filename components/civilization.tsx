@@ -681,6 +681,12 @@ export default function Civilization({
   };
   return (
     <main
+      style={
+        {
+          '--region-accent':
+            regionIndex !== undefined ? regions[regionIndex].color : '#86DFF5',
+        } as React.CSSProperties
+      }
       className={
         'universe-shell soft-world ' +
         (homeView ? 'home-mars ' : '') +
@@ -741,20 +747,14 @@ export default function Civilization({
               transform: `scale(${scale})`,
             }}
           >
-            <img
-              className="civilization-art"
-              src={
-                homeView
-                  ? '/agentverse-mars-civilization.jpg'
-                  : '/civilization.webp'
-              }
-              alt={
-                homeView
-                  ? '协作中心与九个功能站点通过发光桥梁连接的火星 Agent 文明'
-                  : '协作核心居中，九个功能区域悬浮在云海中的 Agent 文明'
-              }
-              draggable={false}
-            />
+            {homeView && (
+              <img
+                className="civilization-art"
+                src="/agentverse-mars-civilization.jpg"
+                alt="协作中心与九个功能站点通过发光桥梁连接的火星 Agent 文明"
+                draggable={false}
+              />
+            )}
             <CivilizationCanvas
               ignixIds={Object.keys(ignix.associations)}
               agents={data.agents}
@@ -768,6 +768,7 @@ export default function Civilization({
               team={team}
               hits={hits}
               population={population}
+              regionIndex={regionIndex}
               activeEventRegion={
                 events.find(
                   (e) => e.mode === 'LIVE' && Date.now() - e.at < 45000,

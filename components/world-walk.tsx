@@ -158,7 +158,6 @@ export default function WorldWalk(props: Props) {
         object.receiveShadow = true;
       }
     });
-    let disposed = false;
     const boardCanvas = document.createElement('canvas');
     boardCanvas.width = boardCanvas.height = 512;
     const boardContext = boardCanvas.getContext('2d');
@@ -193,16 +192,6 @@ export default function WorldWalk(props: Props) {
     );
     architecture.setSurfaceMap(surfaceTexture);
     cryptoProps.setSurfaceMap(surfaceTexture);
-    const panelTexture = new THREE.TextureLoader().load(
-      '/world-panels.jpg',
-      (t) => {
-        if (disposed) {
-          t.dispose();
-          return;
-        }
-        avatars.setPanelAtlas(t);
-      },
-    );
     const skyColor = new THREE.Color(),
       fogColor = new THREE.Color();
     const walkable = (x: number, z: number) =>
@@ -522,9 +511,7 @@ export default function WorldWalk(props: Props) {
       canvas.removeEventListener('pointerup', pointerUp);
       canvas.removeEventListener('pointercancel', blur);
       canvas.removeEventListener('webglcontextlost', onLost);
-      disposed = true;
       surfaceTexture.dispose();
-      panelTexture.dispose();
       effects.dispose();
       architecture.dispose();
       cryptoProps.dispose();
