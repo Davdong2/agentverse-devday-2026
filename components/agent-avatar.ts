@@ -458,6 +458,17 @@ export function createAvatarFactory() {
       );
       const pencil = mesh(toolGroup, rounded, ivory, 0, 0, 0, 0.08, 0.45, 0.08);
       const tip = mesh(toolGroup, sphere, gold, 0, 0.25, 0, 0.05, 0.08, 0.05);
+      const toolAura = mesh(
+        toolGroup,
+        ring,
+        variants[0],
+        0,
+        0,
+        0.08,
+        0.42,
+        0.42,
+        0.08,
+      );
       const capability = mesh(g, rounded, glass, 0, 0.89, -0.56, 0.2, 0.2, 0.2);
       const sidePorts = [-1, 1].map((side) => {
         const port = mesh(
@@ -519,6 +530,8 @@ export function createAvatarFactory() {
         shoulderRings,
         sidePorts,
         backCore,
+        toolGroup,
+        toolAura,
         capability,
         extra,
         farShell,
@@ -537,6 +550,7 @@ export function createAvatarFactory() {
             backpack.material = variants[variant];
             shoulderCaps.forEach((m) => (m.material = variants[variant]));
             sidePorts.forEach((m) => (m.material = variants[variant]));
+            toolAura.material = variants[variant];
             icon.material = glyphMats[variant];
             const design = agentDesigns[variant];
             const [moduleX, moduleY, moduleZ] = moduleProfiles[variant];
@@ -568,6 +582,10 @@ export function createAvatarFactory() {
               e.position.x = (i ? 1 : -1) * 0.15 * design.headX;
               e.position.z = -0.342;
             });
+            eyeGlints.forEach(
+              (e, i) =>
+                (e.position.x = (i ? 1 : -1) * 0.15 * design.headX - 0.017),
+            );
             cheeks.forEach(
               (e, i) => (e.position.x = (i ? 1 : -1) * 0.27 * design.headX),
             );
@@ -655,11 +673,23 @@ export function createAvatarFactory() {
           limbs[1].leg.rotation.x = -motion.stride;
           limbs[0].arm.rotation.x = motion.leftArm;
           limbs[1].arm.rotation.x = motion.rightArm;
-          toolGroup.visible = detail && !motion.joining;
+          toolGroup.visible =
+            detail && (!motion.joining || motion.working || motion.presenting);
+          toolGroup.position.y =
+            -0.3 + (motion.working ? Math.sin(time * 4 + instance) * 0.025 : 0);
+          toolGroup.rotation.z = motion.working
+            ? Math.sin(time * 3 + instance) * 0.09
+            : 0;
+          toolAura.visible = detail && motion.working;
+          toolAura.rotation.z = time * 0.65;
+          const toolPulse = 0.42 * (1 + Math.sin(time * 4 + instance) * 0.07);
+          toolAura.scale.set(toolPulse, toolPulse, 0.08);
           tablet.visible = variant === 0 || variant === 3 || variant === 7;
           tabletFace.visible = tablet.visible;
           coin.visible = variant === 1 || variant === 4;
+          coin.rotation.z = time * (motion.working ? 1.4 : 0.25);
           shield.visible = variant === 2;
+          shield.rotation.y = motion.working ? Math.sin(time * 3) * 0.18 : 0;
           pencil.visible = variant === 5 || variant === 6;
           tip.visible = pencil.visible;
           capability.visible = detail && (motion.joining || motion.presenting);

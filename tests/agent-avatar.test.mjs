@@ -140,6 +140,10 @@ assert.ok(
   avatar.capability.visible,
   'Working group presents a shared capability core',
 );
+assert.ok(
+  avatar.toolGroup.visible && avatar.toolAura.visible,
+  'The active collaborator keeps its physical tool and work aura visible',
+);
 const split = avatarMotion(15, 0, 7, 0.2, true, true);
 avatar.update(0, 15, split, true);
 assert.ok(
