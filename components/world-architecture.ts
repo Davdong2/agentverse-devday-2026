@@ -149,18 +149,49 @@ export function createWorldArchitecture(
   archGeo.translate(0, 0, -0.3);
   const towers = new THREE.InstancedMesh(box, stone, 60);
   root.add(towers);
+  const skylineGlow = mat(
+    new THREE.MeshBasicMaterial({
+      color: '#9DE8FF',
+      transparent: true,
+      opacity: 0.24,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  const skylineBands = new THREE.InstancedMesh(box, skylineGlow, 180);
+  const skylineCaps = new THREE.InstancedMesh(box, edge, 60);
+  skylineBands.name = 'distant-compute-status-bands';
+  skylineCaps.name = 'distant-compute-caps';
+  root.add(skylineBands, skylineCaps);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < 60; i++) {
     const a = i * 2.399963,
       r = 45 + (i % 7) * 6,
-      h = 14 + (i % 9) * 4;
-    dummy.position.set(48 + Math.cos(a) * r, -22 + h / 2, 48 + Math.sin(a) * r);
-    dummy.scale.set(2 + (i % 3), h, 2 + (i % 4));
+      h = 14 + (i % 9) * 4,
+      width = 2 + (i % 3),
+      depth = 2 + (i % 4),
+      x = 48 + Math.cos(a) * r,
+      z = 48 + Math.sin(a) * r,
+      baseY = -22;
+    dummy.position.set(x, baseY + h / 2, z);
+    dummy.scale.set(width, h, depth);
     dummy.rotation.set(0, a, 0);
     dummy.updateMatrix();
     towers.setMatrixAt(i, dummy.matrix);
+    for (let band = 0; band < 3; band++) {
+      dummy.position.set(x, baseY + h * (0.28 + band * 0.22), z);
+      dummy.scale.set(width + 0.1, 0.045, depth + 0.1);
+      dummy.updateMatrix();
+      skylineBands.setMatrixAt(i * 3 + band, dummy.matrix);
+    }
+    dummy.position.set(x, baseY + h + 0.28, z);
+    dummy.scale.set(width * 0.72, 0.56, depth * 0.72);
+    dummy.updateMatrix();
+    skylineCaps.setMatrixAt(i, dummy.matrix);
   }
   towers.instanceMatrix.needsUpdate = true;
+  skylineBands.instanceMatrix.needsUpdate = true;
+  skylineCaps.instanceMatrix.needsUpdate = true;
   const regionPlatforms: THREE.Mesh[] = [];
   const pavingPoints: number[] = [];
   const segment = (a: THREE.Vector3, b: THREE.Vector3) =>
@@ -905,6 +936,9 @@ export function createWorldArchitecture(
     smdBodies,
     smdLights,
     coolingBlades,
+    towers,
+    skylineBands,
+    skylineCaps,
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;
@@ -924,6 +958,12 @@ export function createWorldArchitecture(
       earthSurface.rotation.y = time * 0.018;
       earthClouds.rotation.y = -time * 0.026;
       earthOrbit.rotation.z = time * 0.008;
+      towers.count = quality === 2 ? 28 : quality === 1 ? 44 : 60;
+      skylineBands.count = towers.count * 3;
+      skylineCaps.count = towers.count;
+      skylineGlow.opacity =
+        (quality === 2 ? 0.12 : 0.2) +
+        Math.pow(0.5 + Math.sin(time * 0.45) * 0.5, 5) * 0.1;
       fiberMaterials.forEach((material, i) => {
         material.opacity =
           (quality > 1 && i % 3 ? 0.08 : 0.18) +

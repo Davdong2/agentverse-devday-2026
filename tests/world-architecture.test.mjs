@@ -64,6 +64,13 @@ assert.equal(
   14,
   'Compute district exposes two seven-blade GPU turbines',
 );
+assert.equal(world.towers.count, 60);
+assert.equal(
+  world.skylineBands.count,
+  180,
+  'Distant compute stacks retain three luminous hardware seams each',
+);
+assert.equal(world.skylineCaps.count, 60);
 world.regionPlatforms.forEach((p, i) => {
   assert.equal(p.userData.region, i);
   assert.equal(
@@ -136,6 +143,9 @@ assert.equal(
   world.routes.length * 3,
   'Reduced tier halves route particles',
 );
+assert.equal(world.towers.count, 28);
+assert.equal(world.skylineBands.count, 84);
+assert.equal(world.skylineCaps.count, 28);
 scene.updateMatrixWorld(true);
 scene.traverse((o) =>
   assert.ok(

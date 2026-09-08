@@ -223,6 +223,24 @@ export function createWorldEffects(scene: THREE.Scene) {
   );
   regionBeacons.frustumCulled = false;
   root.add(regionBeacons);
+  const eventCageMaterial = material(
+    new THREE.MeshBasicMaterial({
+      color: '#BDE4F5',
+      transparent: true,
+      opacity: 0.34,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  const eventCage = new THREE.InstancedMesh(
+    beaconGeometry,
+    eventCageMaterial,
+    3,
+  );
+  eventCage.name = 'active-region-orbits';
+  eventCage.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  eventCage.frustumCulled = false;
+  root.add(eventCage);
   // The trunk already branches into every district. These last-mile fibers make
   // that hierarchy legible by terminating at the live Agent positions.
   const maxFiberAgents = 50,
@@ -302,6 +320,7 @@ export function createWorldEffects(scene: THREE.Scene) {
     clouds,
     networkMotes,
     regionBeacons,
+    eventCage,
     agentFibers,
     agentFiberPackets,
     update(
@@ -486,6 +505,33 @@ export function createWorldEffects(scene: THREE.Scene) {
       const index =
         eventRegion ??
         (weather === 'attack' ? 6 : weather === 'resources' ? 8 : 5);
+      eventCage.visible = eventWave.visible && quality < 2;
+      eventCageMaterial.color.set(
+        weather === 'attack' || weather === 'storm'
+          ? '#E7B07C'
+          : weather === 'chain'
+            ? '#9BE5C4'
+            : '#BDE4F5',
+      );
+      for (let orbitIndex = 0; orbitIndex < 3; orbitIndex++) {
+        const radius = 1.75 + orbitIndex * 0.36;
+        dummy.position.set(
+          regions[index].x * 100,
+          2.2 + orbitIndex * 0.18,
+          regions[index].y * 100,
+        );
+        dummy.rotation.set(
+          Math.PI / 2 + orbitIndex * 0.52,
+          time * (orbitIndex % 2 ? -0.22 : 0.18) + orbitIndex,
+          orbitIndex * 0.44,
+        );
+        dummy.scale.setScalar(
+          radius * (1 + Math.sin(time * 1.6 + orbitIndex) * 0.035),
+        );
+        dummy.updateMatrix();
+        eventCage.setMatrixAt(orbitIndex, dummy.matrix);
+      }
+      eventCage.instanceMatrix.needsUpdate = true;
       skyHalos.forEach((m, i) => {
         m.visible = eventWave.visible && quality < 2;
         m.position.set(
