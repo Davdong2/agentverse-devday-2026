@@ -159,6 +159,70 @@ export function createWorldEffects(scene: THREE.Scene) {
   const clouds = new THREE.InstancedMesh(cloudGeo, cloudsMat, 36);
   clouds.frustumCulled = false;
   root.add(clouds);
+  // Fine packets continuously rise from every compute district. Positions are
+  // deterministic and rendered in one point cloud for a dense but light network.
+  const moteGeometry = geometry(new THREE.BufferGeometry());
+  const motePositions: number[] = [],
+    motePhases: number[] = [];
+  regions.forEach((region, regionIndex) => {
+    for (let i = 0; i < 18; i++) {
+      const angle = i * 2.399963 + regionIndex * 0.37,
+        radius = 0.45 + (i % 6) * 0.43;
+      motePositions.push(
+        region.x * 100 + Math.cos(angle) * radius,
+        0.2 + (i % 5) * 0.12,
+        region.y * 100 + Math.sin(angle) * radius,
+      );
+      motePhases.push(((i * 17 + regionIndex * 23) % 97) / 97);
+    }
+  });
+  moteGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(motePositions, 3),
+  );
+  moteGeometry.setAttribute(
+    'aPhase',
+    new THREE.Float32BufferAttribute(motePhases, 1),
+  );
+  const moteMaterial = material(
+    new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uScale: { value: 1 },
+        uColor: { value: new THREE.Color('#91E4F5') },
+      },
+      vertexShader: `attribute float aPhase;uniform float uTime;uniform float uScale;varying float vLife;
+      void main(){float life=fract(aPhase+uTime*.075);vec3 p=position;
+      p.y+=life*5.2;p.x+=sin(uTime*.55+aPhase*31.)*.12;p.z+=cos(uTime*.48+aPhase*27.)*.12;
+      vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      gl_PointSize=clamp((2.2+aPhase*2.4)*uScale*8./max(1.,-mv.z),1.,7.);vLife=sin(life*3.14159);}`,
+      fragmentShader: `uniform vec3 uColor;varying float vLife;void main(){float r=length(gl_PointCoord-.5)*2.;
+      float core=exp(-r*r*7.)*(1.-smoothstep(.72,1.,r));gl_FragColor=vec4(uColor,core*vLife*.82);}`,
+    }),
+  );
+  const networkMotes = new THREE.Points(moteGeometry, moteMaterial);
+  networkMotes.frustumCulled = false;
+  root.add(networkMotes);
+  const beaconGeometry = geometry(new THREE.TorusGeometry(1, 0.018, 6, 72));
+  const beaconMaterial = material(
+    new THREE.MeshBasicMaterial({
+      color: '#94DDEB',
+      transparent: true,
+      opacity: 0.24,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  const regionBeacons = new THREE.InstancedMesh(
+    beaconGeometry,
+    beaconMaterial,
+    regions.length,
+  );
+  regionBeacons.frustumCulled = false;
+  root.add(regionBeacons);
   const dummy = new THREE.Object3D(),
     a = new THREE.Vector3(),
     b = new THREE.Vector3(),
@@ -173,6 +237,8 @@ export function createWorldEffects(scene: THREE.Scene) {
     eventWave,
     specks,
     clouds,
+    networkMotes,
+    regionBeacons,
     update(
       time: number,
       phase: number,
@@ -195,6 +261,32 @@ export function createWorldEffects(scene: THREE.Scene) {
         quality === 2 ? 36 : quality === 1 ? 72 : 144,
       );
       specks.visible = phase >= 1 && phase <= 6;
+      moteMaterial.uniforms.uTime.value = time;
+      moteMaterial.uniforms.uScale.value = quality === 0 ? 1 : 1.35;
+      moteMaterial.uniforms.uColor.value.set(
+        weather === 'attack' || weather === 'storm'
+          ? '#F3BE8D'
+          : weather === 'chain'
+            ? '#98E7C3'
+            : '#91E4F5',
+      );
+      moteGeometry.setDrawRange(
+        0,
+        quality === 2 ? 54 : quality === 1 ? 108 : motePhases.length,
+      );
+      regionBeacons.visible = quality < 2;
+      regions.forEach((region, i) => {
+        const active =
+            i === eventRegion || (i === 0 && phase >= 1 && phase <= 6),
+          pulse = 1 + Math.sin(time * 1.7 + i) * 0.035,
+          radius = (i === 0 ? 4.7 : 2.65) * (active ? 1.08 : 1) * pulse;
+        dummy.position.set(region.x * 100, 0.065, region.y * 100);
+        dummy.rotation.set(-Math.PI / 2, 0, 0);
+        dummy.scale.set(radius, radius, radius);
+        dummy.updateMatrix();
+        regionBeacons.setMatrixAt(i, dummy.matrix);
+      });
+      regionBeacons.instanceMatrix.needsUpdate = true;
       const working = phase >= 1 && phase <= 4;
       ribbons.forEach((m, i) => {
         const state = states[Math.floor(i / 3)];

@@ -53,6 +53,17 @@ assert.equal(
   3,
   'Earth has surface, clouds and orbit',
 );
+assert.equal(
+  world.smdBodies.count,
+  140,
+  'Every district has fourteen physical motherboard packages',
+);
+assert.equal(world.smdLights.count, 140);
+assert.equal(
+  world.coolingBlades.count,
+  14,
+  'Compute district exposes two seven-blade GPU turbines',
+);
 world.regionPlatforms.forEach((p, i) => {
   assert.equal(p.userData.region, i);
   assert.equal(
@@ -80,11 +91,20 @@ world.routes.forEach((route, i) => {
 const states = sampleAgents(agents, details, 6, 'calm');
 world.update(6, 2, 0.1, states, 0);
 const earthRotation = world.earth.children[0].rotation.y;
+const firstBlade = new THREE.Matrix4();
+world.coolingBlades.getMatrixAt(0, firstBlade);
 world.update(12, 2, 0.1, states, 0);
 assert.notEqual(
   world.earth.children[0].rotation.y,
   earthRotation,
   'Distant Earth rotates with world time',
+);
+const movedBlade = new THREE.Matrix4();
+world.coolingBlades.getMatrixAt(0, movedBlade);
+assert.notDeepEqual(
+  firstBlade.elements,
+  movedBlade.elements,
+  'GPU cooling turbines rotate with shared world time',
 );
 const spread = world.cubes[0].position.length();
 world.update(6, 2, 0.9, states, 0);

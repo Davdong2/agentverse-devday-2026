@@ -9,6 +9,8 @@ export function createAvatarFactory() {
   const sphere = new THREE.SphereGeometry(1, 20, 14);
   const plane = new THREE.PlaneGeometry(1, 1);
   const disk = new THREE.CylinderGeometry(0.16, 0.16, 0.055, 12);
+  const collar = new THREE.CylinderGeometry(1, 1, 1, 28);
+  const ring = new THREE.TorusGeometry(1, 0.08, 6, 28);
   const chamfer = new RoundedBoxGeometry(1, 1, 1, 2, 0.17);
   const oval = new THREE.SphereGeometry(0.5, 28, 20);
   const lowOval = new THREE.SphereGeometry(0.5, 12, 8);
@@ -17,6 +19,8 @@ export function createAvatarFactory() {
     sphere,
     plane,
     disk,
+    collar,
+    ring,
     chamfer,
     oval,
     lowOval,
@@ -315,6 +319,19 @@ export function createAvatarFactory() {
       const eyes = [-1, 1].map((s) =>
         mesh(g, oval, ink, s * 0.15, 1.25, -0.342, 0.075, 0.17, 0.035),
       );
+      const eyeGlints = [-1, 1].map((s) =>
+        mesh(
+          g,
+          sphere,
+          pale,
+          s * 0.15 - 0.017,
+          1.29,
+          -0.365,
+          0.009,
+          0.014,
+          0.008,
+        ),
+      );
       const cheeks = [-1, 1].map((s) =>
         mesh(g, sphere, blush, s * 0.27, 1.09, -0.319, 0.063, 0.032, 0.013),
       );
@@ -330,6 +347,18 @@ export function createAvatarFactory() {
         0.155,
         0.02,
       );
+      const chestRing = mesh(
+        g,
+        ring,
+        cyan,
+        0,
+        0.66,
+        -0.254,
+        0.245,
+        0.245,
+        0.08,
+      );
+      const neckCollar = mesh(g, collar, ink, 0, 0.925, 0, 0.3, 0.055, 0.25);
       const limbs = [-1, 1].map((s) => {
         const leg = new THREE.Group();
         leg.position.set(s * 0.15, 0.38, 0);
@@ -386,6 +415,9 @@ export function createAvatarFactory() {
           0.21,
         ),
       );
+      const shoulderRings = limbs.map((l) =>
+        mesh(l.arm, ring, cyan, 0, -0.02, -0.085, 0.12, 0.12, 0.07),
+      );
       const toolGroup = new THREE.Group();
       limbs[0].arm.add(toolGroup);
       toolGroup.position.set(-0.04, -0.3, -0.13);
@@ -417,6 +449,22 @@ export function createAvatarFactory() {
       const pencil = mesh(toolGroup, rounded, ivory, 0, 0, 0, 0.08, 0.45, 0.08);
       const tip = mesh(toolGroup, sphere, gold, 0, 0.25, 0, 0.05, 0.08, 0.05);
       const capability = mesh(g, rounded, glass, 0, 0.89, -0.56, 0.2, 0.2, 0.2);
+      const sidePorts = [-1, 1].map((side) => {
+        const port = mesh(
+          g,
+          disk,
+          variants[0],
+          side * 0.5,
+          0.69,
+          0.02,
+          0.7,
+          0.75,
+          0.7,
+        );
+        port.rotation.z = Math.PI / 2;
+        return port;
+      });
+      const backCore = mesh(g, ring, cyan, 0, 0.69, 0.385, 0.15, 0.15, 0.06);
       const extra = [2, 1, 3].map((v, i) => {
         const group = new THREE.Group();
         g.add(group);
@@ -455,6 +503,12 @@ export function createAvatarFactory() {
         skill,
         limbs,
         eyes,
+        eyeGlints,
+        chestRing,
+        neckCollar,
+        shoulderRings,
+        sidePorts,
+        backCore,
         capability,
         extra,
         farShell,
@@ -472,6 +526,7 @@ export function createAvatarFactory() {
             skill.material = variants[variant];
             backpack.material = variants[variant];
             shoulderCaps.forEach((m) => (m.material = variants[variant]));
+            sidePorts.forEach((m) => (m.material = variants[variant]));
             icon.material = glyphMats[variant];
             const design = agentDesigns[variant];
             skinMeshes.forEach((m) => (m.material = skins[variant]));
@@ -533,10 +588,15 @@ export function createAvatarFactory() {
           skillCore.visible = detail;
           spark.visible = detail;
           // The merged distant form keeps the same face, fingers, ears and split legs in three draw calls.
-          [...ears, ...cheeks].forEach((m) => (m.visible = detail));
+          [...ears, ...cheeks, ...eyeGlints].forEach(
+            (m) => (m.visible = detail),
+          );
           eyes.forEach((m) => {
             m.visible = detail;
             m.scale.y = 0.155 * motion.blink;
+          });
+          eyeGlints.forEach((m) => {
+            m.scale.y = 0.014 * motion.blink;
           });
           g.position.y = Math.max(0, motion.bob);
           shadow.position.y = 0.015 - g.position.y;
@@ -545,7 +605,11 @@ export function createAvatarFactory() {
           skillEdge.visible = detail;
           crownEdge.visible = detail;
           shoulderCaps.forEach((m) => (m.visible = detail));
+          shoulderRings.forEach((m) => (m.visible = detail));
+          sidePorts.forEach((m) => (m.visible = detail));
           backpack.visible = detail;
+          backCore.visible = detail;
+          neckCollar.visible = detail;
           skillCore.rotation.y = time * 0.8;
           skillCore.scale.setScalar(0.1 * motion.corePulse);
           hat.position.y =
@@ -562,6 +626,12 @@ export function createAvatarFactory() {
             0.22 * motion.corePulse,
             0.025,
           );
+          chestRing.scale.set(
+            0.245 * motion.corePulse,
+            0.245 * motion.corePulse,
+            0.08,
+          );
+          chestRing.visible = detail;
           limbs[0].leg.rotation.x = motion.stride;
           limbs[1].leg.rotation.x = -motion.stride;
           limbs[0].arm.rotation.x = motion.leftArm;

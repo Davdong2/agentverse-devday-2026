@@ -103,6 +103,14 @@ const effects = createWorldEffects(scene),
 const states = sampleAgents(agents, {}, 7, 'calm');
 effects.update(7, 2, 0.5, states, camera, 0, 'calm');
 assert.equal(effects.ribbons.filter((m) => m.visible).length, 12);
+assert.equal(
+  effects.networkMotes.geometry.attributes.position.count,
+  180,
+  'Ten districts share a lightweight 180-packet data atmosphere',
+);
+assert.equal(effects.networkMotes.geometry.drawRange.count, 180);
+assert.equal(effects.regionBeacons.count, 10);
+assert.equal(effects.regionBeacons.visible, true);
 const data = effects.ribbons[0].geometry.attributes.position;
 const midpoint = new THREE.Vector3(
   (data.getX(0) + data.getX(1)) / 2,
@@ -120,6 +128,8 @@ for (const m of effects.ribbons)
 effects.update(7, 2, 0.5, states, camera, 2, 'attack', 6);
 assert.equal(effects.ribbons.filter((m) => m.visible).length, 4);
 assert.equal(effects.clouds.count, 12);
+assert.equal(effects.networkMotes.geometry.drawRange.count, 54);
+assert.equal(effects.regionBeacons.visible, false);
 assert.equal(effects.eventWave.position.x, regions[6].x * 100);
 effects.update(17, 8, 0.5, states, camera, 0, 'calm');
 assert.equal(effects.ribbons.filter((m) => m.visible).length, 0);

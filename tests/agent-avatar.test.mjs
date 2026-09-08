@@ -111,6 +111,20 @@ assert.ok(
   avatar.skillEdge.visible,
   'Near camera exposes capability edge highlights',
 );
+assert.equal(avatar.eyeGlints.length, 2);
+assert.ok(
+  avatar.eyeGlints.every((m) => m.visible),
+  'Near camera adds a restrained highlight to each independent eye',
+);
+assert.ok(avatar.chestRing.visible && avatar.neckCollar.visible);
+assert.equal(avatar.shoulderRings.length, 2);
+assert.equal(avatar.sidePorts.length, 2);
+assert.ok(
+  avatar.shoulderRings.every((m) => m.visible) &&
+    avatar.sidePorts.every((m) => m.visible) &&
+    avatar.backCore.visible,
+  'Close range exposes physical joints and interface hardware',
+);
 const working = avatarMotion(8, 0, 4, 0.1, true, false);
 avatar.update(0, 8, working, true);
 avatar.g.updateMatrixWorld(true);
@@ -178,6 +192,12 @@ assert.equal(
   avatar.limbs[0].arm.visible,
   false,
   'Far LOD suppresses articulated limb draw calls',
+);
+assert.ok(
+  avatar.eyeGlints.every((m) => !m.visible) &&
+    avatar.sidePorts.every((m) => !m.visible) &&
+    !avatar.chestRing.visible,
+  'Fine facial and connector details are culled by the distant LOD',
 );
 const hit = {
   x: 100,

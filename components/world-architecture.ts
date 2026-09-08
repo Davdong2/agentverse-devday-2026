@@ -387,6 +387,69 @@ export function createWorldArchitecture(
       }
     }
   });
+  // Shared SMD packages make every platform read as one continuous motherboard.
+  // They are instanced so the added close-range detail costs only two draw calls.
+  const componentsPerRegion = 14;
+  const smdBodies = new THREE.InstancedMesh(
+    box,
+    edge,
+    regions.length * componentsPerRegion,
+  );
+  const smdLights = new THREE.InstancedMesh(
+    box,
+    glow[0],
+    regions.length * componentsPerRegion,
+  );
+  smdBodies.name = 'motherboard-smd-packages';
+  smdLights.name = 'motherboard-smd-status';
+  root.add(smdBodies, smdLights);
+  let componentIndex = 0;
+  regions.forEach((region, n) => {
+    const radius = (n === 0 ? 11 : 5.5) * 0.82;
+    for (let i = 0; i < componentsPerRegion; i++) {
+      const angle = (i * Math.PI * 2) / componentsPerRegion + n * 0.19,
+        x = region.x * 100 + Math.cos(angle) * radius,
+        z = region.y * 100 + Math.sin(angle) * radius;
+      dummy.position.set(x, 0.17, z);
+      dummy.scale.set(0.16 + (i % 3) * 0.035, 0.14, 0.4 + (i % 2) * 0.12);
+      dummy.rotation.set(0, -angle, 0);
+      dummy.updateMatrix();
+      smdBodies.setMatrixAt(componentIndex, dummy.matrix);
+      dummy.position.y = 0.32;
+      dummy.scale.set(0.075, 0.018, 0.27 + (i % 2) * 0.08);
+      dummy.updateMatrix();
+      smdLights.setMatrixAt(componentIndex, dummy.matrix);
+      componentIndex++;
+    }
+  });
+  smdBodies.instanceMatrix.needsUpdate = true;
+  smdLights.instanceMatrix.needsUpdate = true;
+
+  // Two floor-mounted GPU turbines give the compute district a recognizable
+  // hardware function without blocking the walkable surface.
+  const computeRegion = regions[4];
+  const fanCenters = [-1, 1].map(
+    (side) =>
+      new THREE.Vector3(
+        computeRegion.x * 100 + side * 2.25,
+        0.13,
+        computeRegion.y * 100 + 2.75,
+      ),
+  );
+  fanCenters.forEach((center) => {
+    ring(center.x, 0.08, center.z, 1.24, edge);
+    ring(center.x, 0.1, center.z, 1.08, glow[0]);
+    mesh(cylinder, stone, center.x, 0.14, center.z, 0.27, 0.12, 0.27);
+    mesh(cylinder, gold, center.x, 0.215, center.z, 0.13, 0.035, 0.13);
+  });
+  const coolingBlades = new THREE.InstancedMesh(
+    box,
+    edge,
+    fanCenters.length * 7,
+  );
+  coolingBlades.name = 'gpu-cooling-turbines';
+  coolingBlades.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  root.add(coolingBlades);
   // A high open rotunda gives the collaboration center a distinct skyline.
   const rotundaX = regions[0].x * 100,
     rotundaZ = regions[0].y * 100;
@@ -839,6 +902,9 @@ export function createWorldArchitecture(
     waterfalls,
     fiberLines,
     earth,
+    smdBodies,
+    smdLights,
+    coolingBlades,
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;
@@ -876,6 +942,22 @@ export function createWorldArchitecture(
         pulses.setMatrixAt(i, dummy.matrix);
       }
       pulses.instanceMatrix.needsUpdate = true;
+      let bladeIndex = 0;
+      fanCenters.forEach((center, fan) => {
+        for (let blade = 0; blade < 7; blade++) {
+          const angle = time * (fan ? -1.9 : 2.15) + (blade * Math.PI * 2) / 7;
+          dummy.position.set(
+            center.x + Math.cos(angle) * 0.61,
+            center.y,
+            center.z + Math.sin(angle) * 0.61,
+          );
+          dummy.scale.set(0.22, 0.055, 0.68);
+          dummy.rotation.set(0, -angle, 0);
+          dummy.updateMatrix();
+          coolingBlades.setMatrixAt(bladeIndex++, dummy.matrix);
+        }
+      });
+      coolingBlades.instanceMatrix.needsUpdate = true;
       const joined = phase >= 2 && phase <= 6;
       coop.visible = joined;
       coreBeam.visible = joined;
