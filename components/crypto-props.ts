@@ -814,10 +814,39 @@ export function createCryptoProps(
     });
     return { g, moving, receipt, status, region: n };
   });
+  // Two physical blocks per district travel over the shared on-chain backplane.
+  // They are instanced in one draw call and remain explicitly part of Demo choreography.
+  const ledgerMaterial = mat(
+    new THREE.MeshPhongMaterial({
+      color: '#FFFFFF',
+      specular: '#FFFFFF',
+      shininess: 110,
+      transparent: true,
+      opacity: 0.82,
+      depthWrite: false,
+    }),
+  );
+  const ledgerPackets = new THREE.InstancedMesh(box, ledgerMaterial, 20);
+  ledgerPackets.name = 'demo-ledger-block-stream';
+  ledgerPackets.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  ledgerPackets.frustumCulled = false;
+  for (let i = 0; i < 20; i++)
+    ledgerPackets.setColorAt(
+      i,
+      new THREE.Color(cryptoTasks[Math.floor(i / 2)].color).lerp(
+        new THREE.Color('#E9FBFF'),
+        0.28,
+      ),
+    );
+  if (ledgerPackets.instanceColor)
+    ledgerPackets.instanceColor.needsUpdate = true;
+  scene.add(ledgerPackets);
+  const ledgerDummy = new THREE.Object3D();
   return {
     roots,
     stations,
     textures,
+    ledgerPackets,
     setMarketSignal(signal?: MarketSignal | null) {
       if (!researchDisplay) return;
       const key = signal
@@ -848,6 +877,31 @@ export function createCryptoProps(
       );
     },
     update(time: number, quality: number) {
+      ledgerPackets.count = quality === 2 ? 6 : quality === 1 ? 12 : 20;
+      for (let i = 0; i < ledgerPackets.count; i++) {
+        const regionIndex = Math.floor(i / 2),
+          lane = i % 2,
+          station = stations[regionIndex],
+          progress = (time * 0.12 + regionIndex * 0.083 + lane * 0.5) % 1;
+        ledgerDummy.position.set(
+          station.g.position.x - 3.15 + progress * 6.3,
+          0.68 + Math.sin(progress * Math.PI) * 0.1,
+          station.g.position.z - 2.02 + (lane ? 0.08 : -0.08),
+        );
+        ledgerDummy.scale.set(
+          0.18 + lane * 0.035,
+          0.18 + lane * 0.035,
+          0.18 + lane * 0.035,
+        );
+        ledgerDummy.rotation.set(
+          time * 0.18 + lane,
+          time * (lane ? -0.55 : 0.48) + regionIndex,
+          0,
+        );
+        ledgerDummy.updateMatrix();
+        ledgerPackets.setMatrixAt(i, ledgerDummy.matrix);
+      }
+      ledgerPackets.instanceMatrix.needsUpdate = true;
       stations.forEach((s, n) => {
         const task = cryptoTaskState(n, time);
         s.moving.forEach((o, i) => {
@@ -872,6 +926,7 @@ export function createCryptoProps(
     },
     dispose() {
       roots.forEach((g) => scene.remove(g));
+      scene.remove(ledgerPackets);
       geos.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
       textures.forEach((t) => t.dispose());

@@ -60,7 +60,9 @@ const { createCryptoProps, createAgentEquipment } = await import(url(source));
 const scene = new THREE.Scene(),
   picks = [];
 const stations = createCryptoProps(scene, picks);
-assert.equal(scene.children.length, 10);
+assert.equal(stations.roots.length, 10);
+assert.equal(scene.children.length, 11);
+assert.equal(stations.ledgerPackets.count, 20);
 stations.setMarketSignal({ last: 65000.5, change: 1.25, mode: 'fresh' });
 assert.ok(
   drawn.at(-1).includes('65,000.5') && drawn.at(-1).includes('OKX LIVE'),
@@ -77,6 +79,8 @@ const market = stations.stations[5],
   output = market.moving[1];
 stations.update(3 - 5 * 1.7, 0);
 const initial = input.position.x;
+const ledgerStart = new THREE.Matrix4();
+stations.ledgerPackets.getMatrixAt(0, ledgerStart);
 stations.update(15 - 5 * 1.7, 0);
 assert.ok(input.position.x > initial);
 assert.ok(output.position.x < 0);
@@ -84,6 +88,13 @@ assert.equal(
   market.receipt.visible,
   true,
   'Completed task produces a visible receipt',
+);
+const ledgerEnd = new THREE.Matrix4();
+stations.ledgerPackets.getMatrixAt(0, ledgerEnd);
+assert.notDeepEqual(
+  ledgerStart.elements,
+  ledgerEnd.elements,
+  'Physical ledger packets traverse every district backplane',
 );
 stations.update(3 - 5 * 1.7, 0);
 assert.equal(market.receipt.visible, false, 'No receipt before task execution');
@@ -94,6 +105,12 @@ for (const s of stations.stations) {
   );
 }
 assert.equal(stations.blocksPoint(46.8, 51.5), false, 'Entry remains open');
+stations.update(0, 2);
+assert.equal(
+  stations.ledgerPackets.count,
+  6,
+  'Low quality retains a reduced physical block stream',
+);
 scene.updateMatrixWorld(true);
 scene.traverse((o) => assert.ok(o.matrixWorld.elements.every(Number.isFinite)));
 const signatures = stations.stations.map((s) =>
