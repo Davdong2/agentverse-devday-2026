@@ -875,10 +875,11 @@ export default function Civilization({
       </header>
       {homeView && (
         <>
+          <div className="home-earth-motion" aria-hidden="true" />
           <section className="home-mars-intro" aria-label="Agentverse 介绍">
             <small>从火星出发</small>
             <h1>让智能体创造更大的价值</h1>
-            <p>连接现实世界 · 协作 · 创造 · 进化</p>
+            <p>巨型算力主机 · 主板世界 · 光纤协作</p>
           </section>
           <section className="home-market-card" aria-label="现实数据概览">
             <strong>

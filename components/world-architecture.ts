@@ -27,9 +27,9 @@ export function createWorldArchitecture(
   };
   const stone = mat(
     new THREE.MeshPhongMaterial({
-      color: '#F2EADF',
-      specular: '#E7DED0',
-      shininess: 26,
+      color: '#C7C9C9',
+      specular: '#FFFFFF',
+      shininess: 72,
     }),
   );
   stone.onBeforeCompile = (shader) => {
@@ -71,12 +71,23 @@ export function createWorldArchitecture(
       diffuseColor.rgb*=0.967+grain*0.038+strata*0.006;`,
     );
   };
-  stone.customProgramCacheKey = () => 'agentverse-limestone-textured-v2';
+  stone.customProgramCacheKey = () => 'agentverse-brushed-alloy-v3';
   const edge = mat(
-    new THREE.MeshPhongMaterial({ color: '#D3CECD', shininess: 14 }),
+    new THREE.MeshPhongMaterial({
+      color: '#202833',
+      specular: '#7B8B9C',
+      shininess: 54,
+    }),
   );
   const gold = mat(
-    new THREE.MeshPhongMaterial({ color: '#D6BD83', shininess: 60 }),
+    new THREE.MeshPhongMaterial({ color: '#B99159', shininess: 82 }),
+  );
+  const board = mat(
+    new THREE.MeshPhongMaterial({
+      color: '#172D2C',
+      specular: '#4E8987',
+      shininess: 42,
+    }),
   );
   const glowColors = ['#8DD8FF', '#A8E6D3', '#FFE1A0'];
   const glow = glowColors.map((color) =>
@@ -176,7 +187,9 @@ export function createWorldArchitecture(
     const x = r.x * 100,
       z = r.y * 100,
       R = n === 0 ? 11 : 5.5;
-    const floor = mesh(cylinder, stone, x, -0.4, z, R, 0.8, R);
+    const moduleBase = mesh(box, stone, x, -0.82, z, R * 1.72, 1.5, R * 1.72);
+    moduleBase.rotation.y = n * 0.07;
+    const floor = mesh(cylinder, board, x, -0.4, z, R, 0.8, R);
     floor.userData.region = n;
     pickable.push(floor);
     regionPlatforms.push(floor);
@@ -233,6 +246,26 @@ export function createWorldArchitecture(
         pz = z + Math.sin(a) * R * 0.92;
       mesh(box, stone, px, 0.27, pz, 0.22, 0.54, 0.22);
       mesh(box, glow[n % 3], px, 0.56, pz, 0.11, 0.04, 0.11);
+    }
+    // Each region is the open top of a giant compute module: vents, sockets and status rails
+    // live around the walkable motherboard deck instead of becoming decorative buildings.
+    for (let j = 0; j < 8; j++) {
+      const a = (j * Math.PI * 2) / 8 + Math.PI / 8,
+        px = x + Math.cos(a) * R * 0.73,
+        pz = z + Math.sin(a) * R * 0.73;
+      const socket = mesh(box, edge, px, 0.095, pz, 0.54, 0.17, 0.72);
+      socket.rotation.y = -a;
+      const status = mesh(
+        box,
+        glow[(n + j) % 3],
+        px,
+        0.195,
+        pz,
+        0.32,
+        0.025,
+        0.5,
+      );
+      status.rotation.y = -a;
     }
     const fall = mesh(curtain, beamMat, x, -9, z, 0.36, 17, 0.36);
     waterfalls.push(fall);
@@ -446,7 +479,7 @@ export function createWorldArchitecture(
     g.position.copy(A).lerp(B, 0.5);
     g.rotation.y = Math.atan2(B.x - A.x, B.z - A.z);
     root.add(g);
-    mesh(box, stone, 0, -0.2, 0, 2.8, 0.4, length, g);
+    mesh(box, board, 0, -0.2, 0, 2.8, 0.4, length, g);
     [-1, 1].forEach((side) => {
       mesh(box, gold, side * 1.36, -0.025, 0, 0.05, 0.045, length, g);
       mesh(box, stone, side * 1.42, -0.44, 0, 0.1, 0.2, length, g);
@@ -595,6 +628,158 @@ export function createWorldArchitecture(
   root.add(rays);
   const result = mesh(cubeGeo, gold, cx, 2.6, cz, 0.8, 0.8, 0.8);
   result.add(new THREE.LineSegments(edgeGeo, lineMat));
+  // A fiber trunk rises from the GPU core and separates into fine data filaments
+  // that terminate at every regional compute module.
+  const fiberLines: THREE.Line[] = [];
+  const fiberMaterials: THREE.LineBasicMaterial[] = [];
+  const fiberPalette = ['#9DE8FF', '#DDF9FF', '#8CE6C9', '#FFD397'];
+  const addFiber = (
+    points: THREE.Vector3[],
+    color: string,
+    opacity: number,
+  ) => {
+    const geometry = geo(new THREE.BufferGeometry().setFromPoints(points));
+    const material = mat(
+      new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+    );
+    fiberMaterials.push(material);
+    const line = new THREE.Line(geometry, material);
+    line.frustumCulled = false;
+    line.renderOrder = 5;
+    root.add(line);
+    fiberLines.push(line);
+  };
+  for (let i = 0; i < 28; i++) {
+    const points: THREE.Vector3[] = [];
+    for (let p = 0; p <= 24; p++) {
+      const t = p / 24,
+        radius = 0.16 + t * (0.45 + (i % 5) * 0.08),
+        angle = i * 2.399963 + t * 3.2;
+      points.push(
+        new THREE.Vector3(
+          cx + Math.cos(angle) * radius,
+          0.15 + t * 29,
+          cz + Math.sin(angle) * radius,
+        ),
+      );
+    }
+    addFiber(points, fiberPalette[i % fiberPalette.length], 0.28);
+  }
+  regions.slice(1).forEach((region, regionOffset) => {
+    const tx = region.x * 100,
+      tz = region.y * 100;
+    for (let strand = 0; strand < 5; strand++) {
+      const side = strand - 2,
+        curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(cx + side * 0.12, 16 + strand * 0.32, cz),
+          new THREE.Vector3(
+            cx + (tx - cx) * 0.24 + side * 0.38,
+            12.5 + strand * 0.12,
+            cz + (tz - cz) * 0.24,
+          ),
+          new THREE.Vector3(
+            cx + (tx - cx) * 0.68,
+            6.5 + strand * 0.18,
+            cz + (tz - cz) * 0.68 + side * 0.3,
+          ),
+          new THREE.Vector3(tx + side * 0.22, 0.7, tz),
+        ]);
+      addFiber(
+        curve.getPoints(30),
+        fiberPalette[(regionOffset + strand) % fiberPalette.length],
+        0.22,
+      );
+    }
+  });
+  // A lightweight rotating Earth keeps the real world visible beyond the machine.
+  const earth = new THREE.Group();
+  earth.position.set(84, 46, -55);
+  root.add(earth);
+  const earthSurface = mesh(
+    geo(new THREE.SphereGeometry(8.4, 36, 24)),
+    mat(
+      new THREE.MeshPhongMaterial({
+        color: '#3A78A6',
+        emissive: '#102A46',
+        specular: '#BEEBFF',
+        shininess: 72,
+      }),
+    ),
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    earth,
+  );
+  const earthClouds = mesh(
+    geo(new THREE.SphereGeometry(8.55, 32, 20)),
+    mat(
+      new THREE.MeshBasicMaterial({
+        color: '#EAF8FF',
+        transparent: true,
+        opacity: 0.12,
+        wireframe: true,
+        depthWrite: false,
+      }),
+    ),
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    earth,
+  );
+  const earthOrbit = mesh(
+    geo(new THREE.TorusGeometry(11.5, 0.025, 5, 96)),
+    glow[0],
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    earth,
+  );
+  earthOrbit.rotation.x = Math.PI / 2.5;
+  earth.rotation.z = -0.18;
+  const starPositions: number[] = [];
+  for (let i = 0; i < 420; i++) {
+    const a = i * 2.399963,
+      h = ((i * 47) % 211) / 210,
+      radius = 105 + (i % 17);
+    starPositions.push(
+      48 + Math.cos(a) * radius,
+      12 + h * 82,
+      48 + Math.sin(a) * radius,
+    );
+  }
+  const starGeometry = geo(new THREE.BufferGeometry());
+  starGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(starPositions, 3),
+  );
+  const stars = new THREE.Points(
+    starGeometry,
+    mat(
+      new THREE.PointsMaterial({
+        color: '#D9EEFF',
+        size: 0.18,
+        transparent: true,
+        opacity: 0.62,
+        depthWrite: false,
+      }),
+    ),
+  );
+  root.add(stars);
   const yAxis = new THREE.Vector3(0, 1, 0),
     direction = new THREE.Vector3();
   // Static world geometry is batched by material, retaining pick targets and animated parts.
@@ -605,6 +790,9 @@ export function createWorldArchitecture(
     ...links,
     result,
     coreBeam,
+    earthSurface,
+    earthClouds,
+    earthOrbit,
   ]);
   const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
   const original: THREE.Mesh[] = [];
@@ -649,9 +837,13 @@ export function createWorldArchitecture(
     result,
     coop,
     waterfalls,
+    fiberLines,
+    earth,
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;
+      board.map = texture;
+      board.needsUpdate = true;
     },
     update(
       time: number,
@@ -663,6 +855,14 @@ export function createWorldArchitecture(
     ) {
       beamMat.uniforms.uTime.value = time;
       routeMaterial.uniforms.uTime.value = time * flow;
+      earthSurface.rotation.y = time * 0.018;
+      earthClouds.rotation.y = -time * 0.026;
+      earthOrbit.rotation.z = time * 0.008;
+      fiberMaterials.forEach((material, i) => {
+        material.opacity =
+          (quality > 1 && i % 3 ? 0.08 : 0.18) +
+          Math.pow(0.5 + 0.5 * Math.sin(time * 1.7 - i * 0.31), 8) * 0.2;
+      });
       waterfalls.forEach((o, i) => (o.visible = quality < 2 || i === 0));
       pulses.count = routes.length * (quality > 0 ? 3 : 6);
       for (let i = 0; i < pulses.count; i++) {

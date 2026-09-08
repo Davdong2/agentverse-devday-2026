@@ -4920,6 +4920,76 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   justify-content: flex-end;
   color: #e9e6e3;
 }
+.home-earth-motion {
+  position: absolute;
+  z-index: 4;
+  top: 3.4%;
+  right: 6.1%;
+  width: clamp(132px, 15.5vw, 230px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  border: 1px solid #9bd9ff21;
+  border-radius: 50%;
+  box-shadow:
+    inset 18px -8px 38px #06101a33,
+    0 0 42px #6cc9ff12;
+  animation: earth-breathe 12s ease-in-out infinite;
+}
+.home-earth-motion::before,
+.home-earth-motion::after {
+  content: '';
+  position: absolute;
+  inset: -7%;
+  border-radius: 50%;
+}
+.home-earth-motion::before {
+  background: conic-gradient(
+    from 40deg,
+    transparent 0 35%,
+    #b9e8ff66 44%,
+    transparent 53% 100%
+  );
+  mask: radial-gradient(transparent 69%, #000 70% 71%, transparent 72%);
+  animation: earth-orbit 42s linear infinite;
+}
+.home-earth-motion::after {
+  inset: 8%;
+  background: linear-gradient(
+    102deg,
+    transparent 35%,
+    #dff5ff18 49%,
+    transparent 62%
+  );
+  animation: earth-shimmer 20s ease-in-out infinite;
+}
+@keyframes earth-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes earth-breathe {
+  50% {
+    filter: brightness(1.13);
+  }
+}
+@keyframes earth-shimmer {
+  0%,
+  100% {
+    transform: rotate(-16deg) translateX(-13%);
+    opacity: 0.4;
+  }
+  50% {
+    transform: rotate(-16deg) translateX(13%);
+    opacity: 0.85;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-earth-motion,
+  .home-earth-motion::before,
+  .home-earth-motion::after {
+    animation: none;
+  }
+}
 
 @media (max-width: 900px) {
   .home-mars .region-label {
@@ -4934,6 +5004,9 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   }
 }
 @media (max-width: 700px) {
+  .home-earth-motion {
+    display: none;
+  }
   .home-mars .universe-header {
     background: linear-gradient(#090e18e8, transparent);
   }

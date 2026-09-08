@@ -43,6 +43,16 @@ const scene = new THREE.Scene(),
   world = createWorldArchitecture(scene, picks);
 assert.equal(world.regionPlatforms.length, 10);
 assert.equal(world.routes.length, regionConnections.length);
+assert.equal(
+  world.fiberLines.length,
+  73,
+  '28 trunk strands and 45 regional branches form the fiber tree',
+);
+assert.equal(
+  world.earth.children.length,
+  3,
+  'Earth has surface, clouds and orbit',
+);
 world.regionPlatforms.forEach((p, i) => {
   assert.equal(p.userData.region, i);
   assert.equal(
@@ -69,6 +79,13 @@ world.routes.forEach((route, i) => {
 });
 const states = sampleAgents(agents, details, 6, 'calm');
 world.update(6, 2, 0.1, states, 0);
+const earthRotation = world.earth.children[0].rotation.y;
+world.update(12, 2, 0.1, states, 0);
+assert.notEqual(
+  world.earth.children[0].rotation.y,
+  earthRotation,
+  'Distant Earth rotates with world time',
+);
 const spread = world.cubes[0].position.length();
 world.update(6, 2, 0.9, states, 0);
 assert.ok(

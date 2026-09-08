@@ -17,17 +17,17 @@ export function environmentFor(weather: Weather, change = 0) {
   return {
     sky:
       down > 0.25
-        ? '#8093AC'
+        ? '#171823'
         : expansion
-          ? '#E2F7EB'
+          ? '#17302E'
           : information
-            ? '#DDF0FF'
+            ? '#142A38'
             : up > 0.25
-              ? '#FFF7E7'
-              : '#F0F5FF',
-    fog: down > 0.25 ? '#9DADBF' : up > 0.25 ? '#E4EAF0' : '#D9E5EF',
-    sun: 2.05 + up * 0.65 - down * 0.92,
-    exposure: 1.02 + up * 0.1 - down * 0.22,
+              ? '#30241C'
+              : '#18212C',
+    fog: down > 0.25 ? '#2F2930' : up > 0.25 ? '#4A3329' : '#34333A',
+    sun: 1.95 + up * 0.7 - down * 0.82,
+    exposure: 1.08 + up * 0.1 - down * 0.18,
     flow:
       1 + up * 0.75 - down * 0.35 + (information ? 0.2 : expansion ? 0.35 : 0),
     clouds: 0.25 + down * 0.28,

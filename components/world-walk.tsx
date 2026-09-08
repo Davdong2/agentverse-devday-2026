@@ -100,8 +100,8 @@ export default function WorldWalk(props: Props) {
     renderer.shadowMap.autoUpdate = false;
     host.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#DDE5F0');
-    scene.fog = new THREE.Fog('#DDE5F0', 30, 115);
+    scene.background = new THREE.Color('#111821');
+    scene.fog = new THREE.Fog('#3A3436', 36, 125);
     const camera = new THREE.PerspectiveCamera(
       56,
       host.clientWidth / host.clientHeight,
@@ -109,8 +109,8 @@ export default function WorldWalk(props: Props) {
       240,
     );
     camera.rotation.order = 'YXZ';
-    scene.add(new THREE.HemisphereLight('#F4F7FF', '#AAB8CD', 1.1));
-    const sun = new THREE.DirectionalLight('#FFF1D8', 2.1);
+    scene.add(new THREE.HemisphereLight('#D8ECFF', '#55382D', 0.92));
+    const sun = new THREE.DirectionalLight('#FFD7AC', 2.1);
     sun.position.set(-20, 35, 20);
     sun.castShadow = true;
     sun.shadow.mapSize.set(mobile ? 768 : 1536, mobile ? 768 : 1536);
@@ -126,7 +126,7 @@ export default function WorldWalk(props: Props) {
     sun.shadow.normalBias = 0.025;
     sun.shadow.radius = 2;
     scene.add(sun, sun.target);
-    const rim = new THREE.DirectionalLight('#C4DEFF', 0.65);
+    const rim = new THREE.DirectionalLight('#7BDFFF', 0.78);
     rim.position.set(15, 12, -25);
     scene.add(rim);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -159,23 +159,40 @@ export default function WorldWalk(props: Props) {
       }
     });
     let disposed = false;
-    const surfaceTexture = new THREE.TextureLoader().load(
-      '/world-limestone.jpg',
-      (texture) => {
-        if (disposed) {
-          texture.dispose();
-          return;
-        }
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = Math.min(
-          4,
-          renderer.capabilities.getMaxAnisotropy(),
-        );
-        architecture.setSurfaceMap(texture);
-        cryptoProps.setSurfaceMap(texture);
-      },
+    const boardCanvas = document.createElement('canvas');
+    boardCanvas.width = boardCanvas.height = 512;
+    const boardContext = boardCanvas.getContext('2d');
+    if (boardContext) {
+      boardContext.fillStyle = '#152523';
+      boardContext.fillRect(0, 0, 512, 512);
+      boardContext.strokeStyle = '#3B9B92';
+      boardContext.lineWidth = 2;
+      for (let i = 0; i < 24; i++) {
+        const p = 14 + ((i * 37) % 480),
+          q = 14 + ((i * 83) % 480);
+        boardContext.beginPath();
+        boardContext.moveTo(0, p);
+        boardContext.lineTo(q, p);
+        boardContext.lineTo(q, 512);
+        boardContext.stroke();
+      }
+      boardContext.fillStyle = '#B89259';
+      for (let i = 0; i < 34; i++) {
+        const x = 12 + ((i * 71) % 488),
+          y = 12 + ((i * 109) % 488);
+        boardContext.fillRect(x, y, 5, 5);
+      }
+    }
+    const surfaceTexture = new THREE.CanvasTexture(boardCanvas);
+    surfaceTexture.wrapS = surfaceTexture.wrapT = THREE.RepeatWrapping;
+    surfaceTexture.repeat.set(2.2, 2.2);
+    surfaceTexture.colorSpace = THREE.SRGBColorSpace;
+    surfaceTexture.anisotropy = Math.min(
+      4,
+      renderer.capabilities.getMaxAnisotropy(),
     );
+    architecture.setSurfaceMap(surfaceTexture);
+    cryptoProps.setSurfaceMap(surfaceTexture);
     const panelTexture = new THREE.TextureLoader().load(
       '/world-panels.jpg',
       (t) => {
@@ -186,20 +203,6 @@ export default function WorldWalk(props: Props) {
         avatars.setPanelAtlas(t);
       },
     );
-    const skyTexture = new THREE.TextureLoader().load('/world-skyline.jpg');
-    skyTexture.colorSpace = THREE.SRGBColorSpace;
-    const skyGeometry = new THREE.CylinderGeometry(108, 108, 164, 80, 1, true);
-    const skyMaterial = new THREE.MeshBasicMaterial({
-      map: skyTexture,
-      side: THREE.BackSide,
-      depthWrite: false,
-      fog: false,
-      color: '#F0F5FF',
-    });
-    const skyline = new THREE.Mesh(skyGeometry, skyMaterial);
-    skyline.position.set(48, 35, 48);
-    skyline.renderOrder = -10;
-    scene.add(skyline);
     const skyColor = new THREE.Color(),
       fogColor = new THREE.Color();
     const walkable = (x: number, z: number) =>
@@ -438,7 +441,6 @@ export default function WorldWalk(props: Props) {
       const environment = environmentFor(p.weather, p.signal?.change ?? 0);
       skyColor.set(environment.sky);
       fogColor.set(environment.fog);
-      skyMaterial.color.lerp(skyColor, dt * 1.2);
       (scene.background as THREE.Color).lerp(fogColor, dt * 1.2);
       if (scene.fog instanceof THREE.Fog)
         scene.fog.color.lerp(fogColor, dt * 1.2);
@@ -523,9 +525,6 @@ export default function WorldWalk(props: Props) {
       disposed = true;
       surfaceTexture.dispose();
       panelTexture.dispose();
-      skyTexture.dispose();
-      skyGeometry.dispose();
-      skyMaterial.dispose();
       effects.dispose();
       architecture.dispose();
       cryptoProps.dispose();
@@ -609,17 +608,17 @@ export default function WorldWalk(props: Props) {
           </details>
           <div className="walk-location">
             <MapPin size={15} />
-            {regions[area].name}
+            主板层 · {regions[area].name}
             <span className="walk-task-action">
               {cryptoTaskState(area, props.time).label} · Demo
             </span>
-            <small>文明观察者 · {quality}画质</small>
+            <small>GPU 内部 · 文明观察者 · {quality}画质</small>
           </div>
           {hint && !props.inputBlocked && (
             <div className="walk-instructions">
               <Navigation size={20} />
-              <strong>走进世界</strong>
-              <p>WASD 移动 · 拖动转向 · 点击角色或节点</p>
+              <strong>走进算力主机</strong>
+              <p>在主板与 GPU 上移动 · 点击 Agent 或算力节点</p>
               <small>手机使用左侧摇杆，右侧拖动转向</small>
               <button onClick={dismissHint}>开始探索</button>
             </div>
