@@ -223,13 +223,76 @@ export function createWorldEffects(scene: THREE.Scene) {
   );
   regionBeacons.frustumCulled = false;
   root.add(regionBeacons);
+  // The trunk already branches into every district. These last-mile fibers make
+  // that hierarchy legible by terminating at the live Agent positions.
+  const maxFiberAgents = 50,
+    strandsPerAgent = 2;
+  const agentFiberGeometry = geometry(new THREE.BufferGeometry());
+  const agentFiberPositions = new Float32Array(
+      maxFiberAgents * strandsPerAgent * 2 * 3,
+    ),
+    agentFiberColors = new Float32Array(
+      maxFiberAgents * strandsPerAgent * 2 * 3,
+    );
+  agentFiberGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(agentFiberPositions, 3).setUsage(
+      THREE.DynamicDrawUsage,
+    ),
+  );
+  agentFiberGeometry.setAttribute(
+    'color',
+    new THREE.BufferAttribute(agentFiberColors, 3).setUsage(
+      THREE.DynamicDrawUsage,
+    ),
+  );
+  const agentFiberMaterial = material(
+    new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.32,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  const agentFibers = new THREE.LineSegments(
+    agentFiberGeometry,
+    agentFiberMaterial,
+  );
+  agentFibers.name = 'agent-last-mile-fibers';
+  agentFibers.frustumCulled = false;
+  root.add(agentFibers);
+  const packetGeometry = geometry(new THREE.IcosahedronGeometry(0.055, 1));
+  const packetMaterial = material(
+    new THREE.MeshBasicMaterial({
+      color: '#DDF8FF',
+      transparent: true,
+      opacity: 0.78,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  const agentFiberPackets = new THREE.InstancedMesh(
+    packetGeometry,
+    packetMaterial,
+    maxFiberAgents,
+  );
+  agentFiberPackets.name = 'agent-fiber-packets';
+  agentFiberPackets.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  agentFiberPackets.frustumCulled = false;
+  root.add(agentFiberPackets);
   const dummy = new THREE.Object3D(),
     a = new THREE.Vector3(),
     b = new THREE.Vector3(),
     tangent = new THREE.Vector3(),
     eye = new THREE.Vector3(),
     side = new THREE.Vector3(),
-    point = new THREE.Vector3();
+    point = new THREE.Vector3(),
+    fiberStart = new THREE.Vector3(),
+    fiberEnd = new THREE.Vector3(),
+    fiberOffset = new THREE.Vector3(),
+    fiberColor = new THREE.Color(),
+    fiberBright = new THREE.Color('#E9FBFF');
   return {
     root,
     ribbons,
@@ -239,6 +302,8 @@ export function createWorldEffects(scene: THREE.Scene) {
     clouds,
     networkMotes,
     regionBeacons,
+    agentFibers,
+    agentFiberPackets,
     update(
       time: number,
       phase: number,
@@ -287,6 +352,100 @@ export function createWorldEffects(scene: THREE.Scene) {
         regionBeacons.setMatrixAt(i, dummy.matrix);
       });
       regionBeacons.instanceMatrix.needsUpdate = true;
+      const fiberLimit =
+        quality === 2 ? 12 : quality === 1 ? 24 : maxFiberAgents;
+      const orderedStates = [
+        ...states.filter((state) => state.collaborator),
+        ...states
+          .filter((state) => !state.collaborator)
+          .sort(
+            (left, right) =>
+              Math.hypot(
+                left.x * 100 - camera.position.x,
+                left.y * 100 - camera.position.z,
+              ) -
+              Math.hypot(
+                right.x * 100 - camera.position.x,
+                right.y * 100 - camera.position.z,
+              ),
+          ),
+      ].slice(0, fiberLimit);
+      const positionAttribute = agentFiberGeometry.attributes
+          .position as THREE.BufferAttribute,
+        colorAttribute = agentFiberGeometry.attributes
+          .color as THREE.BufferAttribute;
+      orderedStates.forEach((state, stateIndex) => {
+        const agentX = state.x * 100,
+          agentZ = state.y * 100,
+          home = regions.reduce(
+            (best, region, regionIndex) =>
+              Math.hypot(agentX - region.x * 100, agentZ - region.y * 100) <
+              Math.hypot(
+                agentX - regions[best].x * 100,
+                agentZ - regions[best].y * 100,
+              )
+                ? regionIndex
+                : best,
+            0,
+          ),
+          hubX = regions[home].x * 100,
+          hubZ = regions[home].y * 100,
+          dx = agentX - hubX,
+          dz = agentZ - hubZ,
+          distance = Math.max(0.001, Math.hypot(dx, dz)),
+          anchorDistance = Math.min(2.15, distance * 0.48);
+        fiberStart.set(
+          hubX + (dx / distance) * anchorDistance,
+          0.12,
+          hubZ + (dz / distance) * anchorDistance,
+        );
+        fiberEnd.set(agentX, 0.58, agentZ);
+        fiberOffset.set(-dz / distance, 0, dx / distance).multiplyScalar(0.045);
+        fiberColor.set(regions[home].color);
+        for (let strand = 0; strand < strandsPerAgent; strand++) {
+          const vertex = (stateIndex * strandsPerAgent + strand) * 2,
+            direction = strand ? 1 : -1;
+          positionAttribute.setXYZ(
+            vertex,
+            fiberStart.x + fiberOffset.x * direction,
+            fiberStart.y,
+            fiberStart.z + fiberOffset.z * direction,
+          );
+          positionAttribute.setXYZ(
+            vertex + 1,
+            fiberEnd.x + fiberOffset.x * direction,
+            fiberEnd.y,
+            fiberEnd.z + fiberOffset.z * direction,
+          );
+          colorAttribute.setXYZ(
+            vertex,
+            fiberColor.r,
+            fiberColor.g,
+            fiberColor.b,
+          );
+          colorAttribute.setXYZ(
+            vertex + 1,
+            fiberBright.r,
+            fiberBright.g,
+            fiberBright.b,
+          );
+        }
+        const travel = (time * 0.34 + stateIndex * 0.173) % 1;
+        dummy.position.copy(fiberStart).lerp(fiberEnd, travel);
+        dummy.position.y += Math.sin(travel * Math.PI) * 0.055;
+        dummy.scale.setScalar(quality === 0 ? 1 : 0.82);
+        dummy.rotation.set(0, time + stateIndex, 0);
+        dummy.updateMatrix();
+        agentFiberPackets.setMatrixAt(stateIndex, dummy.matrix);
+      });
+      agentFiberGeometry.setDrawRange(
+        0,
+        orderedStates.length * strandsPerAgent * 2,
+      );
+      positionAttribute.needsUpdate = true;
+      colorAttribute.needsUpdate = true;
+      agentFiberPackets.count = orderedStates.length;
+      agentFiberPackets.instanceMatrix.needsUpdate = true;
       const working = phase >= 1 && phase <= 4;
       ribbons.forEach((m, i) => {
         const state = states[Math.floor(i / 3)];

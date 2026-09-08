@@ -213,6 +213,16 @@ export function createAvatarFactory() {
     ...skins,
     ...glyphMats,
   ];
+  const moduleProfiles = [
+    [0.43, 0.4, 0.4],
+    [0.48, 0.34, 0.4],
+    [0.42, 0.43, 0.42],
+    [0.36, 0.47, 0.38],
+    [0.44, 0.36, 0.44],
+    [0.5, 0.32, 0.37],
+    [0.39, 0.41, 0.39],
+    [0.45, 0.36, 0.38],
+  ] as const;
   function mesh(
     g: THREE.Group,
     geo: THREE.BufferGeometry,
@@ -529,6 +539,15 @@ export function createAvatarFactory() {
             sidePorts.forEach((m) => (m.material = variants[variant]));
             icon.material = glyphMats[variant];
             const design = agentDesigns[variant];
+            const [moduleX, moduleY, moduleZ] = moduleProfiles[variant];
+            skill.scale.set(moduleX, moduleY, moduleZ);
+            skillEdge.scale.set(moduleX * 0.9, moduleY * 0.88, moduleZ * 0.9);
+            icon.position.z = -moduleZ * 0.51;
+            icon.scale.set(
+              Math.min(moduleX, moduleY) * 0.68,
+              Math.min(moduleX, moduleY) * 0.68,
+              1,
+            );
             skinMeshes.forEach((m) => (m.material = skins[variant]));
             head.geometry = ['round', 'oval', 'orb', 'capsule'].includes(
               design.shape,

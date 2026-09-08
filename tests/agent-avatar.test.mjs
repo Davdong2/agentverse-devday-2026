@@ -152,11 +152,13 @@ assert.deepEqual(
   'Identical world time produces identical motion',
 );
 const silhouettes = new Set(),
-  skins = new Set();
+  skins = new Set(),
+  modules = new Set();
 for (let v = 0; v < 8; v++) {
   avatar.update(v, 3, avatarMotion(3, 4, 0, 0, false, false), false);
   assert.ok(avatar.skill.material.color instanceof THREE.Color);
   skins.add(avatar.head.material.color.getHex());
+  modules.add(avatar.skill.scale.toArray().join());
   silhouettes.add(
     avatar.head.geometry.type +
       avatar.head.scale.toArray().join() +
@@ -164,6 +166,11 @@ for (let v = 0; v < 8; v++) {
   );
 }
 assert.equal(skins.size, 8, 'All types have distinct body skins');
+assert.equal(
+  modules.size,
+  8,
+  'Every capability family has a distinct physical module proportion',
+);
 assert.equal(
   silhouettes.size,
   8,
