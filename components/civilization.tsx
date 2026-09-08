@@ -90,6 +90,7 @@ import {
 const details = detailsSnapshot as Record<string, Detail>;
 type CameraState = { x: number; y: number; z: number };
 const initialCamera = { x: 0.5, y: 0.47, z: 1 };
+const regionCamera = { x: 0.5, y: 0.5, z: 1 };
 const homeRegionPositions = [
   { x: 0.49, y: 0.52 },
   { x: 0.23, y: 0.73 },
@@ -177,9 +178,7 @@ export default function Civilization({
     [],
   );
   const [cam, setCam] = useState<CameraState>(
-      regionIndex !== undefined
-        ? { x: regions[regionIndex].x, y: regions[regionIndex].y, z: 2.65 }
-        : initialCamera,
+      regionIndex !== undefined ? regionCamera : initialCamera,
     ),
     [size, setSize] = useState({ w: 1440, h: 900 }),
     [dragging, setDragging] = useState(false);
@@ -214,7 +213,9 @@ export default function Civilization({
   const homeView = regionIndex === undefined && viewMode === 'observe';
   const fit = homeView
       ? Math.max(size.w / 1600, size.h / 900)
-      : Math.min(size.w / 1600, (size.h - 105) / 900) * 1.03,
+      : regionIndex !== undefined
+        ? Math.max(size.w / 1600, (size.h - 105) / 900) * 0.98
+        : Math.min(size.w / 1600, (size.h - 105) / 900) * 1.03,
     scale = fit * cam.z;
   const activeNews =
     signalMode === 'live' && newsReaction && newsReaction.until > Date.now()
@@ -364,7 +365,7 @@ export default function Civilization({
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [viewMode]);
+  }, [viewMode, regionIndex]);
   useEffect(() => {
     if (stage < 7) return;
     const key = episode + ':' + cycle;
@@ -439,11 +440,14 @@ export default function Civilization({
     (n: number, showPanel = true) => {
       const position = homeView ? homeRegionPositions[n] : regions[n];
       setRegion(n);
-      setCam({ x: position.x, y: position.y, z: 2.65 });
       if (regionIndex === n) {
+        setCam(regionCamera);
         if (showPanel) setPanel('region');
         return;
       }
+      setCam(
+        homeView ? { x: position.x, y: position.y, z: 2.65 } : regionCamera,
+      );
       setPanel(null);
       setTransitioning(true);
       if (navigationTimer.current) clearTimeout(navigationTimer.current);
@@ -460,7 +464,13 @@ export default function Civilization({
     if (regionIndex !== undefined) router.push('/');
   };
   const zoom = (delta: number) =>
-    setCam((c) => ({ ...c, z: Math.max(1, Math.min(4.8, c.z + delta)) }));
+    setCam((c) => ({
+      ...c,
+      z: Math.max(
+        1,
+        Math.min(regionIndex === undefined ? 4.8 : 1.8, c.z + delta),
+      ),
+    }));
   useEffect(() => {
     const el = viewport.current;
     if (!el) return;
@@ -469,7 +479,13 @@ export default function Civilization({
       e.preventDefault();
       setCam((c) => ({
         ...c,
-        z: Math.max(1, Math.min(4.8, c.z * Math.exp(-e.deltaY * 0.001))),
+        z: Math.max(
+          1,
+          Math.min(
+            regionIndex === undefined ? 4.8 : 1.8,
+            c.z * Math.exp(-e.deltaY * 0.001),
+          ),
+        ),
       }));
     };
     el.addEventListener('wheel', wheel, { passive: false });
@@ -548,7 +564,13 @@ export default function Civilization({
       g.moved = true;
       setCam({
         ...g.cam,
-        z: Math.max(1, Math.min(4.8, (g.cam.z * d) / g.distance)),
+        z: Math.max(
+          1,
+          Math.min(
+            regionIndex === undefined ? 4.8 : 1.8,
+            (g.cam.z * d) / g.distance,
+          ),
+        ),
       });
       return;
     }
@@ -768,6 +790,7 @@ export default function Civilization({
               team={team}
               hits={hits}
               population={population}
+              viewportWidth={size.w}
               regionIndex={regionIndex}
               activeEventRegion={
                 events.find(
@@ -1091,7 +1114,18 @@ export default function Civilization({
         <button onClick={() => zoom(-0.5)} aria-label="缩小">
           <Minus size={18} />
         </button>
-        <span>{cam.z < 1.5 ? '世界' : cam.z < 3 ? '区域' : 'Agent'}视角</span>
+        <span>
+          {regionIndex !== undefined
+            ? cam.z < 1.3
+              ? '区域'
+              : 'Agent'
+            : cam.z < 1.5
+              ? '世界'
+              : cam.z < 3
+                ? '区域'
+                : 'Agent'}
+          视角
+        </span>
         <button onClick={() => zoom(0.5)} aria-label="放大">
           <Plus size={18} />
         </button>

@@ -38,7 +38,11 @@
 }
 .soft-world.region-page .civilization-canvas {
   display: block;
-  filter: saturate(0.94) contrast(1.05);
+  filter: saturate(0.96) contrast(1.04);
+  image-rendering: auto;
+}
+.soft-world.region-page .region-label {
+  display: none;
 }
 .soft-world.region-page .universe-vignette {
   background:
@@ -154,6 +158,15 @@
   box-shadow: 0 0 12px var(--region-accent);
 }
 .soft-world.region-page .collaboration-dock {
+  left: 32px;
+  right: auto;
+  bottom: 28px;
+  width: 310px;
+  max-width: 310px;
+  transform: none;
+  grid-template-columns: 1fr;
+  padding: 11px 14px;
+  gap: 2px 12px;
   color: #e7eff1;
   background: linear-gradient(145deg, #171f26e8, #0a1016dc);
   border-color: #deeff72b;
@@ -161,6 +174,12 @@
     inset 0 1px #ffffff14,
     0 18px 60px #00070d82;
   backdrop-filter: blur(24px) saturate(1.15);
+}
+.soft-world.region-page .stage-explanation {
+  display: none;
+}
+.soft-world.region-page .stage-track {
+  display: none;
 }
 .soft-world.region-page .dock-title,
 .soft-world.region-page .dock-title strong {
@@ -230,11 +249,24 @@
   .soft-world.region-page .region-heading {
     top: 112px;
     left: 16px;
-    width: min(250px, calc(100% - 32px));
+    width: 220px;
     padding: 13px 14px;
   }
   .soft-world.region-page .region-heading h1 {
     font-size: 24px;
+  }
+  .soft-world.region-page .region-heading p {
+    display: none;
+  }
+  .soft-world.region-page .collaboration-dock {
+    left: 16px;
+    bottom: 86px;
+    width: 210px;
+    grid-template-columns: 1fr;
+  }
+  .soft-world.region-page .stage-track,
+  .soft-world.region-page .phase-line {
+    display: none;
   }
 }
 :root,

@@ -1,15 +1,22 @@
 'use client';
 import { drawVectorAgent } from '@/lib/vector-agent';
+import { drawAvatarSprite } from '@/lib/avatar-sprite';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Agent, Detail } from '@/lib/marketplace';
 import { cryptoTaskState } from '@/lib/crypto-world';
 import {
+  agentDesigns,
   avatarMotion,
   teamVariants,
   type AvatarMotion,
   type AvatarHit,
 } from '@/lib/agent-design';
 import { appearance } from '@/lib/world-model';
+import {
+  closeupPopulationLimit,
+  closeupSlot,
+  regionCloseupBlueprints,
+} from '@/lib/region-closeup';
 import {
   cycleDuration,
   sampleAgents,
@@ -37,6 +44,7 @@ type Props = {
   team: Agent[];
   hits: MutableRefObject<Hit[]>;
   population: number;
+  viewportWidth: number;
   activeEventRegion?: number;
   regionIndex?: number;
 };
@@ -56,9 +64,18 @@ export default function CivilizationCanvas(props: Props) {
       baseStamp = 0;
     const frameInterval = matchMedia('(pointer:coarse)').matches ? 30 : 15;
     let lastAgents: Agent[] | null = null;
-    canvas.width = 2400;
-    canvas.height = 1350;
-    ctx.scale(1.5, 1.5);
+    let referenceAtlas: HTMLImageElement | null = null;
+    const atlasImage = new Image();
+    atlasImage.onload = () => {
+      referenceAtlas = atlasImage;
+      lastFrame = '';
+    };
+    atlasImage.src = '/agent-diverse-atlas.png';
+    canvas.width = 3200;
+    canvas.height = 1800;
+    ctx.scale(2, 2);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     const line = (
       a: { x: number; y: number },
       b: { x: number; y: number },
@@ -420,15 +437,26 @@ export default function CivilizationCanvas(props: Props) {
       ctx.save();
       ctx.translate(x, y - (motion?.bob ?? 0) * 18);
       if (motion) ctx.rotate(motion.stride * 0.04 + motion.headTilt * 0.4);
-      drawVectorAgent(
-        ctx,
-        variant,
-        -size / 2,
-        -size * 1.22,
-        size,
-        (size * 4) / 3,
-        motion,
-      );
+      if (referenceAtlas)
+        drawAvatarSprite(
+          ctx,
+          referenceAtlas,
+          variant,
+          -size / 2,
+          -size * 1.22,
+          size,
+          (size * 4) / 3,
+        );
+      else
+        drawVectorAgent(
+          ctx,
+          variant,
+          -size / 2,
+          -size * 1.22,
+          size,
+          (size * 4) / 3,
+          motion,
+        );
       ctx.restore();
     };
     const text = (
@@ -442,6 +470,486 @@ export default function CivilizationCanvas(props: Props) {
       ctx.font = `${size}px Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(str, x, y);
+    };
+    const capsule = (
+      value: string,
+      x: number,
+      y: number,
+      color: string,
+      size = 12,
+      padding = 9,
+    ) => {
+      ctx.save();
+      ctx.font = `500 ${size}px Arial, sans-serif`;
+      const width = ctx.measureText(value).width + padding * 2;
+      ctx.fillStyle = '#071016E8';
+      ctx.strokeStyle = color + '66';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - width / 2, y - size - 8, width, size + 14, 8);
+      ctx.fill();
+      ctx.stroke();
+      text(value, x, y, '#EAF5F6', size);
+      ctx.restore();
+    };
+    const localFiber = (
+      ax: number,
+      ay: number,
+      bx: number,
+      by: number,
+      color: string,
+      t: number,
+      seedValue: number,
+    ) => {
+      ctx.save();
+      ctx.strokeStyle = color + '75';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 9;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.bezierCurveTo(ax, ay + 70, bx, by - 85, bx, by);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      for (let i = 0; i < 3; i++) {
+        const u = (t * 0.13 + i / 3 + seedValue * 0.17) % 1,
+          v = 1 - u,
+          cx1 = ax,
+          cy1 = ay + 70,
+          cx2 = bx,
+          cy2 = by - 85,
+          x =
+            v * v * v * ax +
+            3 * v * v * u * cx1 +
+            3 * v * u * u * cx2 +
+            u * u * u * bx,
+          y =
+            v * v * v * ay +
+            3 * v * v * u * cy1 +
+            3 * v * u * u * cy2 +
+            u * u * u * by;
+        dot(x, y, i === 0 ? 3.2 : 2, '#F4FFFF');
+      }
+      ctx.restore();
+    };
+    const drawHabitatInstrument = (
+      regionIndex: number,
+      x: number,
+      y: number,
+      t: number,
+    ) => {
+      const blueprint = regionCloseupBlueprints[regionIndex],
+        color = regions[regionIndex].color,
+        pulse = (Math.sin(t * 1.8) + 1) / 2;
+      ctx.save();
+      ctx.translate(x, y);
+
+      // The instrument is a shared organ used by Agents, embedded in the deck.
+      const halo = ctx.createRadialGradient(0, 0, 3, 0, 0, 165);
+      halo.addColorStop(0, color + '4F');
+      halo.addColorStop(0.52, color + '12');
+      halo.addColorStop(1, 'transparent');
+      ctx.fillStyle = halo;
+      ctx.fillRect(-180, -165, 360, 330);
+      ctx.strokeStyle = color + '7A';
+      ctx.lineWidth = 1.5;
+      for (let ring = 0; ring < 3; ring++) {
+        ctx.beginPath();
+        ctx.ellipse(0, 14, 102 + ring * 25, 38 + ring * 10, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (blueprint.feature === 'compute') {
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(side * 54, -14, 38, 0, Math.PI * 2);
+          ctx.fillStyle = '#071014';
+          ctx.fill();
+          ctx.strokeStyle = color;
+          ctx.stroke();
+          for (let blade = 0; blade < 7; blade++) {
+            const a = blade * 0.897 + t * (side * 0.72);
+            ctx.beginPath();
+            ctx.moveTo(side * 54, -14);
+            ctx.quadraticCurveTo(
+              side * 54 + Math.cos(a + 0.35) * 15,
+              -14 + Math.sin(a + 0.35) * 15,
+              side * 54 + Math.cos(a) * 30,
+              -14 + Math.sin(a) * 30,
+            );
+            ctx.stroke();
+          }
+        }
+      } else if (blueprint.feature === 'security') {
+        ctx.fillStyle = '#071014';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -74);
+        ctx.lineTo(58, -48);
+        ctx.lineTo(46, 28);
+        ctx.lineTo(0, 66);
+        ctx.lineTo(-46, 28);
+        ctx.lineTo(-58, -48);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-18, -4);
+        ctx.lineTo(-4, 13);
+        ctx.lineTo(25, -22);
+        ctx.stroke();
+      } else if (blueprint.feature === 'reality') {
+        for (let ring = 0; ring < 4; ring++) {
+          ctx.strokeStyle = color + (ring === 0 ? 'CC' : '66');
+          ctx.beginPath();
+          ctx.ellipse(0, -12, 37 + ring * 19, 55 + ring * 8, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#DCEAFF';
+        ctx.beginPath();
+        ctx.arc(0, -18, 26, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#6F98B7';
+        ctx.beginPath();
+        ctx.arc(8, -24, 13, -0.5, 2.2);
+        ctx.fill();
+      } else if (blueprint.feature === 'memory') {
+        for (let i = 0; i < 5; i++) {
+          const yy = 37 - i * 24;
+          ctx.fillStyle =
+            i === Math.floor((t * 0.45) % 5) ? color + 'AA' : '#101B22';
+          ctx.strokeStyle = color + '88';
+          ctx.beginPath();
+          ctx.roundRect(-72 + i * 6, yy - 24, 144 - i * 12, 19, 5);
+          ctx.fill();
+          ctx.stroke();
+        }
+      } else if (blueprint.feature === 'energy') {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(19, -79);
+        ctx.lineTo(-29, -5);
+        ctx.lineTo(8, -5);
+        ctx.lineTo(-18, 67);
+        ctx.lineTo(44, -20);
+        ctx.lineTo(8, -20);
+        ctx.closePath();
+        ctx.stroke();
+        for (let i = 0; i < 5; i++) {
+          const a = i * 1.256 + t * 0.25;
+          dot(Math.cos(a) * 86, 2 + Math.sin(a) * 34, 4, color);
+        }
+      } else if (blueprint.feature === 'unknown') {
+        ctx.strokeStyle = color;
+        for (let i = 0; i < 6; i++) {
+          ctx.save();
+          ctx.rotate(t * 0.04 + i * 1.047);
+          ctx.strokeRect(22 + i * 7, -8, 18, 16);
+          ctx.restore();
+        }
+        glow(0, 0, 70 + pulse * 16, color, 0.2);
+        text('?', 0, 17, '#EAF3F5', 55);
+      } else {
+        const count = blueprint.feature === 'market' ? 4 : 7;
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * Math.PI * 2 + t * 0.08,
+            radius = blueprint.feature === 'genesis' ? 45 + i * 5 : 74,
+            px = Math.cos(a) * radius,
+            py = -6 + Math.sin(a) * radius * 0.43;
+          ctx.fillStyle =
+            blueprint.feature === 'collaboration'
+              ? skillColors[i % skillColors.length]
+              : i % 2
+                ? color
+                : '#EAF8F7';
+          ctx.strokeStyle = '#F5FFFFAA';
+          ctx.beginPath();
+          ctx.roundRect(px - 13, py - 13, 26, 26, 7);
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (blueprint.feature === 'research') {
+          ctx.strokeStyle = '#E9F8FF';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(-8, -14, 27, 0, Math.PI * 2);
+          ctx.moveTo(12, 7);
+          ctx.lineTo(42, 37);
+          ctx.stroke();
+        }
+      }
+      text(blueprint.system, 0, -112, '#EAF4F5', 13);
+      text(blueprint.deck, 0, -91, '#9CB2B7', 12);
+      ctx.restore();
+    };
+    const drawAgentHabitat = (
+      p: Props,
+      t: number,
+      phase: number,
+      phaseValue: number,
+    ) => {
+      const regionIndex = p.regionIndex ?? 0,
+        region = regions[regionIndex],
+        blueprint = regionCloseupBlueprints[regionIndex],
+        focusX = 915,
+        focusY = 330;
+
+      const background = ctx.createLinearGradient(0, 0, 0, 900);
+      background.addColorStop(0, '#091523');
+      background.addColorStop(0.48, '#12252F');
+      background.addColorStop(1, '#211A15');
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, 1600, 900);
+
+      const atmosphere = ctx.createRadialGradient(
+        focusX,
+        360,
+        20,
+        focusX,
+        360,
+        720,
+      );
+      atmosphere.addColorStop(0, region.color + '28');
+      atmosphere.addColorStop(0.46, '#18354519');
+      atmosphere.addColorStop(1, '#02050800');
+      ctx.fillStyle = atmosphere;
+      ctx.fillRect(250, 0, 1350, 900);
+
+      // A continuing habitat replaces the old finite grid of thumbnail nodes.
+      for (let i = 0; i < 28; i++) {
+        const x = 300 + ((i * 173) % 1420),
+          y = 170 + ((i * 67) % 190),
+          w = 48 + (i % 4) * 18,
+          h = 90 + (i % 5) * 25;
+        ctx.globalAlpha = 0.16 + (i % 4) * 0.025;
+        const tower = ctx.createLinearGradient(x, y, x + w, y + h);
+        tower.addColorStop(0, '#E8ECEB');
+        tower.addColorStop(0.32, '#6E7D84');
+        tower.addColorStop(1, '#182329');
+        ctx.fillStyle = tower;
+        ctx.beginPath();
+        ctx.roundRect(x - w / 2, y - h, w, h, 12);
+        ctx.fill();
+        ctx.strokeStyle = i % 3 === 0 ? region.color : '#A7C9D0';
+        ctx.lineWidth = 1;
+        for (let band = 0; band < 3; band++)
+          ctx.strokeRect(x - w / 2 + 7, y - h + 17 + band * 18, w - 14, 5);
+      }
+      ctx.globalAlpha = 1;
+
+      const horizonFade = ctx.createLinearGradient(0, 270, 0, 470);
+      horizonFade.addColorStop(0, '#07101600');
+      horizonFade.addColorStop(1, '#071016D9');
+      ctx.fillStyle = horizonFade;
+      ctx.fillRect(0, 260, 1600, 230);
+
+      // Precision-milled host deck. The material supports the Agent habitat.
+      ctx.save();
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 45;
+      ctx.fillStyle = '#03070A';
+      ctx.beginPath();
+      ctx.ellipse(focusX, 738, 570, 168, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      const alloy = ctx.createLinearGradient(420, 430, 1370, 820);
+      alloy.addColorStop(0, '#F5F6F3');
+      alloy.addColorStop(0.18, '#AEB8BC');
+      alloy.addColorStop(0.51, '#4F5A61');
+      alloy.addColorStop(0.82, '#C9CFCE');
+      alloy.addColorStop(1, '#29343A');
+      ctx.fillStyle = alloy;
+      ctx.beginPath();
+      ctx.ellipse(focusX, 650, 545, 208, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#091218';
+      ctx.beginPath();
+      ctx.ellipse(focusX, 625, 505, 178, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#E7F6FA42';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      for (let ring = 0; ring < 4; ring++) {
+        ctx.strokeStyle = ring === 1 ? region.color + 'A0' : '#C6E7EE2B';
+        ctx.lineWidth = ring === 1 ? 3 : 1;
+        ctx.beginPath();
+        ctx.ellipse(
+          focusX,
+          625,
+          425 - ring * 58,
+          142 - ring * 18,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+      }
+      for (let i = 0; i < 44; i++) {
+        const a = (i / 44) * Math.PI * 2,
+          x = focusX + Math.cos(a) * 469,
+          y = 627 + Math.sin(a) * 159;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(a);
+        ctx.fillStyle = i % 4 === 0 ? region.color : '#0B1419';
+        ctx.fillRect(-8, -2, 16, 4);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // One fiber trunk arrives from the shared world and branches to actual Agents.
+      for (let strand = 0; strand < 18; strand++) {
+        ctx.strokeStyle = strand % 4 === 0 ? region.color + 'A8' : '#AEEBFA5F';
+        ctx.lineWidth = strand % 5 === 0 ? 2.5 : 0.8;
+        ctx.beginPath();
+        ctx.moveTo(focusX + (strand - 9) * 3.1, -30);
+        ctx.bezierCurveTo(
+          focusX + Math.sin(strand * 1.4) * 55,
+          120,
+          focusX + Math.cos(strand * 1.1) * 45,
+          230,
+          focusX + (strand - 9) * 1.3,
+          focusY - 70,
+        );
+        ctx.stroke();
+      }
+      glow(focusX, focusY, 180, region.color, 0.12);
+      drawHabitatInstrument(regionIndex, focusX, focusY, t);
+
+      const states = sampleAgents(
+          p.agents,
+          p.details,
+          t,
+          p.weather,
+          p.population,
+        ),
+        sources = new Map(p.agents.map((agent) => [agent.agentId, agent])),
+        resident = (state: (typeof states)[number]) => {
+          const source = sources.get(state.agentId);
+          return source
+            ? regionFor(source, p.details[source.agentId]) === regionIndex
+            : false;
+        },
+        distance = (state: (typeof states)[number]) =>
+          Math.hypot(state.x - region.x, state.y - region.y),
+        localStates = [...states]
+          .sort((a, b) => {
+            if (regionIndex === 0 && a.collaborator !== b.collaborator)
+              return Number(b.collaborator) - Number(a.collaborator);
+            if (resident(a) !== resident(b))
+              return Number(resident(b)) - Number(resident(a));
+            return distance(a) - distance(b);
+          })
+          .slice(0, closeupPopulationLimit(p.viewportWidth));
+
+      for (let i = localStates.length - 1; i >= 0; i--) {
+        const state = localStates[i],
+          slot = closeupSlot(i),
+          actorSize = 102 * slot.scale,
+          color = agentDesigns[state.variant]?.color ?? region.color;
+        localFiber(focusX, focusY + 78, slot.x, slot.y + 4, color, t, i);
+        ctx.save();
+        ctx.globalAlpha = i === 0 ? 0.3 : 0.16;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(
+          slot.x,
+          slot.y + 8,
+          actorSize * 0.55,
+          actorSize * 0.16,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.restore();
+        actor(
+          slot.x,
+          slot.y,
+          state.variant,
+          actorSize,
+          avatarMotion(
+            t,
+            state.instance,
+            phase,
+            phaseValue,
+            state.collaborator,
+            state.activity === '移动中',
+          ),
+        );
+        capsule(
+          state.name.length > 20 ? state.name.slice(0, 19) + '…' : state.name,
+          slot.x,
+          slot.y - actorSize * 1.43,
+          color,
+          i === 0 ? 14 : 12,
+          i === 0 ? 12 : 9,
+        );
+        if (p.ignixIds.includes(state.agentId)) {
+          ctx.fillStyle = '#365F50';
+          ctx.beginPath();
+          ctx.roundRect(
+            slot.x + actorSize * 0.29,
+            slot.y - actorSize * 1.2,
+            19,
+            16,
+            5,
+          );
+          ctx.fill();
+          text(
+            'ig',
+            slot.x + actorSize * 0.29 + 9.5,
+            slot.y - actorSize * 1.2 + 12,
+            '#F0F9D8',
+            10,
+          );
+        }
+        if (p.selected === state.instance) {
+          ctx.strokeStyle = '#FFF0B4';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(
+            slot.x,
+            slot.y + 7,
+            actorSize * 0.58,
+            actorSize * 0.18,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          ctx.stroke();
+        }
+        p.hits.current.push({
+          x: slot.x,
+          y: slot.y,
+          width: actorSize,
+          height: actorSize * 1.22,
+          instance: state.instance,
+          agentId: state.agentId,
+        });
+      }
+
+      // Crypto and capability labels are engraved into the deck instead of floating cards.
+      blueprint.assets.forEach((asset, index) => {
+        const x = 548 + index * 245;
+        ctx.fillStyle = index % 2 ? '#111C21' : '#0B151B';
+        ctx.strokeStyle = region.color + '4F';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x - 55, 800, 110, 28, 7);
+        ctx.fill();
+        ctx.stroke();
+        dot(
+          x - 38,
+          814,
+          3,
+          index === Math.floor((t * 0.35) % 4) ? '#EFFFFF' : region.color,
+        );
+        text(asset, x + 4, 818, '#A9BEC2', 10);
+      });
+      text(blueprint.status, focusX, 862, '#A7B7B8', 13);
     };
     const frame = (stamp: number) => {
       raf = requestAnimationFrame(frame);
@@ -466,13 +974,17 @@ export default function CivilizationCanvas(props: Props) {
         p.selected,
         p.activeEventRegion,
         p.regionIndex,
+        p.viewportWidth,
       ].join(':');
       if (lastFrame === frameKey && lastAgents === p.agents) return;
       lastFrame = frameKey;
       lastAgents = p.agents;
       ctx.clearRect(0, 0, 1600, 900);
-      if (p.regionIndex !== undefined) drawComputeWorld(t, p.regionIndex);
       p.hits.current = [];
+      if (p.regionIndex !== undefined) {
+        drawAgentHabitat(p, t, phase, phaseProgress(t));
+        return;
+      }
       if (p.activeEventRegion !== undefined) {
         const r = regions[p.activeEventRegion];
         glow(r.x * 1600, r.y * 900, 100, '#c3d997', 0.5);

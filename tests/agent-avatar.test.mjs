@@ -20,7 +20,7 @@ const canvasSource = fs.readFileSync(
   ),
   spriteSource = fs.readFileSync('components/world-scene.tsx', 'utf8'),
   walkSource = fs.readFileSync('components/world-walk.tsx', 'utf8');
-assert.ok(!canvasSource.includes('agent-diverse-atlas.png'));
+assert.ok(canvasSource.includes('agent-diverse-atlas.png'));
 assert.ok(spriteSource.includes('agent-diverse-atlas.png'));
 assert.ok(!walkSource.includes('setPanelAtlas'));
 assert.ok(!walkSource.includes('walk-instructions'));
@@ -35,9 +35,10 @@ assert.ok(
   !fs.readFileSync('lib/vector-agent.ts', 'utf8').includes('visorWidth'),
 );
 assert.ok(
-  canvasSource.includes('drawVectorAgent') &&
+  canvasSource.includes('drawAvatarSprite') &&
+    canvasSource.includes('drawVectorAgent') &&
     spriteSource.includes('drawAvatarSprite'),
-  'The live world stays texture-free while profile surfaces use the authored atlas',
+  'Close observation and profile cards share the authored skin; vector rendering remains the loading fallback',
 );
 assert.equal(agentDesigns.length, 8);
 assert.equal(new Set(agentDesigns.map((a) => a.color)).size, 8);
