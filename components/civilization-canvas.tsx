@@ -532,7 +532,12 @@ export default function CivilizationCanvas(props: Props) {
       }
       ctx.restore();
     };
-    const drawHabitatCity = (regionIndex: number, t: number) => {
+    const drawHabitatCity = (
+      regionIndex: number,
+      t: number,
+      ambientStates: ReturnType<typeof sampleAgents>,
+      ignixIds: string[],
+    ) => {
       const region = regions[regionIndex],
         blueprint = regionCloseupBlueprints[regionIndex],
         skyline = blueprint.skyline;
@@ -636,6 +641,37 @@ export default function CivilizationCanvas(props: Props) {
           ctx.fillRect(x - 8, y + 4, 16, 2);
         }
       });
+
+      // Lightweight aerial traffic crosses several depths. These routes remain
+      // visibly part of Demo mode while giving the habitat a working skyline.
+      for (let shuttle = 0; shuttle < 8; shuttle++) {
+        const lane = shuttle % 3,
+          direction = shuttle % 2 ? -1 : 1,
+          u = (t * (0.018 + lane * 0.004) + shuttle * 0.137) % 1,
+          x = direction > 0 ? -90 + u * 1780 : 1690 - u * 1780,
+          y = 92 + lane * 59 + Math.sin(u * Math.PI * 2 + shuttle) * 17,
+          scale = 0.66 + lane * 0.12;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(direction, 1);
+        ctx.globalAlpha = 0.58 + lane * 0.14;
+        ctx.strokeStyle = lane === 1 ? region.color + '72' : '#8FE5FF68';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-118 * scale, 2);
+        ctx.lineTo(-29 * scale, 2);
+        ctx.stroke();
+        ctx.fillStyle = '#BFC9CC';
+        ctx.beginPath();
+        ctx.roundRect(-25 * scale, -7 * scale, 50 * scale, 14 * scale, 7);
+        ctx.fill();
+        ctx.fillStyle = '#07131A';
+        ctx.beginPath();
+        ctx.roundRect(-13 * scale, -4 * scale, 25 * scale, 7 * scale, 3);
+        ctx.fill();
+        dot(22 * scale, 0, 2.4 * scale, shuttle % 3 ? '#9BEAFF' : '#FFD590');
+        ctx.restore();
+      }
       [190, 438, 1195, 1448].forEach((x, i) => {
         const top = i % 2 ? 106 : 152;
         const column = ctx.createLinearGradient(x - 20, 0, x + 20, 0);
@@ -691,6 +727,47 @@ export default function CivilizationCanvas(props: Props) {
         ctx.fillText('0' + (i + 1), x + 12, boardY + 75);
         ctx.fillText(activity, x + 36, boardY + 88, 66);
       });
+
+      // The opposite facade shows a living service network rather than another
+      // floating app panel. It is deliberately embedded between city columns.
+      const networkX = 366,
+        networkY = 148,
+        networkW = 254,
+        networkH = 126;
+      ctx.shadowColor = '#6ADFFF';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#06131DE8';
+      ctx.strokeStyle = '#8EE7FF74';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(networkX, networkY, networkW, networkH, 13);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#99AFB8';
+      ctx.font = '9px Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('AGENT SERVICE NETWORK', networkX + 16, networkY + 19);
+      ctx.fillStyle = '#EDF9FB';
+      ctx.font = '600 17px Arial, sans-serif';
+      ctx.fillText(blueprint.system, networkX + 16, networkY + 43);
+      for (let lane = 0; lane < 4; lane++) {
+        const y = networkY + 61 + lane * 14,
+          progress = 0.34 + ((regionIndex * 0.17 + lane * 0.21) % 0.57),
+          pulse = (t * 0.18 + lane * 0.23) % 1;
+        ctx.fillStyle = '#0F2732';
+        ctx.beginPath();
+        ctx.roundRect(networkX + 16, y, 157, 5, 3);
+        ctx.fill();
+        ctx.fillStyle = lane % 3 === 0 ? '#F2C978' : region.color;
+        ctx.beginPath();
+        ctx.roundRect(networkX + 16, y, 157 * progress, 5, 3);
+        ctx.fill();
+        dot(networkX + 16 + 157 * pulse, y + 2.5, 2.4, '#E9FFFF');
+        ctx.fillStyle = '#9EB2B8';
+        ctx.font = '8px Arial, sans-serif';
+        ctx.fillText(blueprint.assets[lane], networkX + 185, y + 5, 55);
+      }
 
       const tokenSymbols = blueprint.assets.slice(0, 3);
       tokenSymbols.forEach((symbol, i) => {
@@ -857,6 +934,141 @@ export default function CivilizationCanvas(props: Props) {
         '#A8CAD2',
         10,
       );
+
+      // Actual directory residents populate elevated routes and service decks.
+      // They use the same state sample and artwork as the foreground Agents.
+      const residentSlots = [
+        [108, 332, 20],
+        [166, 312, 19],
+        [236, 338, 22],
+        [442, 314, 20],
+        [525, 338, 22],
+        [1115, 336, 21],
+        [1208, 312, 19],
+        [1324, 342, 22],
+        [1432, 318, 20],
+        [285, 434, 29],
+        [1350, 420, 29],
+        [1492, 431, 25],
+      ] as const;
+      ambientStates.slice(0, residentSlots.length).forEach((state, index) => {
+        const [x, y, size] = residentSlots[index],
+          color = agentDesigns[state.variant]?.color ?? region.color,
+          name =
+            state.name.length > 12
+              ? state.name.slice(0, 11) + '\u2026'
+              : state.name;
+        ctx.save();
+        ctx.globalAlpha = index < 9 ? 0.74 : 0.88;
+        glow(x, y - size * 0.55, size * 0.9, color, 0.09);
+        actor(
+          x,
+          y,
+          state.variant,
+          size,
+          avatarMotion(t, state.instance, 0, 0, false, index % 4 === 1),
+        );
+        ctx.restore();
+        ctx.font = `500 ${index < 9 ? 7 : 8}px Arial, sans-serif`;
+        const labelWidth = Math.min(84, ctx.measureText(name).width + 12);
+        ctx.fillStyle = '#061018D9';
+        ctx.strokeStyle = color + '5F';
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.roundRect(
+          x - labelWidth / 2,
+          y - size * 1.52,
+          labelWidth,
+          index < 9 ? 13 : 15,
+          5,
+        );
+        ctx.fill();
+        ctx.stroke();
+        text(
+          name,
+          x,
+          y - size * 1.52 + (index < 9 ? 9 : 10.5),
+          '#E9F6F8',
+          index < 9 ? 7 : 8,
+        );
+        if (ignixIds.includes(state.agentId)) {
+          ctx.fillStyle = '#7FE4A7';
+          ctx.beginPath();
+          ctx.roundRect(x + labelWidth / 2 - 3, y - size * 1.52 - 2, 10, 9, 3);
+          ctx.fill();
+          text('ig', x + labelWidth / 2 + 2, y - size * 1.52 + 5, '#0A2417', 6);
+        }
+      });
+      ctx.restore();
+    };
+
+    const drawHabitatForeground = (regionIndex: number, t: number) => {
+      const color = regions[regionIndex].color;
+      ctx.save();
+
+      // A cropped overhead service ring and near camera hardware make the viewer
+      // stand inside the habitat instead of looking at a distant illustration.
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#02070BF4';
+      ctx.lineWidth = 58;
+      ctx.beginPath();
+      ctx.moveTo(-120, 84);
+      ctx.bezierCurveTo(410, -45, 1120, 138, 1730, -12);
+      ctx.stroke();
+      ctx.strokeStyle = '#9BA9AE9C';
+      ctx.lineWidth = 29;
+      ctx.stroke();
+      ctx.strokeStyle = color + 'B8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.strokeStyle = '#FFD395A8';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-100, 96);
+      ctx.bezierCurveTo(420, -24, 1120, 153, 1710, 5);
+      ctx.stroke();
+
+      for (const side of [-1, 1]) {
+        const x = side < 0 ? -34 : 1601;
+        ctx.shadowColor = '#000000C8';
+        ctx.shadowBlur = 24;
+        const pylon = ctx.createLinearGradient(
+          x - side * 72,
+          0,
+          x + side * 35,
+          0,
+        );
+        pylon.addColorStop(0, '#050B10');
+        pylon.addColorStop(0.42, '#4C5960');
+        pylon.addColorStop(0.72, '#B5BDBD');
+        pylon.addColorStop(1, '#182229');
+        ctx.fillStyle = pylon;
+        ctx.beginPath();
+        ctx.roundRect(x - 42, 108, 82, 660, 24);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = side < 0 ? color + '72' : '#FFD18B72';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x + side * -3, 146);
+        ctx.lineTo(x + side * -3, 724);
+        ctx.stroke();
+        for (let seam = 0; seam < 9; seam++) {
+          const y = 180 + seam * 61;
+          ctx.fillStyle =
+            seam === Math.floor((t * 0.35) % 9) ? '#E8FFFF' : '#07141B';
+          ctx.beginPath();
+          ctx.roundRect(x - 12, y, 24, 4, 2);
+          ctx.fill();
+        }
+      }
+
+      const vignette = ctx.createRadialGradient(800, 470, 300, 800, 470, 960);
+      vignette.addColorStop(0, '#00000000');
+      vignette.addColorStop(0.72, '#00000008');
+      vignette.addColorStop(1, '#00070DD1');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, 1600, 900);
       ctx.restore();
     };
     const drawHabitatFloor = (
@@ -1090,10 +1302,38 @@ export default function CivilizationCanvas(props: Props) {
         focusX = 915,
         focusY = 330;
 
+      const states = sampleAgents(
+          p.agents,
+          p.details,
+          t,
+          p.weather,
+          p.population,
+        ),
+        sources = new Map(p.agents.map((agent) => [agent.agentId, agent])),
+        resident = (state: (typeof states)[number]) => {
+          const source = sources.get(state.agentId);
+          return source
+            ? regionFor(source, p.details[source.agentId]) === regionIndex
+            : false;
+        },
+        distance = (state: (typeof states)[number]) =>
+          Math.hypot(state.x - region.x, state.y - region.y),
+        orderedStates = [...states].sort((a, b) => {
+          if (regionIndex === 0 && a.collaborator !== b.collaborator)
+            return Number(b.collaborator) - Number(a.collaborator);
+          if (resident(a) !== resident(b))
+            return Number(resident(b)) - Number(resident(a));
+          return distance(a) - distance(b);
+        }),
+        localLimit = closeupPopulationLimit(p.viewportWidth),
+        localStates = orderedStates.slice(0, localLimit),
+        ambientStates = orderedStates.slice(localLimit, localLimit + 12);
+
       const background = ctx.createLinearGradient(0, 0, 0, 900);
-      background.addColorStop(0, '#091523');
-      background.addColorStop(0.48, '#12252F');
-      background.addColorStop(1, '#211A15');
+      background.addColorStop(0, '#0A1B2F');
+      background.addColorStop(0.45, '#123140');
+      background.addColorStop(0.76, '#182A30');
+      background.addColorStop(1, '#241B16');
       ctx.fillStyle = background;
       ctx.fillRect(0, 0, 1600, 900);
 
@@ -1105,13 +1345,13 @@ export default function CivilizationCanvas(props: Props) {
         360,
         720,
       );
-      atmosphere.addColorStop(0, region.color + '28');
-      atmosphere.addColorStop(0.46, '#18354519');
+      atmosphere.addColorStop(0, region.color + '3B');
+      atmosphere.addColorStop(0.46, '#2D6B8422');
       atmosphere.addColorStop(1, '#02050800');
       ctx.fillStyle = atmosphere;
       ctx.fillRect(250, 0, 1350, 900);
 
-      drawHabitatCity(regionIndex, t);
+      drawHabitatCity(regionIndex, t, ambientStates, p.ignixIds);
 
       const horizonFade = ctx.createLinearGradient(0, 286, 0, 484);
       horizonFade.addColorStop(0, '#07101600');
@@ -1154,7 +1394,19 @@ export default function CivilizationCanvas(props: Props) {
       ctx.beginPath();
       ctx.ellipse(focusX, 654, 518, 188, 0, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = '#091218';
+      const activeBoard = ctx.createRadialGradient(
+        focusX,
+        572,
+        40,
+        focusX,
+        625,
+        510,
+      );
+      activeBoard.addColorStop(0, region.color + '48');
+      activeBoard.addColorStop(0.26, '#0C2732');
+      activeBoard.addColorStop(0.72, '#07141C');
+      activeBoard.addColorStop(1, '#02080C');
+      ctx.fillStyle = activeBoard;
       ctx.beginPath();
       ctx.ellipse(focusX, 625, 505, 178, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -1195,6 +1447,60 @@ export default function CivilizationCanvas(props: Props) {
         ctx.beginPath();
         ctx.arc(x, y, seam % 4 === 0 ? 3.2 : 2, 0, Math.PI * 2);
         ctx.fill();
+      }
+
+      // Surface packages and moving receipt traces make the host deck read as
+      // an active board at close range, while leaving all Agent paths clear.
+      for (let socket = 0; socket < 18; socket++) {
+        const a = (socket / 18) * Math.PI * 2 + 0.12,
+          radius = socket % 2 ? 348 : 402,
+          x = focusX + Math.cos(a) * radius,
+          y = 625 + Math.sin(a) * radius * 0.31,
+          width = socket % 3 === 0 ? 30 : 20;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(a);
+        ctx.fillStyle = '#071118';
+        ctx.strokeStyle = socket % 4 === 0 ? '#FFD18B86' : region.color + '68';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(-width / 2, -5, width, 10, 3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle =
+          socket === Math.floor((t * 0.8) % 18)
+            ? '#E8FFFF'
+            : region.color + '8A';
+        ctx.fillRect(-width * 0.26, -1.2, width * 0.52, 2.4);
+        ctx.restore();
+      }
+      for (let route = 0; route < 7; route++) {
+        const a = -Math.PI * 0.78 + route * 0.26,
+          startX = focusX + Math.cos(a) * 118,
+          startY = 625 + Math.sin(a) * 37,
+          endX = focusX + Math.cos(a) * 446,
+          endY = 625 + Math.sin(a) * 142;
+        ctx.strokeStyle = route % 2 ? region.color + '56' : '#F4C97C55';
+        ctx.lineWidth = route % 3 === 0 ? 1.7 : 0.8;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.quadraticCurveTo(
+          (startX + endX) / 2,
+          (startY + endY) / 2 + Math.sin(route) * 22,
+          endX,
+          endY,
+        );
+        ctx.stroke();
+        const u = (t * 0.17 + route * 0.129) % 1,
+          cx = (startX + endX) / 2,
+          cy = (startY + endY) / 2 + Math.sin(route) * 22,
+          v = 1 - u;
+        dot(
+          v * v * startX + 2 * v * u * cx + u * u * endX,
+          v * v * startY + 2 * v * u * cy + u * u * endY,
+          route % 3 === 0 ? 2.8 : 1.7,
+          route % 2 ? '#DFFFFFF0' : '#FFE4A6',
+        );
       }
       ctx.restore();
 
@@ -1269,32 +1575,6 @@ export default function CivilizationCanvas(props: Props) {
       ctx.globalAlpha = 1;
       glow(focusX, focusY, 180, region.color, 0.12);
       drawHabitatInstrument(regionIndex, focusX, focusY, t);
-
-      const states = sampleAgents(
-          p.agents,
-          p.details,
-          t,
-          p.weather,
-          p.population,
-        ),
-        sources = new Map(p.agents.map((agent) => [agent.agentId, agent])),
-        resident = (state: (typeof states)[number]) => {
-          const source = sources.get(state.agentId);
-          return source
-            ? regionFor(source, p.details[source.agentId]) === regionIndex
-            : false;
-        },
-        distance = (state: (typeof states)[number]) =>
-          Math.hypot(state.x - region.x, state.y - region.y),
-        localStates = [...states]
-          .sort((a, b) => {
-            if (regionIndex === 0 && a.collaborator !== b.collaborator)
-              return Number(b.collaborator) - Number(a.collaborator);
-            if (resident(a) !== resident(b))
-              return Number(resident(b)) - Number(resident(a));
-            return distance(a) - distance(b);
-          })
-          .slice(0, closeupPopulationLimit(p.viewportWidth));
 
       for (let i = localStates.length - 1; i >= 0; i--) {
         const state = localStates[i],
@@ -1402,6 +1682,7 @@ export default function CivilizationCanvas(props: Props) {
         text(asset, x + 4, 818, '#A9BEC2', 10);
       });
       text(blueprint.status, focusX, 862, '#A7B7B8', 13);
+      drawHabitatForeground(regionIndex, t);
     };
     const frame = (stamp: number) => {
       raf = requestAnimationFrame(frame);

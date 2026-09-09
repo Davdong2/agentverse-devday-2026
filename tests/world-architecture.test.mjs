@@ -84,6 +84,9 @@ assert.equal(
   'Upper compute city starts with twelve aerial couriers',
 );
 assert.equal(world.shuttleLights.count, 24);
+assert.equal(world.consoleBodies.count, 40);
+assert.equal(world.consoleScreens.count, 40);
+assert.equal(world.consoleRails.count, 40);
 world.regionPlatforms.forEach((p, i) => {
   assert.equal(p.userData.region, i);
   assert.equal(
@@ -182,6 +185,9 @@ assert.equal(world.mountingScrews.count, 24);
 assert.equal(world.coolingRings.count, 0);
 assert.equal(world.shuttles.count, 4);
 assert.equal(world.shuttleLights.count, 8);
+assert.equal(world.consoleBodies.count, 16);
+assert.equal(world.consoleScreens.count, 16);
+assert.equal(world.consoleRails.count, 16);
 scene.updateMatrixWorld(true);
 scene.traverse((o) =>
   assert.ok(

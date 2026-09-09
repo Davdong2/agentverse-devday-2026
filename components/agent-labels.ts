@@ -130,7 +130,7 @@ export function createAgentLabels() {
             label = entry(name);
             sprite.material = label.material;
           }
-          const pixelWidth = Math.min(118, label.width * 0.5);
+          const pixelWidth = Math.min(104, label.width * 0.46);
           const scale = Math.max(
             0.58,
             Math.min(
@@ -142,7 +142,7 @@ export function createAgentLabels() {
           sprite.scale.set(scale, scale / label.aspect, 1);
           sprite.position.set(
             0,
-            (composite ? 3.18 : 2.62) + (instance % 3) * 0.08,
+            (composite ? 3.2 : 2.62) + (instance % 4) * 0.2,
             0,
           );
           sprite.visible = visible;

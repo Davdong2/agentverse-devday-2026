@@ -54,8 +54,14 @@ assert.match(
   canvasSource,
   /regionFor\(source, p\.details\[source\.agentId\]\)/,
 );
-assert.match(canvasSource, /drawHabitatCity\(regionIndex, t\)/);
+assert.match(
+  canvasSource,
+  /drawHabitatCity\(regionIndex, t, ambientStates, p\.ignixIds\)/,
+);
 assert.match(canvasSource, /drawHabitatFloor\(regionIndex, t, focusX\)/);
+assert.match(canvasSource, /drawHabitatForeground\(regionIndex, t\)/);
+assert.match(canvasSource, /AGENT SERVICE NETWORK/);
+assert.match(canvasSource, /residentSlots/);
 
 console.log(
   'PASS: ten distinct Agent-first habitats, resident-first staging, six non-overlapping close-range actors and a 2× vector canvas.',

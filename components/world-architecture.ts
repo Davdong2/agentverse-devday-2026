@@ -153,7 +153,7 @@ export function createWorldArchitecture(
     new THREE.MeshBasicMaterial({
       color: '#9DE8FF',
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.34,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     }),
@@ -180,7 +180,7 @@ export function createWorldArchitecture(
     towers.setMatrixAt(i, dummy.matrix);
     for (let band = 0; band < 3; band++) {
       dummy.position.set(x, baseY + h * (0.28 + band * 0.22), z);
-      dummy.scale.set(width + 0.1, 0.045, depth + 0.1);
+      dummy.scale.set(width + 0.12, 0.085, depth + 0.12);
       dummy.updateMatrix();
       skylineBands.setMatrixAt(i * 3 + band, dummy.matrix);
     }
@@ -498,6 +498,63 @@ export function createWorldArchitecture(
   });
   smdBodies.instanceMatrix.needsUpdate = true;
   smdLights.instanceMatrix.needsUpdate = true;
+
+  // Four low service consoles surround every habitat. Their physical screens
+  // carry task traffic into the walking view and make the large decks feel used.
+  const consolesPerRegion = 4;
+  const consoleBodies = new THREE.InstancedMesh(
+    box,
+    edge,
+    regions.length * consolesPerRegion,
+  );
+  const consoleScreens = new THREE.InstancedMesh(
+    box,
+    glow[0],
+    regions.length * consolesPerRegion,
+  );
+  const consoleRails = new THREE.InstancedMesh(
+    box,
+    gold,
+    regions.length * consolesPerRegion,
+  );
+  consoleBodies.name = 'agent-service-consoles';
+  consoleScreens.name = 'agent-service-console-screens';
+  consoleRails.name = 'agent-service-console-rails';
+  root.add(consoleBodies, consoleScreens, consoleRails);
+  let consoleIndex = 0;
+  regions.forEach((region, n) => {
+    const radius = (n === 0 ? 11 : 5.5) * 0.71;
+    for (let console = 0; console < consolesPerRegion; console++) {
+      const angle =
+          (console * Math.PI * 2) / consolesPerRegion + Math.PI / 4 + n * 0.08,
+        x = region.x * 100 + Math.cos(angle) * radius,
+        z = region.y * 100 + Math.sin(angle) * radius;
+      dummy.position.set(x, 0.58, z);
+      dummy.scale.set(n === 0 ? 1.18 : 0.78, 0.92, 0.18);
+      dummy.rotation.set(0, -angle + Math.PI / 2, -0.08);
+      dummy.updateMatrix();
+      consoleBodies.setMatrixAt(consoleIndex, dummy.matrix);
+      dummy.position.y = 0.67;
+      dummy.scale.set(n === 0 ? 0.96 : 0.62, 0.57, 0.025);
+      dummy.updateMatrix();
+      consoleScreens.setMatrixAt(consoleIndex, dummy.matrix);
+      consoleScreens.setColorAt(
+        consoleIndex,
+        new THREE.Color(regions[(n + console) % regions.length].color),
+      );
+      dummy.position.y = 0.14;
+      dummy.scale.set(n === 0 ? 1.25 : 0.84, 0.035, 0.23);
+      dummy.rotation.set(0, -angle + Math.PI / 2, 0);
+      dummy.updateMatrix();
+      consoleRails.setMatrixAt(consoleIndex, dummy.matrix);
+      consoleIndex++;
+    }
+  });
+  consoleBodies.instanceMatrix.needsUpdate = true;
+  consoleScreens.instanceMatrix.needsUpdate = true;
+  if (consoleScreens.instanceColor)
+    consoleScreens.instanceColor.needsUpdate = true;
+  consoleRails.instanceMatrix.needsUpdate = true;
 
   // Two floor-mounted GPU turbines give the compute district a recognizable
   // hardware function without blocking the walkable surface.
@@ -1004,6 +1061,9 @@ export function createWorldArchitecture(
     skylineCaps,
     shuttles,
     shuttleLights,
+    consoleBodies,
+    consoleScreens,
+    consoleRails,
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;
@@ -1028,6 +1088,9 @@ export function createWorldArchitecture(
       skylineCaps.count = towers.count;
       shuttles.count = quality === 2 ? 4 : quality === 1 ? 8 : shuttleCount;
       shuttleLights.count = shuttles.count * 2;
+      consoleBodies.count = quality === 2 ? 16 : quality === 1 ? 28 : 40;
+      consoleScreens.count = consoleBodies.count;
+      consoleRails.count = consoleBodies.count;
       for (let i = 0; i < shuttles.count; i++) {
         const lane = i % 3,
           radius = 20 + lane * 11,
@@ -1056,8 +1119,8 @@ export function createWorldArchitecture(
       shuttles.instanceMatrix.needsUpdate = true;
       shuttleLights.instanceMatrix.needsUpdate = true;
       skylineGlow.opacity =
-        (quality === 2 ? 0.12 : 0.2) +
-        Math.pow(0.5 + Math.sin(time * 0.45) * 0.5, 5) * 0.1;
+        (quality === 2 ? 0.16 : 0.28) +
+        Math.pow(0.5 + Math.sin(time * 0.45) * 0.5, 5) * 0.16;
       ventSlots.count = quality === 2 ? 64 : quality === 1 ? 112 : 160;
       mountingScrews.count = quality === 2 ? 24 : quality === 1 ? 42 : 60;
       fiberMaterials.forEach((material, i) => {
@@ -1131,16 +1194,18 @@ export function createWorldArchitecture(
         o.scale.set(0.021, direction.length(), 0.021);
         o.quaternion.setFromUnitVectors(yAxis, direction.normalize());
       });
-      rays.visible = quality < 2 && joined;
+      rays.visible = quality < 2;
       for (let i = 0; i < 48; i++) {
         const u = (time * 0.45 + i / 48) % 1,
           a = i * 2.39996;
         dummy.position.set(
-          cx + Math.cos(a) * (0.2 + u * 0.6),
-          0.1 + u * 3.3,
-          cz + Math.sin(a) * (0.2 + u * 0.6),
+          cx + Math.cos(a) * (0.2 + u * (joined ? 0.6 : 1.4)),
+          0.1 + u * (joined ? 3.3 : 1.35),
+          cz + Math.sin(a) * (0.2 + u * (joined ? 0.6 : 1.4)),
         );
-        dummy.scale.setScalar(0.018 + (i % 3) * 0.008);
+        dummy.scale.setScalar(
+          (joined ? 0.018 : 0.012) + (i % 3) * (joined ? 0.008 : 0.005),
+        );
         dummy.rotation.set(0, 0, 0);
         dummy.updateMatrix();
         rays.setMatrixAt(i, dummy.matrix);

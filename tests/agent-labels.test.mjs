@@ -65,6 +65,10 @@ assert.ok(
   other.sprite.scale.x > first.sprite.scale.x,
   'Distance compensation preserves readability',
 );
+assert.ok(
+  other.sprite.position.y - first.sprite.position.y >= 0.19,
+  'Nearby names are vertically staggered during collaboration',
+);
 const y = first.sprite.position.y;
 first.update(name, 8, 900, 56, true, true);
 assert.ok(
