@@ -18,6 +18,7 @@ import type {
   MarketSignal,
   MemoryRecord,
 } from '@/lib/civilization-model';
+import type { RelationshipLog } from '@/lib/agent-relationships';
 export type WorldEvent = {
   id: string;
   title: string;
@@ -76,6 +77,8 @@ function useStore() {
     [signalError, setSignalError] = useState('');
   const [history, setHistory] = useState<MemoryRecord[]>([]),
     [events, setEvents] = useState<WorldEvent[]>([]),
+    [relationshipLogs, setRelationshipLogs] = useState<RelationshipLog[]>([]),
+    [relationshipReady, setRelationshipReady] = useState(false),
     [viewMode, setViewMode] = useState<'observe' | 'walk'>('observe');
   const inspected = useRef<{ agentId: string; instance: number } | null>(null);
   const recorded = useRef(new Set<string>()),
@@ -85,6 +88,30 @@ function useStore() {
   const [news, setNews] = useState<WorldNews | null>(null);
   const [newsReaction, setNewsReaction] = useState<NewsReaction | null>(null);
   const seenNews = useRef(new Set<string>());
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('agentverse.relationship.logs.v1');
+      if (stored) {
+        const parsed = JSON.parse(stored) as RelationshipLog[];
+        if (Array.isArray(parsed)) setRelationshipLogs(parsed.slice(0, 300));
+      }
+    } catch {
+      // A blocked or malformed local store should not stop the world.
+    } finally {
+      setRelationshipReady(true);
+    }
+  }, []);
+  useEffect(() => {
+    if (!relationshipReady) return;
+    try {
+      localStorage.setItem(
+        'agentverse.relationship.logs.v1',
+        JSON.stringify(relationshipLogs.slice(0, 300)),
+      );
+    } catch {
+      // The in-memory log and export remain available when storage is full.
+    }
+  }, [relationshipLogs, relationshipReady]);
   useEffect(() => {
     const controller = new AbortController();
     async function refreshNews() {
@@ -173,6 +200,9 @@ function useStore() {
     recorded,
     events,
     setEvents,
+    relationshipLogs,
+    setRelationshipLogs,
+    relationshipReady,
     viewMode,
     setViewMode,
     walker,

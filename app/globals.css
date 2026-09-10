@@ -269,6 +269,279 @@
     display: none;
   }
 }
+
+/* Autonomous Agent relationships remain inspectable and explicitly simulated. */
+.world-happenings > small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.world-happenings > small > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #97aea12b;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #eff4eb1c;
+  color: inherit;
+  font-size: 10px;
+  letter-spacing: 0;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.relationship-sheet {
+  width: min(520px, calc(100vw - 20px)) !important;
+}
+.relationship-mode-note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #e6c96d2e;
+  border-radius: 12px;
+  background: #e4c76e0d;
+  color: #9cb0b9;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.relationship-mode-note b {
+  color: #e4cb7d;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.relationship-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.relationship-stats > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid #a1bbc120;
+  border-radius: 11px;
+  background: #b4ccd509;
+}
+.relationship-stats strong {
+  font-size: 22px;
+  color: #e6ece7;
+  font-weight: 500;
+}
+.relationship-stats small {
+  color: #8ea7b3;
+  font-size: 11px;
+}
+.relationship-exports {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.relationship-exports button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  border: 1px solid #b3c9c12b;
+  border-radius: 10px;
+  background: #b7d4c211;
+  color: #cadbd6;
+  font-size: 12px;
+  cursor: pointer;
+}
+.relationship-exports button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.relationship-network {
+  display: grid;
+  gap: 7px;
+}
+.relationship-network article {
+  padding: 11px 12px;
+  border: 1px solid #9cb6bc20;
+  border-radius: 10px;
+  background: #adc7ce08;
+}
+.relationship-network article > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px auto 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+}
+.relationship-network button {
+  overflow: hidden;
+  border: 0;
+  background: none;
+  color: #dce8e6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.relationship-network button:first-child {
+  text-align: right;
+}
+.relationship-network button:last-child {
+  text-align: left;
+}
+.relationship-network i {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e3c878a6, transparent);
+}
+.relationship-network span {
+  color: #e1c97e;
+  font-size: 11px;
+}
+.relationship-network small {
+  display: block;
+  margin-top: 6px;
+  text-align: center;
+  color: #829daa;
+  font-size: 10px;
+}
+.relationship-timeline {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+.relationship-timeline article {
+  padding: 14px;
+  border: 1px solid #a0bac122;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #bdd2d00c, #e0cb8308);
+}
+.relationship-timeline header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+}
+.relationship-timeline header span,
+.relationship-timeline header b {
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #d9c27116;
+  color: #dfc875;
+  font-weight: 400;
+}
+.relationship-timeline header b {
+  background: #8ec7ad16;
+  color: #91c5a8;
+}
+.relationship-timeline time {
+  margin-left: auto;
+  color: #7e99a6;
+}
+.relationship-timeline h4 {
+  margin: 11px 0 6px;
+  color: #e3ebe7;
+  font-size: 14px;
+  font-weight: 500;
+}
+.relationship-timeline p {
+  margin: 0 !important;
+  color: #a9bdc2;
+  font-size: 12px !important;
+  line-height: 1.75 !important;
+}
+.relationship-timeline > article > small {
+  display: block;
+  margin-top: 7px;
+  color: #7f99a5;
+  line-height: 1.65;
+}
+.relationship-timeline > article > div {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.relationship-timeline > article > div span {
+  overflow: hidden;
+  max-width: 48%;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #8dbfb016;
+  color: #9cc8ba;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dossier-relationships {
+  display: grid;
+  gap: 9px;
+}
+.dossier-relationships article {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 8px;
+  padding: 9px 0;
+  border-top: 1px solid #d6dfe5;
+}
+.dossier-relationships article > span {
+  align-self: center;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--agent-accent) 14%, transparent);
+  color: #5f7484;
+  font-size: 10px;
+}
+.dossier-relationships button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  color: #354e61;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dossier-relationships small {
+  grid-column: 1/-1;
+  color: #889aa6;
+  line-height: 1.55;
+}
+body:has(.soft-world) .relationship-mode-note {
+  color: #829489;
+  border-color: #b9a76735;
+  background: #ddcd8b18;
+}
+body:has(.soft-world) .relationship-mode-note b,
+body:has(.soft-world) .relationship-network span,
+body:has(.soft-world) .relationship-timeline header span {
+  color: #917a42;
+}
+body:has(.soft-world) .relationship-stats > div,
+body:has(.soft-world) .relationship-network article,
+body:has(.soft-world) .relationship-timeline article {
+  border-color: #8ca08d2d;
+  background: #dce5d91f;
+}
+body:has(.soft-world) .relationship-stats strong,
+body:has(.soft-world) .relationship-network button,
+body:has(.soft-world) .relationship-timeline h4 {
+  color: #4f6d5e;
+}
+body:has(.soft-world) .relationship-exports button {
+  color: #5f7c6c;
+  border-color: #90a48f3d;
+  background: #d7e2d32b;
+}
+body:has(.soft-world) .relationship-timeline p {
+  color: #718b7d;
+}
+@media (max-width: 700px) {
+  .relationship-sheet {
+    width: calc(100vw - 10px) !important;
+  }
+  .relationship-network article > div {
+    grid-template-columns: minmax(0, 1fr) 12px auto 12px minmax(0, 1fr);
+  }
+}
 :root,
 .dark {
   --background: #f5f6f5;
@@ -1905,7 +2178,8 @@ footer {
   will-change: transform;
 }
 .civilization-art,
-.civilization-canvas {
+.civilization-canvas,
+.home-world-effects {
   position: absolute;
   inset: 0;
   width: 1600px;
@@ -1919,6 +2193,11 @@ footer {
 }
 .civilization-canvas {
   z-index: 2;
+}
+.home-world-effects {
+  z-index: 2;
+  opacity: 0.9;
+  mix-blend-mode: normal;
 }
 .universe-vignette {
   position: absolute;
@@ -5321,4 +5600,13 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   .home-mars .world-caption p {
     display: none;
   }
+}
+
+.world-happenings > small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.world-happenings > small > button {
+  display: inline-flex;
 }

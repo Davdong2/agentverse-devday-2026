@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   lazy,
   Suspense,
 } from 'react';
@@ -58,6 +59,7 @@ import { IgnixBadge } from '@/components/ignix-profile';
 import AgentDossier from '@/components/agent-dossier';
 import { AgentSprite } from '@/components/world-scene';
 import CivilizationCanvas, { type Hit } from '@/components/civilization-canvas';
+import HomeWorldEffects from '@/components/home-world-effects';
 import snapshot from '@/lib/agents.json';
 import detailsSnapshot from '@/lib/details.json';
 import { cryptoTaskState } from '@/lib/crypto-world';
@@ -68,6 +70,12 @@ import {
   pickAvatar,
 } from '@/lib/agent-design';
 import { appearance } from '@/lib/world-model';
+import {
+  buildRelationshipGraph,
+  createRelationshipLog,
+  relationshipCsv,
+  relationshipExport,
+} from '@/lib/agent-relationships';
 import type { Agent, AgentData, Detail } from '@/lib/marketplace';
 import {
   regionSlugs,
@@ -159,6 +167,9 @@ export default function Civilization({
     recorded,
     events,
     setEvents,
+    relationshipLogs,
+    setRelationshipLogs,
+    relationshipReady,
     viewMode,
     setViewMode,
     walker,
@@ -182,9 +193,9 @@ export default function Civilization({
     ),
     [size, setSize] = useState({ w: 1440, h: 900 }),
     [dragging, setDragging] = useState(false);
-  const [panel, setPanel] = useState<'directory' | 'agent' | 'region' | null>(
-      profileId ? 'agent' : null,
-    ),
+  const [panel, setPanel] = useState<
+      'directory' | 'agent' | 'region' | 'relationships' | null
+    >(profileId ? 'agent' : null),
     [region, setRegion] = useState(regionIndex ?? 0),
     [selected, setSelected] = useState<number | null>(null),
     [agentId, setAgentId] = useState(profileId ?? '2083');
@@ -237,6 +248,10 @@ export default function Civilization({
   const roster = worldRoster(data.agents);
   const population = roster.length;
   const team = roster.slice(0, 4);
+  const relationshipGraph = useMemo(
+    () => buildRelationshipGraph(relationshipLogs),
+    [relationshipLogs],
+  );
   const appearanceData = appearance(agent, service ?? undefined);
   const teamIndex = team.findIndex((a) => a.agentId === agent.agentId);
   const regionTask = cryptoTaskState(region, time);
@@ -389,6 +404,40 @@ export default function Civilization({
       ].slice(0, 30),
     );
   }, [stage, cycle, episode, weather, team.map((a) => a.agentId).join(',')]);
+  useEffect(() => {
+    if (!relationshipReady || data.agents.length < 2) return;
+    const relationshipCycle = episode * 10000 + cycle;
+    const log = createRelationshipLog(
+      data.agents,
+      details,
+      relationshipCycle,
+      Date.now(),
+      regionFor,
+    );
+    if (!log) return;
+    setRelationshipLogs((current) =>
+      current.some((item) => item.id === log.id)
+        ? current
+        : [log, ...current].slice(0, 300),
+    );
+    setEvents((current) =>
+      [
+        {
+          id: log.id,
+          title: `${log.actorNames[0]} 与 ${log.actorNames[1]} · ${log.type}`,
+          region: log.region,
+          mode: 'Demo' as const,
+          at: log.at,
+        },
+        ...current.filter((item) => item.id !== log.id),
+      ].slice(0, 12),
+    );
+  }, [
+    cycle,
+    episode,
+    relationshipReady,
+    data.agents.map((item) => item.agentId).join(','),
+  ]);
   useEffect(() => {
     if (panel !== 'agent') return;
     const c = new AbortController();
@@ -651,6 +700,30 @@ export default function Civilization({
   const sceneHref =
     'data:application/json;charset=utf-8,' +
     encodeURIComponent(JSON.stringify(scene, null, 2));
+  const exportRelationshipLogs = (format: 'json' | 'csv') => {
+    const content =
+      format === 'json'
+        ? JSON.stringify(
+            relationshipExport(relationshipLogs, data.fetchedAt),
+            null,
+            2,
+          )
+        : '\ufeff' + relationshipCsv(relationshipLogs);
+    const blob = new Blob([content], {
+      type:
+        format === 'json'
+          ? 'application/json;charset=utf-8'
+          : 'text/csv;charset=utf-8',
+    });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = `agentverse-relationship-events-${new Date().toISOString().slice(0, 10)}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(href);
+  };
   const generatePhoto = async () => {
     if (photoBusy || photoUncertain) return;
     setPhotoBusy(true);
@@ -770,12 +843,32 @@ export default function Civilization({
             }}
           >
             {homeView && (
-              <img
-                className="civilization-art"
-                src="/agentverse-mars-civilization.jpg"
-                alt="协作中心与九个功能站点通过发光桥梁连接的火星 Agent 文明"
-                draggable={false}
-              />
+              <>
+                <img
+                  className="civilization-art"
+                  src="/agentverse-mars-civilization.jpg"
+                  alt="协作中心与九个功能站点通过发光桥梁连接的火星 Agent 文明"
+                  draggable={false}
+                />
+                <HomeWorldEffects
+                  time={time}
+                  paused={paused}
+                  speed={speed}
+                  weather={weather}
+                  stage={stage}
+                  activeEventRegion={
+                    signalMode === 'demo'
+                      ? event.region
+                      : (activeNews?.region ??
+                        events.find(
+                          (item) =>
+                            item.mode === 'LIVE' &&
+                            Date.now() - item.at < 45000,
+                        )?.region)
+                  }
+                  relationshipCount={relationshipGraph.length}
+                />
+              </>
             )}
             <CivilizationCanvas
               ignixIds={Object.keys(ignix.associations)}
@@ -886,6 +979,14 @@ export default function Civilization({
             <Users size={16} />
             <span>我的智能体</span>
           </button>
+          <button
+            aria-label="Agent 关系日志"
+            className={panel === 'relationships' ? 'active' : ''}
+            onClick={() => setPanel('relationships')}
+          >
+            <Network size={16} />
+            <span>关系日志</span>
+          </button>
         </nav>
         <button className="source-light" onClick={() => setHelp(true)}>
           <span className="data-mode-badge">
@@ -948,7 +1049,12 @@ export default function Civilization({
         </div>
       )}
       <div className="world-happenings">
-        <small>世界正在发生</small>
+        <small>
+          世界正在发生
+          <button onClick={() => setPanel('relationships')}>
+            <Network size={12} /> 关系日志 {relationshipLogs.length}
+          </button>
+        </small>
         {events.length ? (
           events.slice(0, 2).map((e) => (
             <button key={e.id} onClick={() => focusRegion(e.region, false)}>
@@ -1042,7 +1148,7 @@ export default function Civilization({
           <strong>{data.agents.length}</strong> 真实档案
         </span>
         <span>
-          <strong>{history.length}</strong> 本次协作成果
+          <strong>{relationshipGraph.length}</strong> 自主关系
         </span>
       </div>
       <div className="collaboration-dock">
@@ -1162,10 +1268,124 @@ export default function Civilization({
           className={
             panel === 'agent'
               ? 'civilization-sheet dossier-sheet'
-              : 'civilization-sheet'
+              : panel === 'relationships'
+                ? 'civilization-sheet relationship-sheet'
+                : 'civilization-sheet'
           }
         >
-          {panel === 'directory' ? (
+          {panel === 'relationships' ? (
+            <>
+              <SheetTitle>Agent 关系日志</SheetTitle>
+              <SheetDescription>
+                Agent
+                根据公开能力资料和演示性格自主选择伙伴。每一次关系都有可追溯的选择理由。
+              </SheetDescription>
+              <div className="relationship-mode-note">
+                <b>行为 Demo</b>
+                <span>
+                  这些关系是世界模拟，不是 OKX.AI 服务的真实调用记录。未来接入
+                  A2A 或链上事件后，真实行为会单独标记为 LIVE。
+                </span>
+              </div>
+              <div className="relationship-stats">
+                <div>
+                  <strong>{relationshipLogs.length}</strong>
+                  <small>事件</small>
+                </div>
+                <div>
+                  <strong>{relationshipGraph.length}</strong>
+                  <small>关系</small>
+                </div>
+                <div>
+                  <strong>
+                    {
+                      new Set(relationshipLogs.flatMap((log) => log.actorIds))
+                        .size
+                    }
+                  </strong>
+                  <small>参与 Agent</small>
+                </div>
+              </div>
+              <div className="relationship-exports">
+                <button
+                  disabled={!relationshipLogs.length}
+                  onClick={() => exportRelationshipLogs('json')}
+                >
+                  <Download size={15} /> 导出 JSON
+                </button>
+                <button
+                  disabled={!relationshipLogs.length}
+                  onClick={() => exportRelationshipLogs('csv')}
+                >
+                  <Download size={15} /> 导出 CSV
+                </button>
+              </div>
+              <h3>关系网络</h3>
+              <div className="relationship-network">
+                {relationshipGraph.slice(0, 8).map((edge) => (
+                  <article key={edge.id}>
+                    <div>
+                      <button
+                        onClick={() => {
+                          const selectedAgent = data.agents.find(
+                            (item) => item.agentId === edge.sourceId,
+                          );
+                          if (selectedAgent) selectAgent(selectedAgent);
+                        }}
+                      >
+                        {edge.sourceName}
+                      </button>
+                      <i />
+                      <span>{edge.kind}</span>
+                      <i />
+                      <button
+                        onClick={() => {
+                          const selectedAgent = data.agents.find(
+                            (item) => item.agentId === edge.targetId,
+                          );
+                          if (selectedAgent) selectAgent(selectedAgent);
+                        }}
+                      >
+                        {edge.targetName}
+                      </button>
+                    </div>
+                    <small>
+                      互动 {edge.interactions} 次 · 关系强度 {edge.strength}/100
+                    </small>
+                  </article>
+                ))}
+                {!relationshipGraph.length && (
+                  <p>世界启动后会生成第一条关系。</p>
+                )}
+              </div>
+              <h3>事件时间线</h3>
+              <div className="relationship-timeline">
+                {relationshipLogs.map((log) => (
+                  <article key={log.id}>
+                    <header>
+                      <span>{log.type}</span>
+                      <b>{log.mode}</b>
+                      <time>
+                        {new Date(log.at).toLocaleString('zh-CN', {
+                          timeZone: 'Asia/Shanghai',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })}
+                      </time>
+                    </header>
+                    <h4>{log.title}</h4>
+                    <p>{log.summary}</p>
+                    <small>{log.reason}</small>
+                    <div>
+                      <span>{log.capabilities[0]}</span>
+                      <span>{log.capabilities[1]}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : panel === 'directory' ? (
             <>
               <SheetTitle>世界里的 Agent</SheetTitle>
               <SheetDescription>
@@ -1385,6 +1605,9 @@ export default function Civilization({
                 (s) => s.agentId === agent.agentId,
               )}
               memories={memories}
+              relationships={relationshipLogs.filter((log) =>
+                log.actorIds.includes(agent.agentId),
+              )}
               team={team}
               onSelect={selectAgent}
               onDirectory={() => setPanel('directory')}

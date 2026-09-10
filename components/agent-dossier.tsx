@@ -27,6 +27,7 @@ import {
   type MemoryRecord,
 } from '@/lib/civilization-model';
 import type { Agent, AgentData, Detail } from '@/lib/marketplace';
+import type { RelationshipLog } from '@/lib/agent-relationships';
 const icons = [
   Search,
   ChartNoAxesColumnIncreasing,
@@ -55,6 +56,7 @@ export default function AgentDossier({
   time,
   state,
   memories,
+  relationships,
   team,
   onSelect,
   onDirectory,
@@ -67,6 +69,7 @@ export default function AgentDossier({
   time: number;
   state?: AgentState;
   memories: MemoryRecord[];
+  relationships: RelationshipLog[];
   team: Agent[];
   onSelect: (a: Agent) => void;
   onDirectory: () => void;
@@ -275,6 +278,39 @@ export default function AgentDossier({
               </dd>
             </div>
           </dl>
+        </section>
+        <section className="dossier-card">
+          <h3>
+            自主关系 <span className="dossier-demo">Demo</span>
+          </h3>
+          <p className="dossier-muted">
+            根据公开能力资料推导的演示性格与能力互补关系。
+          </p>
+          <div className="dossier-relationships">
+            {relationships.slice(0, 3).map((relationship) => {
+              const otherIndex =
+                relationship.actorIds[0] === agent.agentId ? 1 : 0;
+              const other = data.agents.find(
+                (item) => item.agentId === relationship.actorIds[otherIndex],
+              );
+              return (
+                <article key={relationship.id}>
+                  <span>{relationship.type}</span>
+                  <button
+                    disabled={!other}
+                    onClick={() => other && onSelect(other)}
+                  >
+                    {relationship.actorNames[otherIndex]}
+                    <ArrowUpRight size={12} />
+                  </button>
+                  <small>{relationship.reason}</small>
+                </article>
+              );
+            })}
+            {!relationships.length && (
+              <p className="dossier-muted">尚未在本次世界运行中建立关系。</p>
+            )}
+          </div>
         </section>
         <section className="dossier-card">
           <h3>
