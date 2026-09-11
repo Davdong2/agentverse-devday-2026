@@ -19,9 +19,19 @@ const canvasSource = fs.readFileSync(
     'utf8',
   ),
   spriteSource = fs.readFileSync('components/world-scene.tsx', 'utf8'),
-  walkSource = fs.readFileSync('components/world-walk.tsx', 'utf8');
+  walkSource = fs.readFileSync('components/world-walk.tsx', 'utf8'),
+  homeEffectsSource = fs.readFileSync(
+    'components/home-world-effects.tsx',
+    'utf8',
+  ),
+  civilizationSource = fs.readFileSync('components/civilization.tsx', 'utf8');
 assert.ok(canvasSource.includes('agent-diverse-atlas.png'));
 assert.ok(spriteSource.includes('agent-diverse-atlas.png'));
+assert.ok(homeEffectsSource.includes('agent-diverse-atlas.png'));
+assert.ok(homeEffectsSource.includes('drawAvatarSprite'));
+assert.ok(homeEffectsSource.includes('agentVariant(agent)'));
+assert.ok(!homeEffectsSource.includes('drawTinyAgent'));
+assert.ok(civilizationSource.includes('agents={roster}'));
 assert.ok(!walkSource.includes('setPanelAtlas'));
 assert.ok(!walkSource.includes('walk-instructions'));
 assert.ok(!walkSource.includes('agentverse-walk-introduction'));

@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { drawAvatarSprite } from '@/lib/avatar-sprite';
 import { weathers, type Weather } from '@/lib/civilization-model';
+import { agentVariant } from '@/lib/agent-design';
+import type { Agent } from '@/lib/marketplace';
 
 type Props = {
   time: number;
@@ -10,6 +13,7 @@ type Props = {
   stage: number;
   activeEventRegion?: number;
   relationshipCount: number;
+  agents: Agent[];
 };
 
 const center = { x: 800, y: 472 };
@@ -60,6 +64,12 @@ export default function HomeWorldEffects(props: Props) {
     let baseStamp = performance.now();
     let wasPaused = latest.current.paused;
     const glowSprites = new Map<string, HTMLCanvasElement>();
+    const atlasImage = new Image();
+    let atlasReady = false;
+    atlasImage.onload = () => {
+      atlasReady = true;
+    };
+    atlasImage.src = '/agent-diverse-atlas.png';
 
     const glow = (
       x: number,
@@ -94,64 +104,37 @@ export default function HomeWorldEffects(props: Props) {
       ctx.restore();
     };
 
-    const drawTinyAgent = (
+    const drawProfileAgent = (
       x: number,
       y: number,
       index: number,
       time: number,
-      direction: number,
+      agent: Agent,
     ) => {
-      const colors = [
-        '#73C9FF',
-        '#78DBA6',
-        '#F0C66F',
-        '#B49AEF',
-        '#F39AA0',
-        '#78DDE1',
-      ];
+      if (!atlasReady) return;
       const bob = Math.sin(time * 5 + index) * 1.4;
-      const step = Math.sin(time * 7 + index * 1.7) * 1.6;
+      const depth = 0.84 + Math.max(0, Math.min(1, (y - 250) / 520)) * 0.28;
+      const width = 39 * depth;
+      const height = 54 * depth;
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
       ctx.translate(x, y + bob);
-      ctx.scale(direction, 1);
-      ctx.globalAlpha = 0.92;
-      ctx.fillStyle = '#02060A75';
+      ctx.globalAlpha = 0.94;
+      ctx.fillStyle = '#02060A72';
       ctx.beginPath();
-      ctx.ellipse(0, 8, 11, 3.4, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 2.5, width * 0.31, height * 0.07, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#C8D3D7';
-      ctx.beginPath();
-      ctx.roundRect(-7, -7, 14, 14, 5);
-      ctx.fill();
-      ctx.fillStyle = '#F6F4EF';
-      ctx.beginPath();
-      ctx.roundRect(-10, -20, 20, 15, 6);
-      ctx.fill();
-      ctx.fillStyle = '#101820';
-      ctx.beginPath();
-      ctx.ellipse(-3.2, -13, 1.45, 2.7, 0, 0, Math.PI * 2);
-      ctx.ellipse(3.2, -13, 1.45, 2.7, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#E8EDF0';
-      ctx.lineWidth = 3.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(-4, 5);
-      ctx.lineTo(-5 + step, 10);
-      ctx.moveTo(4, 5);
-      ctx.lineTo(5 - step, 10);
-      ctx.stroke();
-      ctx.fillStyle = colors[index % colors.length];
-      ctx.shadowColor = colors[index % colors.length];
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.roundRect(-5, -27, 10, 8, 2.5);
-      ctx.fill();
-      ctx.fillStyle = '#DFFFFF';
-      ctx.beginPath();
-      ctx.arc(0, -23, 1.5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.shadowColor = '#9EEFFF';
+      ctx.shadowBlur = 4;
+      drawAvatarSprite(
+        ctx,
+        atlasImage,
+        agentVariant(agent),
+        -width / 2,
+        -height + 4,
+        width,
+        height,
+      );
       ctx.restore();
     };
 
@@ -274,7 +257,7 @@ export default function HomeWorldEffects(props: Props) {
 
       // Named identities become visible after entering; the overview shows their
       // shared civilization as small workers moving on the same data routes.
-      const workerCount = coarse ? 5 : 11;
+      const workerCount = Math.min(coarse ? 5 : 11, state.agents.length);
       for (let worker = 0; worker < workerCount; worker++) {
         const nodeIndex = worker % 9;
         const node = nodes[nodeIndex + 1];
@@ -290,7 +273,13 @@ export default function HomeWorldEffects(props: Props) {
         const direction = worker % 2 ? -1 : 1;
         if (direction < 0) progress = 1 - progress;
         const position = pointOnCurve(center, control, node, progress);
-        drawTinyAgent(position.x, position.y - 5, worker, time, direction);
+        drawProfileAgent(
+          position.x,
+          position.y - 5,
+          worker,
+          time,
+          state.agents[worker],
+        );
       }
 
       // Each compute station has a restrained breathing status ring.

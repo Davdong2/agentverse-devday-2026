@@ -867,6 +867,7 @@ export default function Civilization({
                         )?.region)
                   }
                   relationshipCount={relationshipGraph.length}
+                  agents={roster}
                 />
               </>
             )}
