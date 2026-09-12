@@ -7,6 +7,7 @@ import type { MarketSignal } from '@/lib/civilization-model';
 import { createWorldEffects } from '@/components/world-effects';
 import { createWorldArchitecture } from '@/components/world-architecture';
 import { createAgentEconomy } from '@/components/world-agent-economy';
+import { createInteriorCity } from '@/components/world-interior-city';
 import { createCryptoProps } from '@/components/crypto-props';
 import { createAgentLabels } from '@/components/agent-labels';
 import { createAvatarFactory } from '@/components/agent-avatar';
@@ -113,6 +114,7 @@ export default function WorldWalk(props: Props) {
     renderer.toneMappingExposure = 1.05;
     const pickable: THREE.Object3D[] = [];
     const architecture = createWorldArchitecture(scene, pickable);
+    const interiorCity = createInteriorCity(scene);
     const economy = createAgentEconomy(scene);
     const cryptoProps = createCryptoProps(scene, pickable);
     const avatars = createAvatarFactory();
@@ -362,6 +364,8 @@ export default function WorldWalk(props: Props) {
       cryptoProps.update(time, level);
       economy.setData(p.agents.length, p.ignixIds.length, p.signal);
       economy.update(time, level);
+      interiorCity.setSignal(p.signal);
+      interiorCity.update(time, level);
       cityGlow.visible = level < 2;
       cityGlow.intensity = level === 0 ? 3.4 : 1.8;
       actors.forEach((actor, i) => {
@@ -497,6 +501,7 @@ export default function WorldWalk(props: Props) {
       surfaceTexture.dispose();
       effects.dispose();
       architecture.dispose();
+      interiorCity.dispose();
       economy.dispose();
       cryptoProps.dispose();
       avatars.dispose();

@@ -5610,3 +5610,285 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
 .world-happenings > small > button {
   display: inline-flex;
 }
+
+/* V2 civilization overview: the ecosystem is legible before entering it. */
+.home-ecosystem-rail {
+  position: absolute;
+  z-index: 12;
+  top: 95px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 15px;
+  color: #cce9f3;
+  background: linear-gradient(90deg, #07101bbb, #101a26d9, #07101bbb);
+  border: 1px solid #8fdfff37;
+  border-radius: 999px;
+  box-shadow: 0 10px 40px #00081466, inset 0 0 28px #5edbff0a;
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.home-ecosystem-rail span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+.home-ecosystem-rail span:nth-of-type(2),
+.home-ecosystem-rail span:nth-of-type(4) {
+  color: #ffd391;
+}
+.home-ecosystem-rail i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #78e4ff;
+  box-shadow: 0 0 10px #78e4ff;
+}
+.home-core-readout {
+  position: absolute;
+  z-index: 12;
+  top: 141px;
+  left: 50%;
+  width: min(400px, calc(100vw - 48px));
+  transform: translateX(-50%);
+  padding: 15px 22px 14px;
+  color: #edfaff;
+  text-align: center;
+  background: linear-gradient(145deg, #07121fdb, #102538ba);
+  border: 1px solid #95e7ff4a;
+  border-radius: 14px;
+  box-shadow: 0 18px 50px #02081076, inset 0 0 32px #72dfff0c;
+  backdrop-filter: blur(12px);
+}
+.home-core-readout::before {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #74e5ff, #ffd386, transparent);
+  box-shadow: 0 0 16px #79e4ff;
+}
+.home-core-readout small {
+  display: block;
+  color: #8fc5d4;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+.home-core-readout strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 520;
+  letter-spacing: 0.08em;
+}
+.home-core-readout p {
+  margin: 6px 0 11px;
+  color: #b4c6ce;
+  font-size: 12px;
+}
+.home-core-readout button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 37px;
+  padding: 7px 16px;
+  color: #0a1b25;
+  background: linear-gradient(110deg, #eff7f6, #cfe7e6);
+  border: 1px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px #02070d63, 0 0 26px #78ddff20;
+  font-size: 13px;
+}
+.home-core-readout button:hover {
+  transform: translateY(-1px);
+  background: #fff;
+}
+.home-protocol-beacons > span {
+  position: absolute;
+  z-index: 11;
+  display: block;
+  min-width: 108px;
+  padding: 8px 11px 9px;
+  color: #eaf9fb;
+  background: #07131dc9;
+  border: 1px solid #81ddf84a;
+  border-radius: 9px;
+  box-shadow: 0 8px 24px #02081266;
+  backdrop-filter: blur(10px);
+  text-align: left;
+  pointer-events: none;
+}
+.home-protocol-beacons > span::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  height: 36px;
+  background: linear-gradient(#78e5ffb8, transparent);
+  box-shadow: 0 0 9px #78e5ff;
+}
+.home-protocol-beacons b {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+}
+.home-protocol-beacons small {
+  display: block;
+  margin-top: 3px;
+  color: #91abb5;
+  font-size: 10px;
+}
+.beacon-okx {
+  left: 35%;
+  top: 34%;
+}
+.beacon-xlayer {
+  left: 61%;
+  top: 33%;
+}
+.beacon-pay {
+  left: 72%;
+  top: 53%;
+}
+.home-mars .collaboration-dock {
+  top: auto;
+  bottom: 92px;
+}
+
+/* The walking view uses the same dark glass, cyan and warm metal language as
+   the new physical city, so overlay controls no longer look pasted on. */
+.walk-mode {
+  background: #06101a;
+}
+.walk-mode .universe-header {
+  background: linear-gradient(#050b13e8, transparent);
+}
+.walk-mode .universe-brand > span,
+.walk-mode .universe-brand > svg {
+  color: #f4f8fa;
+}
+.walk-mode .universe-brand small {
+  color: #91a8b5;
+}
+.walk-mode .universe-header nav {
+  background: #0a1520d9;
+  border: 1px solid #8edfff30;
+  box-shadow: 0 14px 45px #02060b75;
+}
+.walk-mode .universe-header nav button {
+  color: #94aab6;
+}
+.walk-mode .universe-header nav button.active,
+.walk-mode .universe-header nav button:hover {
+  color: #f1fbff;
+  background: #7398aa36;
+}
+.walk-mode .universe-header .source-light {
+  color: #dce9ed;
+}
+.walk-mode .data-mode-badge,
+.walk-mode .demo-mode-badge {
+  color: #b9e9e0;
+  background: #0b1925cf;
+  border-color: #7fe3d545;
+}
+.walk-mode .demo-mode-badge {
+  color: #f1c985;
+  border-color: #e1bc744f;
+}
+.walk-mode .walk-location,
+.walk-mode .walk-signal-card,
+.walk-mode .collaboration-dock,
+.walk-mode .world-controls,
+.walk-mode .walk-actions button {
+  color: #e9f5f7;
+  background: linear-gradient(145deg, #08131edb, #102432c9);
+  border-color: #90e2f23d;
+  box-shadow: 0 14px 42px #01050a75, inset 0 0 30px #77dfff09;
+  backdrop-filter: blur(16px);
+}
+.walk-mode .walk-location small,
+.walk-mode .walk-signal-card small,
+.walk-mode .walk-signal-card p,
+.walk-mode .dock-title small {
+  color: #8ba5b0;
+}
+.walk-mode .walk-task-action,
+.walk-mode .walk-signal-card em {
+  color: #6fd7c4;
+}
+.walk-mode .walk-signal-card a {
+  color: #b8dbe5;
+  border-top-color: #6aa4b63d;
+}
+.walk-mode .world-controls button,
+.walk-mode .world-controls span,
+.walk-mode .walk-actions button,
+.walk-mode .dock-title,
+.walk-mode .dock-title strong {
+  color: #edf8fa;
+}
+.walk-mode .dock-title .dock-symbol {
+  color: #ffd083;
+  background: #ffd08312;
+  border-color: #ffd08347;
+}
+
+@media (max-width: 900px) {
+  .home-ecosystem-rail {
+    gap: 7px;
+    padding-inline: 10px;
+  }
+  .home-ecosystem-rail span {
+    font-size: 9px;
+  }
+  .home-protocol-beacons {
+    display: none;
+  }
+  .home-core-readout {
+    top: 147px;
+    width: 310px;
+  }
+  .home-core-readout strong {
+    font-size: 17px;
+  }
+}
+@media (max-width: 700px) {
+  .home-ecosystem-rail {
+    top: 91px;
+    max-width: calc(100vw - 24px);
+    overflow: hidden;
+  }
+  .home-ecosystem-rail span:nth-of-type(n + 5),
+  .home-ecosystem-rail i:nth-of-type(n + 5) {
+    display: none;
+  }
+  .home-core-readout {
+    top: auto;
+    bottom: 144px;
+    width: min(300px, calc(100vw - 34px));
+    padding: 12px 16px;
+  }
+  .home-core-readout p {
+    display: none;
+  }
+  .home-mars .collaboration-dock {
+    display: none;
+  }
+}
+@media (max-width: 700px) and (max-height: 650px) {
+  .home-mars-intro,
+  .home-market-card {
+    display: none;
+  }
+  .home-core-readout {
+    bottom: 128px;
+  }
+}

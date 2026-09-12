@@ -1034,6 +1034,45 @@ export default function Civilization({
               <small>已核实</small>
             </div>
           </section>
+          <div className="home-ecosystem-rail" aria-label="Agent 经济协议层">
+            <span>OKX.AI</span>
+            <i />
+            <span>X LAYER</span>
+            <i />
+            <span>AGENT PAY</span>
+            <i />
+            <span>ONCHAIN OS</span>
+            <i />
+            <span>A2A</span>
+            <i />
+            <span>IGNIX</span>
+          </div>
+          <section className="home-core-readout" aria-label="Agentverse 文明核心">
+            <small>AGENT NATIVE CIVILIZATION</small>
+            <strong>X LAYER AGENT ECONOMY</strong>
+            <p>
+              {population} 个世界分身 · {relationshipGraph.length} 条关系 ·{' '}
+              {stages[stage].short}中
+            </p>
+            <button onClick={() => setViewMode('walk')}>
+              <Focus size={15} /> 进入主板内部
+              <ArrowUpRight size={14} />
+            </button>
+          </section>
+          <div className="home-protocol-beacons" aria-hidden="true">
+            <span className="beacon-okx">
+              <b>OKX.AI</b>
+              <small>Agent 名录</small>
+            </span>
+            <span className="beacon-xlayer">
+              <b>X LAYER</b>
+              <small>结算网络</small>
+            </span>
+            <span className="beacon-pay">
+              <b>USDT0</b>
+              <small>Agent Pay</small>
+            </span>
+          </div>
         </>
       )}
       {regionIndex !== undefined && (
