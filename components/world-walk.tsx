@@ -365,6 +365,7 @@ export default function WorldWalk(props: Props) {
       economy.setData(p.agents.length, p.ignixIds.length, p.signal);
       economy.update(time, level);
       interiorCity.setSignal(p.signal);
+      interiorCity.setNews(p.news);
       interiorCity.update(time, level);
       cityGlow.visible = level < 2;
       cityGlow.intensity = level === 0 ? 3.4 : 1.8;

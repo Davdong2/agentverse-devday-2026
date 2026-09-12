@@ -29,6 +29,13 @@ test('walkable interior is a spatial 360-degree Agent economy city', () => {
     'BTC',
     'ETH',
     'USDT0',
+    '世界新闻流',
+    '美股观察',
+    '资金流入 / 流出',
+    '全球资产涨跌气泡',
+    'X Layer 链上资金路径',
+    'OKX 市场信号',
+    'world-market-360-ticker',
   ]) {
     assert.ok(source.includes(term), `missing ${term}`);
   }
@@ -46,5 +53,11 @@ test('walkable interior is a spatial 360-degree Agent economy city', () => {
   assert.match(source, /shuttleCount = 14/);
   assert.match(source, /quality === 2 \? 5 : quality === 1 \? 9/);
   assert.match(source, /signalState/);
+  assert.match(source, /setNews\(news\?: WorldNews \| null\)/);
+  assert.match(source, /const marketWallGroups = marketWalls\.flatMap/);
+  assert.match(source, /wall\.group\.clone\(true\)/);
+  assert.match(source, /news\?\.mode === 'fresh' \? 'LIVE'/);
+  assert.match(source, /价格与涨跌来自 OKX · 曲线动画为 Demo/);
+  assert.match(source, /示意价格 · 等待接入授权的美股行情源/);
   assert.match(source, /textures\.forEach\(\(item\) => item\.dispose\(\)\)/);
 });

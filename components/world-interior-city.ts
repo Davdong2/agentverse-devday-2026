@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { regions, type MarketSignal } from '@/lib/civilization-model';
+import type { WorldNews } from '@/lib/world-news';
 
 const workCells = [
   ['RESEARCH AGENT', 'ONCHAIN DATA', '#77DFFF'],
@@ -15,6 +16,31 @@ const networkNodes = [
   ['AGENT PAY', 'USDT0 ESCROW'],
   ['ONCHAIN OS', 'WALLET · SWAP'],
 ] as const;
+
+const stockDemo = [
+  ['NVDA', '184.62', 2.84],
+  ['AAPL', '237.18', 0.72],
+  ['TSLA', '418.36', -1.46],
+  ['MSFT', '512.40', 1.08],
+  ['COIN', '326.55', 3.92],
+  ['MSTR', '366.81', -0.88],
+] as const;
+
+const flowDemo = [
+  ['BTC ETF', 186, true],
+  ['ETH ETF', 74, true],
+  ['STABLECOIN', 128, true],
+  ['EXCHANGE', 96, false],
+  ['RWA', 42, true],
+] as const;
+
+type MarketWallKind =
+  | 'news'
+  | 'stocks'
+  | 'flows'
+  | 'bubbles'
+  | 'onchain'
+  | 'market';
 
 /**
  * A fully spatial interior city. The far field is a procedural 360° dome and
@@ -42,6 +68,7 @@ export function createInteriorCity(scene: THREE.Scene) {
   const plane = geo(new THREE.PlaneGeometry(1, 1));
   const skySphere = geo(new THREE.SphereGeometry(155, 64, 32));
   const towerBox = geo(new THREE.BoxGeometry(1, 1, 1));
+  const tickerCylinder = geo(new THREE.CylinderGeometry(1, 1, 1, 96, 1, true));
   const silver = mat(
     new THREE.MeshPhongMaterial({
       color: '#BFC9CF',
@@ -224,6 +251,265 @@ export function createInteriorCity(scene: THREE.Scene) {
     texture.anisotropy = 4;
     textures.push(texture);
     return texture;
+  }
+
+  function dynamicTexture(width: number, height: number) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 4;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    textures.push(texture);
+    return { canvas, context: canvas.getContext('2d')!, texture };
+  }
+
+  function shorten(value: string, context: CanvasRenderingContext2D, width: number) {
+    if (context.measureText(value).width <= width) return value;
+    let result = value;
+    while (result.length > 8 && context.measureText(`${result}…`).width > width)
+      result = result.slice(0, -1);
+    return `${result}…`;
+  }
+
+  function wallBase(
+    context: CanvasRenderingContext2D,
+    title: string,
+    mode: string,
+    accent: string,
+  ) {
+    const gradient = context.createLinearGradient(0, 0, 1024, 512);
+    gradient.addColorStop(0, '#06131E');
+    gradient.addColorStop(0.58, '#0A1F2A');
+    gradient.addColorStop(1, '#061018');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 1024, 512);
+    context.strokeStyle = '#315263';
+    context.lineWidth = 3;
+    context.strokeRect(12, 12, 1000, 488);
+    context.fillStyle = accent;
+    context.fillRect(12, 12, 10, 488);
+    context.font = '700 44px system-ui, sans-serif';
+    context.fillStyle = '#F3FAFC';
+    context.fillText(title, 54, 72);
+    context.font = '700 20px system-ui, sans-serif';
+    const modeWidth = Math.max(94, context.measureText(mode).width + 34);
+    context.fillStyle = mode === 'LIVE' ? '#0E714F' : mode.includes('缓存') ? '#5A4926' : '#273C49';
+    context.fillRect(970 - modeWidth, 34, modeWidth, 48);
+    context.fillStyle = mode === 'LIVE' ? '#86F2BE' : mode.includes('缓存') ? '#FFD078' : '#9DC7D4';
+    context.textAlign = 'center';
+    context.fillText(mode, 970 - modeWidth / 2, 66);
+    context.textAlign = 'left';
+    context.strokeStyle = '#21414F';
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(54, 98);
+    context.lineTo(970, 98);
+    context.stroke();
+  }
+
+  function paintMarketWall(
+    kind: MarketWallKind,
+    context: CanvasRenderingContext2D,
+    time: number,
+    signal?: MarketSignal | null,
+    news?: WorldNews | null,
+  ) {
+    const positive = '#3CE6A1';
+    const negative = '#FF6E7A';
+    const cyanText = '#7BDEFF';
+    context.clearRect(0, 0, 1024, 512);
+
+    if (kind === 'news') {
+      const mode = news?.mode === 'fresh' ? 'LIVE' : news ? '缓存' : '暂无数据';
+      wallBase(context, '世界新闻流', mode, '#7BDEFF');
+      const items = news?.items.slice(0, 3) ?? [];
+      context.font = '600 24px system-ui, sans-serif';
+      items.forEach((item, index) => {
+        const y = 148 + index * 94;
+        context.fillStyle = index === 0 ? '#7BDEFF' : '#86A6B2';
+        context.fillRect(54, y - 20, 10, 10);
+        context.fillStyle = '#EEF6F8';
+        context.fillText(shorten(item.title, context, 820), 86, y);
+        context.font = '500 18px system-ui, sans-serif';
+        context.fillStyle = '#7FA4B1';
+        context.fillText(`${item.category} · COINDESK`, 86, y + 32);
+        context.font = '600 24px system-ui, sans-serif';
+      });
+      if (!items.length) {
+        context.fillStyle = '#86A6B2';
+        context.font = '500 30px system-ui, sans-serif';
+        context.fillText('等待公开新闻信号进入研究区', 54, 226);
+      }
+      context.fillStyle = '#0B2935';
+      context.fillRect(54, 438, 916, 42);
+      context.fillStyle = cyanText;
+      context.font = '600 19px system-ui, sans-serif';
+      const marquee = items[0]?.title ?? 'AGENTVERSE · REALITY SIGNAL INTAKE';
+      const shift = (time * 42) % 620;
+      context.fillText(shorten(marquee, context, 780), 72 - shift, 466);
+      context.fillText(shorten(marquee, context, 780), 720 - shift, 466);
+      return;
+    }
+
+    if (kind === 'stocks') {
+      wallBase(context, '美股观察', 'DEMO', '#FFD078');
+      context.font = '600 22px system-ui, sans-serif';
+      stockDemo.forEach(([symbol, price, change], index) => {
+        const column = index % 3;
+        const row = Math.floor(index / 3);
+        const x = 54 + column * 305;
+        const y = 150 + row * 160;
+        context.fillStyle = '#102733';
+        context.fillRect(x, y - 34, 270, 126);
+        context.fillStyle = '#F4FAFC';
+        context.fillText(symbol, x + 18, y);
+        context.font = '700 30px ui-monospace, monospace';
+        context.fillText(price, x + 18, y + 43);
+        context.fillStyle = change >= 0 ? positive : negative;
+        context.font = '700 22px ui-monospace, monospace';
+        context.fillText(`${change >= 0 ? '+' : ''}${change.toFixed(2)}%`, x + 158, y + 43);
+        context.font = '600 22px system-ui, sans-serif';
+      });
+      context.fillStyle = '#7895A0';
+      context.font = '500 18px system-ui, sans-serif';
+      context.fillText('示意价格 · 等待接入授权的美股行情源', 54, 470);
+      return;
+    }
+
+    if (kind === 'flows') {
+      wallBase(context, '资金流入 / 流出', 'DEMO', '#AE9AFF');
+      flowDemo.forEach(([label, amount, incoming], index) => {
+        const y = 142 + index * 68;
+        context.font = '600 21px system-ui, sans-serif';
+        context.fillStyle = '#DCE8EC';
+        context.fillText(label, 54, y);
+        context.fillStyle = '#132A35';
+        context.fillRect(260, y - 20, 540, 24);
+        context.fillStyle = incoming ? positive : negative;
+        context.fillRect(530, y - 20, (incoming ? 1 : -1) * Math.min(250, amount * 1.2), 24);
+        context.fillStyle = incoming ? positive : negative;
+        context.font = '700 20px ui-monospace, monospace';
+        context.fillText(`${incoming ? '+' : '-'}$${amount}M`, 834, y);
+      });
+      context.strokeStyle = '#66808B';
+      context.beginPath();
+      context.moveTo(530, 112);
+      context.lineTo(530, 430);
+      context.stroke();
+      context.fillStyle = '#7895A0';
+      context.font = '500 18px system-ui, sans-serif';
+      context.fillText('负向流出', 260, 466);
+      context.fillText('正向流入', 700, 466);
+      return;
+    }
+
+    if (kind === 'bubbles') {
+      wallBase(context, '全球资产涨跌气泡', 'DEMO', '#70E0B4');
+      const bubbles = [
+        ['BTC', 2.6, 126, 214, 64],
+        ['ETH', 1.4, 274, 304, 52],
+        ['NVDA', 2.8, 414, 206, 70],
+        ['TSLA', -1.5, 568, 318, 56],
+        ['COIN', 3.9, 728, 198, 74],
+        ['MSTR', -0.9, 884, 310, 48],
+      ] as const;
+      bubbles.forEach(([symbol, change, x, y, base], index) => {
+        const radius = base + Math.sin(time * 0.7 + index) * 4;
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fillStyle = change >= 0 ? 'rgba(31, 197, 126, .72)' : 'rgba(241, 72, 91, .72)';
+        context.fill();
+        context.strokeStyle = change >= 0 ? positive : negative;
+        context.lineWidth = 4;
+        context.stroke();
+        context.fillStyle = '#FFFFFF';
+        context.textAlign = 'center';
+        context.font = '700 22px system-ui, sans-serif';
+        context.fillText(symbol, x, y - 4);
+        context.font = '700 17px ui-monospace, monospace';
+        context.fillText(`${change >= 0 ? '+' : ''}${change.toFixed(1)}%`, x, y + 23);
+      });
+      context.textAlign = 'left';
+      context.fillStyle = '#7895A0';
+      context.font = '500 18px system-ui, sans-serif';
+      context.fillText('气泡面积映射示意涨跌幅 · 非实时行情', 54, 470);
+      return;
+    }
+
+    if (kind === 'onchain') {
+      wallBase(context, 'X Layer 链上资金路径', 'DEMO', '#7BDEFF');
+      const nodes = [
+        ['WALLET', 132, 196, positive],
+        ['SWAP', 350, 308, cyanText],
+        ['AGENT', 572, 186, '#FFD078'],
+        ['USDT0', 808, 302, '#AE9AFF'],
+      ] as const;
+      context.lineWidth = 5;
+      nodes.slice(0, -1).forEach((node, index) => {
+        const next = nodes[index + 1];
+        context.strokeStyle = index === 1 ? '#FFD078' : '#4FBED8';
+        context.beginPath();
+        context.moveTo(node[1] + 56, node[2]);
+        context.bezierCurveTo(node[1] + 110, node[2] - 70, next[1] - 80, next[2] + 70, next[1] - 56, next[2]);
+        context.stroke();
+        const progress = (time * 0.18 + index * 0.27) % 1;
+        const px = node[1] + (next[1] - node[1]) * progress;
+        const py = node[2] + (next[2] - node[2]) * progress;
+        context.fillStyle = '#FFFFFF';
+        context.beginPath();
+        context.arc(px, py, 8, 0, Math.PI * 2);
+        context.fill();
+      });
+      nodes.forEach(([label, x, y, color]) => {
+        context.fillStyle = '#102631';
+        context.beginPath();
+        context.arc(x, y, 54, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = color;
+        context.lineWidth = 4;
+        context.stroke();
+        context.fillStyle = '#EEF7F9';
+        context.textAlign = 'center';
+        context.font = '700 18px system-ui, sans-serif';
+        context.fillText(label, x, y + 6);
+      });
+      context.textAlign = 'left';
+      context.fillStyle = positive;
+      context.font = '700 25px ui-monospace, monospace';
+      context.fillText('NET INFLOW  +$3.8M', 54, 438);
+      context.fillStyle = '#7895A0';
+      context.font = '500 18px system-ui, sans-serif';
+      context.fillText('路径与金额为演示', 720, 438);
+      return;
+    }
+
+    const marketMode = signal?.mode === 'fresh' ? 'LIVE' : signal ? '缓存' : '暂无数据';
+    wallBase(context, 'OKX 市场信号', marketMode, signal && signal.change < 0 ? negative : positive);
+    context.fillStyle = '#A6BBC4';
+    context.font = '600 23px system-ui, sans-serif';
+    context.fillText('BTC / USDT', 54, 162);
+    context.fillStyle = '#F5FBFC';
+    context.font = '700 74px ui-monospace, monospace';
+    context.fillText(signal ? signal.last.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—', 54, 250);
+    context.fillStyle = signal && signal.change < 0 ? negative : positive;
+    context.font = '700 36px ui-monospace, monospace';
+    context.fillText(signal ? `${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%` : '等待现实信号', 680, 244);
+    context.strokeStyle = signal && signal.change < 0 ? negative : positive;
+    context.lineWidth = 6;
+    context.beginPath();
+    for (let index = 0; index < 24; index++) {
+      const x = 54 + index * 38;
+      const trend = (signal?.change ?? 0) * index * 0.58;
+      const y = 374 - Math.sin(index * 1.24 + time * 0.55) * 24 - trend;
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+    context.fillStyle = '#7895A0';
+    context.font = '500 18px system-ui, sans-serif';
+    context.fillText('价格与涨跌来自 OKX · 曲线动画为 Demo', 54, 470);
   }
 
   // Resolution-independent 360° sky. It contains no bitmap and has no seam,
@@ -422,6 +708,120 @@ export function createInteriorCity(scene: THREE.Scene) {
     return group;
   });
 
+  // Large information façades occupy the previously empty skyline. Real
+  // OKX/CoinDesk inputs and illustrative finance surfaces are visibly labelled.
+  const marketWallKinds: MarketWallKind[] = [
+    'news',
+    'stocks',
+    'flows',
+    'bubbles',
+    'onchain',
+    'market',
+  ];
+  const marketWalls = marketWallKinds.map((kind, index) => {
+    const group = new THREE.Group();
+    const angle = (index / marketWallKinds.length) * Math.PI * 2 + 0.62;
+    const radius = 47.5;
+    group.name = `skyline-data-wall-${kind}`;
+    group.position.set(
+      worldCx + Math.cos(angle) * radius,
+      11.2 + (index % 2) * 4.2,
+      worldCz + Math.sin(angle) * radius,
+    );
+    group.rotation.y = -Math.PI / 2 - angle;
+    root.add(group);
+    part(group, box, skylineGlass, 0, 0, 0, 11.7, 6.2, 0.42);
+    part(group, box, index % 2 ? amber : cyan, 0, -3.22, 0.12, 12.1, 0.09, 0.18);
+    for (const side of [-1, 1])
+      part(group, box, silver, side * 5.55, -4.7, -0.05, 0.17, 3.2, 0.28);
+    const surface = dynamicTexture(1024, 512);
+    paintMarketWall(kind, surface.context, 0);
+    surface.texture.needsUpdate = true;
+    const material = mat(
+      new THREE.MeshBasicMaterial({
+        map: surface.texture,
+        toneMapped: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    part(group, plane, material, 0, 0, 0.235, 11.05, 5.28, 1);
+    return { kind, group, ...surface };
+  });
+
+  // A second physical screen for each texture fills the gaps between the six
+  // data districts without duplicating canvas painting or texture memory.
+  const marketWallGroups = marketWalls.flatMap((wall, index) => {
+    const duplicate = wall.group.clone(true);
+    const angle = (index / marketWallKinds.length) * Math.PI * 2 + 0.62 + Math.PI / 6;
+    const radius = 47.5;
+    duplicate.name = `${wall.group.name}-relay`;
+    duplicate.position.set(
+      worldCx + Math.cos(angle) * radius,
+      13.3 + ((index + 1) % 2) * 4.2,
+      worldCz + Math.sin(angle) * radius,
+    );
+    duplicate.rotation.y = -Math.PI / 2 - angle;
+    root.add(duplicate);
+    return [wall.group, duplicate];
+  });
+
+  const tickerSurface = dynamicTexture(2048, 128);
+  tickerSurface.texture.wrapS = THREE.RepeatWrapping;
+  tickerSurface.texture.repeat.set(3.1, 1);
+  const tickerMaterial = mat(
+    new THREE.MeshBasicMaterial({
+      map: tickerSurface.texture,
+      transparent: true,
+      opacity: 0.92,
+      side: THREE.BackSide,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  const marketTicker = part(
+    root,
+    tickerCylinder,
+    tickerMaterial,
+    worldCx,
+    25.5,
+    worldCz,
+    58,
+    1.65,
+    58,
+  );
+  marketTicker.name = 'world-market-360-ticker';
+
+  function paintTicker(signal?: MarketSignal | null, news?: WorldNews | null) {
+    const context = tickerSurface.context;
+    const canvas = tickerSurface.canvas;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'rgba(4, 14, 22, .96)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = '#315262';
+    context.strokeRect(0, 4, canvas.width, canvas.height - 8);
+    const btc = signal
+      ? `BTC ${signal.last.toLocaleString('en-US', { maximumFractionDigits: 0 })}  ${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%  ${signal.mode === 'fresh' ? 'LIVE' : '缓存'}`
+      : 'BTC 等待 OKX 信号';
+    const segments = [
+      [btc, !signal || signal.change >= 0 ? '#3CE6A1' : '#FF6E7A'],
+      [news?.items[0]?.title ?? '公开新闻等待进入研究区', '#8EDFFF'],
+      ['NVDA +2.84% · AAPL +0.72% · TSLA -1.46%  DEMO', '#FFD078'],
+      ['X LAYER · AGENT PAY · USDT0 · RWA', '#AE9AFF'],
+    ] as const;
+    context.font = '700 31px system-ui, sans-serif';
+    let x = 34;
+    segments.forEach(([text, color]) => {
+      context.fillStyle = color;
+      const value = shorten(text, context, 760);
+      context.fillText(value, x, 80);
+      x += context.measureText(value).width + 92;
+      context.fillStyle = '#4B7180';
+      context.fillRect(x - 48, 34, 4, 54);
+    });
+    tickerSurface.texture.needsUpdate = true;
+  }
+  paintTicker();
+
   // The city threshold creates a strong first read from the default spawn.
   const threshold = new THREE.Group();
   threshold.name = 'xlayer-city-threshold';
@@ -511,6 +911,9 @@ export function createInteriorCity(scene: THREE.Scene) {
   root.add(shuttles, shuttleLights);
   const dummy = new THREE.Object3D();
   let signalState: MarketSignal | null | undefined;
+  let newsState: WorldNews | null | undefined;
+  let dataDirty = true;
+  let lastWallPaint = -Infinity;
 
   return {
     root,
@@ -522,13 +925,21 @@ export function createInteriorCity(scene: THREE.Scene) {
     dataColumns,
     cityRails,
     horizonLabels,
+    marketWalls,
+    marketWallGroups,
+    marketTicker,
     threshold,
     workGroups,
     nodeGroups,
     overheadRings,
     shuttles,
     setSignal(signal?: MarketSignal | null) {
+      if (signalState !== signal) dataDirty = true;
       signalState = signal;
+    },
+    setNews(news?: WorldNews | null) {
+      if (newsState !== news) dataDirty = true;
+      newsState = news;
     },
     update(time: number, quality: number) {
       const flow = signalState ? 1 + Math.min(1.4, Math.abs(signalState.change) / 5) : 1;
@@ -549,6 +960,24 @@ export function createInteriorCity(scene: THREE.Scene) {
       horizonLabels.forEach((group, index) => {
         group.visible = quality === 0 || index % (quality === 1 ? 2 : 4) === 0;
       });
+      marketWallGroups.forEach((group, index) => {
+        group.visible =
+          quality === 0 ||
+          (quality === 1 && index % 3 !== 1) ||
+          (quality === 2 && index % 3 === 0);
+      });
+      marketTicker.visible = true;
+      tickerSurface.texture.offset.x = -((time * 0.018) % 1);
+      if (dataDirty || Math.abs(time - lastWallPaint) > 0.34) {
+        marketWalls.forEach((wall) => {
+          paintMarketWall(wall.kind, wall.context, time, signalState, newsState);
+          wall.texture.needsUpdate = true;
+        });
+        if (dataDirty || Math.abs(time - lastWallPaint) > 1.8)
+          paintTicker(signalState, newsState);
+        lastWallPaint = time;
+        dataDirty = false;
+      }
       overheadRings.forEach((ring, index) => {
         ring.rotation.z = time * (index ? -0.028 : 0.04);
         ring.visible = quality < 2 || index === 0;
