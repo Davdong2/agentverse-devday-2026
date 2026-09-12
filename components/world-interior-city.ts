@@ -17,13 +17,13 @@ const networkNodes = [
 ] as const;
 
 /**
- * The near field of the walkable world: a crisp skyline plate plus physical
- * work cells. It is deliberately behind the live Agents so the scene gains
- * depth without turning the interactive characters into another flat image.
+ * A fully spatial interior city. The far field is a procedural 360° dome and
+ * every architectural layer inside it is real geometry, so turning or walking
+ * away from the original spawn never exposes the edge of a backdrop image.
  */
 export function createInteriorCity(scene: THREE.Scene) {
   const root = new THREE.Group();
-  root.name = 'agentverse-interior-city-v2';
+  root.name = 'agentverse-interior-city-v3-360';
   scene.add(root);
   const geometries: THREE.BufferGeometry[] = [];
   const materials: THREE.Material[] = [];
@@ -40,6 +40,8 @@ export function createInteriorCity(scene: THREE.Scene) {
   const cylinder = geo(new THREE.CylinderGeometry(1, 1, 1, 48));
   const torus = geo(new THREE.TorusGeometry(1, 0.028, 6, 96));
   const plane = geo(new THREE.PlaneGeometry(1, 1));
+  const skySphere = geo(new THREE.SphereGeometry(155, 64, 32));
+  const towerBox = geo(new THREE.BoxGeometry(1, 1, 1));
   const silver = mat(
     new THREE.MeshPhongMaterial({
       color: '#BFC9CF',
@@ -88,8 +90,87 @@ export function createInteriorCity(scene: THREE.Scene) {
       depthWrite: false,
     }),
   );
+  const skylineMetal = mat(
+    new THREE.MeshStandardMaterial({
+      color: '#526471',
+      metalness: 0.88,
+      roughness: 0.22,
+      vertexColors: true,
+    }),
+  );
+  const skylineGlass = mat(
+    new THREE.MeshStandardMaterial({
+      color: '#0A1D2C',
+      metalness: 0.72,
+      roughness: 0.16,
+      emissive: '#071C2A',
+      emissiveIntensity: 0.9,
+    }),
+  );
+  const skylineGlow = mat(
+    new THREE.MeshBasicMaterial({
+      color: '#7BDEFF',
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.76,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  const skyUniforms = {
+    uTime: { value: 0 },
+    uPulse: { value: 0.35 },
+  };
+  const skyMaterial = mat(
+    new THREE.ShaderMaterial({
+      uniforms: skyUniforms,
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+      toneMapped: false,
+      vertexShader: `
+        varying vec3 vDirection;
+        void main() {
+          vDirection = normalize(position);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+        varying vec3 vDirection;
+        uniform float uTime;
+        uniform float uPulse;
+
+        float hash3(vec3 p) {
+          p = fract(p * 0.1031);
+          p += dot(p, p.yzx + 33.33);
+          return fract((p.x + p.y) * p.z);
+        }
+
+        void main() {
+          vec3 dir = normalize(vDirection);
+          float vertical = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
+          vec3 lower = vec3(0.004, 0.011, 0.020);
+          vec3 upper = vec3(0.020, 0.055, 0.086);
+          vec3 color = mix(lower, upper, pow(vertical, 0.72));
+          float horizon = exp(-abs(dir.y + 0.04) * 8.0);
+          color += vec3(0.025, 0.115, 0.165) * horizon * (0.65 + uPulse * 0.35);
+          float aurora = sin(dir.x * 16.0 + dir.z * 12.0 + uTime * 0.035);
+          aurora = smoothstep(0.72, 1.0, aurora) * smoothstep(-0.05, 0.55, dir.y);
+          color += vec3(0.015, 0.070, 0.095) * aurora;
+          float starSeed = hash3(floor(dir * 920.0));
+          float stars = step(0.9968, starSeed) * smoothstep(-0.05, 0.48, dir.y);
+          color += vec3(0.58, 0.82, 1.0) * stars * (0.45 + 0.55 * sin(uTime * 0.7 + starSeed * 24.0));
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+    }),
+  );
   const cx = regions[0].x * 100;
   const cz = regions[0].y * 100;
+  const worldCx = 50;
+  const worldCz = 52;
 
   function part(
     parent: THREE.Object3D,
@@ -145,37 +226,201 @@ export function createInteriorCity(scene: THREE.Scene) {
     return texture;
   }
 
-  // A generated environment plate supplies the distant city. It sits far
-  // behind the live scene and is never used for collision or interaction.
-  const backdropTexture = new THREE.TextureLoader().load(
-    '/agentverse-interior-skyline-v2.webp',
-  );
-  backdropTexture.colorSpace = THREE.SRGBColorSpace;
-  backdropTexture.anisotropy = 4;
-  textures.push(backdropTexture);
-  const backdropMaterial = mat(
-    new THREE.MeshBasicMaterial({
-      map: backdropTexture,
-      transparent: true,
-      opacity: 0.82,
-      depthWrite: false,
-      fog: false,
-      toneMapped: false,
-    }),
-  );
-  const backdrop = part(
+  // Resolution-independent 360° sky. It contains no bitmap and has no seam,
+  // edge or privileged camera direction.
+  const skyDome = part(
     root,
-    plane,
-    backdropMaterial,
-    cx,
-    24.5,
-    cz - 72,
-    108,
-    41.8,
+    skySphere,
+    skyMaterial,
+    worldCx,
+    18,
+    worldCz,
+    1,
+    1,
     1,
   );
-  backdrop.name = 'infinite-agent-city-backdrop';
-  backdrop.renderOrder = -20;
+  skyDome.name = 'procedural-360-environment-dome';
+  skyDome.renderOrder = -30;
+
+  // Three concentric rings of actual buildings surround the entire playable
+  // world. Instancing keeps the panoramic city inexpensive to render.
+  const skylineCount = 108;
+  const skyline = new THREE.InstancedMesh(towerBox, skylineMetal, skylineCount);
+  skyline.name = 'panoramic-360-city-towers';
+  skyline.frustumCulled = false;
+  root.add(skyline);
+  const skylineDummy = new THREE.Object3D();
+  const shellColors = [
+    new THREE.Color('#7891A0'),
+    new THREE.Color('#344957'),
+    new THREE.Color('#A6B5BD'),
+    new THREE.Color('#213643'),
+  ];
+  const towerMetrics: Array<{ angle: number; radius: number; width: number; depth: number; height: number }> = [];
+  for (let index = 0; index < skylineCount; index++) {
+    const angle = (index / skylineCount) * Math.PI * 2 + Math.sin(index * 7.13) * 0.018;
+    const ring = index % 3;
+    const radius = 72 + ring * 13 + Math.sin(index * 2.71) * 3.8;
+    const width = 2.2 + ((index * 17) % 7) * 0.42;
+    const depth = 2.8 + ((index * 11) % 5) * 0.55;
+    const height = 13 + ((index * 19) % 29) + ring * 3;
+    towerMetrics.push({ angle, radius, width, depth, height });
+    skylineDummy.position.set(
+      worldCx + Math.cos(angle) * radius,
+      height * 0.5 - 2.6,
+      worldCz + Math.sin(angle) * radius,
+    );
+    skylineDummy.rotation.set(0, Math.PI / 2 - angle, 0);
+    skylineDummy.scale.set(width, height, depth);
+    skylineDummy.updateMatrix();
+    skyline.setMatrixAt(index, skylineDummy.matrix);
+    skyline.setColorAt(index, shellColors[(index + ring) % shellColors.length]);
+  }
+  skyline.instanceMatrix.needsUpdate = true;
+  if (skyline.instanceColor) skyline.instanceColor.needsUpdate = true;
+
+  const windowCount = 72;
+  const skylineWindows = new THREE.InstancedMesh(towerBox, skylineGlow, windowCount);
+  skylineWindows.name = 'panoramic-city-window-ribbons';
+  skylineWindows.frustumCulled = false;
+  root.add(skylineWindows);
+  const lightColors = [
+    new THREE.Color('#76DFFF'),
+    new THREE.Color('#FFD078'),
+    new THREE.Color('#70E0B4'),
+  ];
+  for (let index = 0; index < windowCount; index++) {
+    const tower = towerMetrics[(index * 5) % skylineCount];
+    const insetRadius = tower.radius - tower.depth * 0.51;
+    skylineDummy.position.set(
+      worldCx + Math.cos(tower.angle) * insetRadius,
+      Math.max(3.8, tower.height * (0.38 + (index % 3) * 0.13)),
+      worldCz + Math.sin(tower.angle) * insetRadius,
+    );
+    skylineDummy.rotation.set(0, -Math.PI / 2 - tower.angle, 0);
+    skylineDummy.scale.set(tower.width * 0.68, 0.09 + (index % 2) * 0.05, 0.06);
+    skylineDummy.updateMatrix();
+    skylineWindows.setMatrixAt(index, skylineDummy.matrix);
+    skylineWindows.setColorAt(index, lightColors[index % lightColors.length]);
+  }
+  skylineWindows.instanceMatrix.needsUpdate = true;
+  if (skylineWindows.instanceColor) skylineWindows.instanceColor.needsUpdate = true;
+
+  const spineCount = 72;
+  const skylineSpines = new THREE.InstancedMesh(towerBox, skylineGlow, spineCount);
+  skylineSpines.name = 'panoramic-city-vertical-light-spines';
+  skylineSpines.frustumCulled = false;
+  root.add(skylineSpines);
+  for (let index = 0; index < spineCount; index++) {
+    const tower = towerMetrics[(index * 7 + 3) % skylineCount];
+    const insetRadius = tower.radius - tower.depth * 0.52;
+    skylineDummy.position.set(
+      worldCx + Math.cos(tower.angle) * insetRadius,
+      tower.height * 0.5 - 1.4,
+      worldCz + Math.sin(tower.angle) * insetRadius,
+    );
+    skylineDummy.rotation.set(0, -Math.PI / 2 - tower.angle, 0);
+    skylineDummy.scale.set(0.075, tower.height * 0.62, 0.055);
+    skylineDummy.updateMatrix();
+    skylineSpines.setMatrixAt(index, skylineDummy.matrix);
+    skylineSpines.setColorAt(index, lightColors[(index + 1) % lightColors.length]);
+  }
+  skylineSpines.instanceMatrix.needsUpdate = true;
+  if (skylineSpines.instanceColor) skylineSpines.instanceColor.needsUpdate = true;
+
+  const crownCount = 36;
+  const skylineCrowns = new THREE.InstancedMesh(torus, skylineGlow, crownCount);
+  skylineCrowns.name = 'panoramic-city-luminous-crowns';
+  skylineCrowns.frustumCulled = false;
+  root.add(skylineCrowns);
+  for (let index = 0; index < crownCount; index++) {
+    const tower = towerMetrics[(index * 3 + 1) % skylineCount];
+    skylineDummy.position.set(
+      worldCx + Math.cos(tower.angle) * tower.radius,
+      tower.height - 2.35,
+      worldCz + Math.sin(tower.angle) * tower.radius,
+    );
+    skylineDummy.rotation.set(Math.PI / 2, 0, 0);
+    skylineDummy.scale.set(tower.width * 0.62, tower.width * 0.62, tower.width * 0.62);
+    skylineDummy.updateMatrix();
+    skylineCrowns.setMatrixAt(index, skylineDummy.matrix);
+    skylineCrowns.setColorAt(index, lightColors[index % lightColors.length]);
+  }
+  skylineCrowns.instanceMatrix.needsUpdate = true;
+  if (skylineCrowns.instanceColor) skylineCrowns.instanceColor.needsUpdate = true;
+
+  const dataColumnCount = 24;
+  const dataColumns = new THREE.InstancedMesh(towerBox, skylineGlow, dataColumnCount);
+  dataColumns.name = 'panoramic-xlayer-data-columns';
+  dataColumns.frustumCulled = false;
+  root.add(dataColumns);
+  for (let index = 0; index < dataColumnCount; index++) {
+    const angle = (index / dataColumnCount) * Math.PI * 2 + 0.11;
+    const radius = index % 2 ? 66 : 96;
+    const height = 18 + (index % 5) * 4.2;
+    skylineDummy.position.set(
+      worldCx + Math.cos(angle) * radius,
+      height * 0.5 + 2,
+      worldCz + Math.sin(angle) * radius,
+    );
+    skylineDummy.rotation.set(0, -angle, 0);
+    skylineDummy.scale.set(0.05, height, 0.05);
+    skylineDummy.updateMatrix();
+    dataColumns.setMatrixAt(index, skylineDummy.matrix);
+    dataColumns.setColorAt(index, lightColors[index % lightColors.length]);
+  }
+  dataColumns.instanceMatrix.needsUpdate = true;
+  if (dataColumns.instanceColor) dataColumns.instanceColor.needsUpdate = true;
+
+  const cityRails = [60, 76, 92, 108].map((radius, index) => {
+    const rail = part(
+      root,
+      torus,
+      index % 2 ? amber : cyan,
+      worldCx,
+      12 + index * 7.2,
+      worldCz,
+      radius,
+      radius,
+      radius,
+    );
+    rail.name = `panoramic-city-rail-${index + 1}`;
+    rail.rotation.x = Math.PI / 2;
+    return rail;
+  });
+
+  const horizonLabels = [
+    ['OKX.AI', 'AGENT DIRECTORY'],
+    ['X LAYER', 'AGENT SETTLEMENT'],
+    ['A2A PAY', 'MACHINE ECONOMY'],
+    ['BTC', 'DIGITAL RESERVE'],
+    ['ETH', 'SMART CONTRACTS'],
+    ['USDT0', 'LIQUIDITY RAIL'],
+    ['RWA', 'REAL WORLD ASSETS'],
+    ['AGENTVERSE', 'CIVILIZATION NETWORK'],
+  ].map(([title, subtitle], index) => {
+    const group = new THREE.Group();
+    const angle = (index / 8) * Math.PI * 2 + Math.PI / 8;
+    const radius = 61;
+    group.name = `panoramic-protocol-sign-${title.toLowerCase().replaceAll('.', '')}`;
+    group.position.set(
+      worldCx + Math.cos(angle) * radius,
+      8.5 + (index % 2) * 3.2,
+      worldCz + Math.sin(angle) * radius,
+    );
+    group.rotation.y = -Math.PI / 2 - angle;
+    root.add(group);
+    part(group, box, skylineGlass, 0, 0, 0.12, 5.6, 3.1, 0.28);
+    const texture = screenTexture(
+      title,
+      subtitle,
+      index % 2 ? '#FFD078' : '#77DFFF',
+      'LIVE INFRASTRUCTURE · WORLD DATA',
+    );
+    const material = mat(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }));
+    part(group, plane, material, 0, 0, -0.035, 5.1, 2.55, 1);
+    return group;
+  });
 
   // The city threshold creates a strong first read from the default spawn.
   const threshold = new THREE.Group();
@@ -269,7 +514,14 @@ export function createInteriorCity(scene: THREE.Scene) {
 
   return {
     root,
-    backdrop,
+    skyDome,
+    skyline,
+    skylineWindows,
+    skylineSpines,
+    skylineCrowns,
+    dataColumns,
+    cityRails,
+    horizonLabels,
     threshold,
     workGroups,
     nodeGroups,
@@ -280,6 +532,23 @@ export function createInteriorCity(scene: THREE.Scene) {
     },
     update(time: number, quality: number) {
       const flow = signalState ? 1 + Math.min(1.4, Math.abs(signalState.change) / 5) : 1;
+      skyUniforms.uTime.value = time;
+      skyUniforms.uPulse.value +=
+        ((signalState ? Math.min(1, Math.abs(signalState.change) / 6) : 0.35) -
+          skyUniforms.uPulse.value) *
+        0.025;
+      skyline.count = quality === 2 ? 48 : quality === 1 ? 78 : skylineCount;
+      skylineWindows.count = quality === 2 ? 22 : quality === 1 ? 46 : windowCount;
+      skylineSpines.count = quality === 2 ? 20 : quality === 1 ? 44 : spineCount;
+      skylineCrowns.count = quality === 2 ? 10 : quality === 1 ? 24 : crownCount;
+      dataColumns.count = quality === 2 ? 8 : quality === 1 ? 16 : dataColumnCount;
+      cityRails.forEach((rail, index) => {
+        rail.rotation.z = time * (index % 2 ? -0.0025 : 0.0018);
+        rail.visible = quality < 2 || index < 2;
+      });
+      horizonLabels.forEach((group, index) => {
+        group.visible = quality === 0 || index % (quality === 1 ? 2 : 4) === 0;
+      });
       overheadRings.forEach((ring, index) => {
         ring.rotation.z = time * (index ? -0.028 : 0.04);
         ring.visible = quality < 2 || index === 0;
@@ -296,11 +565,11 @@ export function createInteriorCity(scene: THREE.Scene) {
       for (let index = 0; index < shuttles.count; index++) {
         const lane = index % 3;
         const angle = time * (0.055 + lane * 0.009) * flow + index * 1.73;
-        const radius = 17 + lane * 5.2;
+        const radius = 52 + lane * 9.2;
         dummy.position.set(
-          cx + Math.cos(angle) * radius,
-          8.5 + lane * 2.15 + Math.sin(time * 0.55 + index) * 0.5,
-          cz - 8 + Math.sin(angle) * radius * 0.42,
+          worldCx + Math.cos(angle) * radius,
+          13.5 + lane * 4.2 + Math.sin(time * 0.55 + index) * 0.7,
+          worldCz + Math.sin(angle) * radius,
         );
         dummy.rotation.set(0, -angle + Math.PI / 2, 0);
         dummy.scale.set(0.9 + lane * 0.18, 0.18, 0.42);
