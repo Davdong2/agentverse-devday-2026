@@ -82,7 +82,7 @@ function useStore() {
     [viewMode, setViewMode] = useState<'observe' | 'walk'>('observe');
   const inspected = useRef<{ agentId: string; instance: number } | null>(null);
   const recorded = useRef(new Set<string>()),
-    walker = useRef({ x: 46.8, z: 51.5, yaw: 0, pitch: 0 }),
+    walker = useRef({ x: 46.8, z: 53.2, yaw: 0, pitch: 0.08 }),
     lastCatalog = useRef<AgentData>({ ...snapshot, mode: 'snapshot' }),
     lastMarket = useRef<number | null>(null);
   const [news, setNews] = useState<WorldNews | null>(null);

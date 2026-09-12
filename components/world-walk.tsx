@@ -6,6 +6,7 @@ import type { WorldNews, NewsReaction } from '@/lib/world-news';
 import type { MarketSignal } from '@/lib/civilization-model';
 import { createWorldEffects } from '@/components/world-effects';
 import { createWorldArchitecture } from '@/components/world-architecture';
+import { createAgentEconomy } from '@/components/world-agent-economy';
 import { createCryptoProps } from '@/components/crypto-props';
 import { createAgentLabels } from '@/components/agent-labels';
 import { createAvatarFactory } from '@/components/agent-avatar';
@@ -105,10 +106,14 @@ export default function WorldWalk(props: Props) {
     const rim = new THREE.DirectionalLight('#7BDFFF', 0.96);
     rim.position.set(15, 12, -25);
     scene.add(rim);
+    const cityGlow = new THREE.PointLight('#79DFFF', 3.4, 34, 2);
+    cityGlow.position.set(regions[0].x * 100, 8, regions[0].y * 100 - 5);
+    scene.add(cityGlow);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     const pickable: THREE.Object3D[] = [];
     const architecture = createWorldArchitecture(scene, pickable);
+    const economy = createAgentEconomy(scene);
     const cryptoProps = createCryptoProps(scene, pickable);
     const avatars = createAvatarFactory();
     const labels = createAgentLabels();
@@ -355,6 +360,10 @@ export default function WorldWalk(props: Props) {
         center = regions[0];
       cryptoProps.setMarketSignal(p.signal);
       cryptoProps.update(time, level);
+      economy.setData(p.agents.length, p.ignixIds.length, p.signal);
+      economy.update(time, level);
+      cityGlow.visible = level < 2;
+      cityGlow.intensity = level === 0 ? 3.4 : 1.8;
       actors.forEach((actor, i) => {
         if (i >= states.length) {
           actor.g.visible = false;
@@ -488,6 +497,7 @@ export default function WorldWalk(props: Props) {
       surfaceTexture.dispose();
       effects.dispose();
       architecture.dispose();
+      economy.dispose();
       cryptoProps.dispose();
       avatars.dispose();
       labels.dispose();
@@ -601,9 +611,9 @@ export default function WorldWalk(props: Props) {
               onClick={() => {
                 props.walker.current = {
                   x: regions[0].x * 100,
-                  z: regions[0].y * 100 + 8,
+                  z: regions[0].y * 100 + 9.7,
                   yaw: 0,
-                  pitch: 0,
+                  pitch: 0.08,
                 };
               }}
             >

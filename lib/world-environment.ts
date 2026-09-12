@@ -24,10 +24,10 @@ export function environmentFor(weather: Weather, change = 0) {
             ? '#193448'
             : up > 0.25
               ? '#382A20'
-              : '#1D2B3A',
-    fog: down > 0.25 ? '#312B34' : up > 0.25 ? '#51392F' : '#3B4149',
-    sun: 2.12 + up * 0.72 - down * 0.82,
-    exposure: 1.14 + up * 0.11 - down * 0.18,
+              : '#142A3B',
+    fog: down > 0.25 ? '#312B34' : up > 0.25 ? '#51392F' : '#263B4A',
+    sun: 2.38 + up * 0.72 - down * 0.82,
+    exposure: 1.22 + up * 0.11 - down * 0.18,
     flow:
       1 + up * 0.75 - down * 0.35 + (information ? 0.2 : expansion ? 0.35 : 0),
     clouds: 0.25 + down * 0.28,
