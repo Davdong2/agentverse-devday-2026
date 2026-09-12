@@ -30,6 +30,7 @@ const {
   worldRoster,
   canWalkAt,
   regionConnections,
+  residentSlot,
 } = await import(url(model));
 assert.equal(regions.length, 10);
 assert.equal(cycleDuration, 18);
@@ -120,6 +121,70 @@ for (let i = 0; i < 4; i++) {
   assert.equal(state[i].x, collaborationPose(7, i).x);
   assert.equal(state[i].y, collaborationPose(7, i).y);
 }
+const stationary = state.filter(
+  (agent) => !agent.collaborator && agent.activity === '工作中',
+);
+for (const agent of stationary) {
+  const distanceToDistrict = Math.min(
+    ...regions.slice(1).map((region) =>
+      Math.hypot(agent.x * 100 - region.x * 100, agent.y * 100 - region.y * 100),
+    ),
+  );
+  assert.ok(
+    distanceToDistrict <= 3.11,
+    'Stationary residents stay inside the service-console safety ring',
+  );
+}
+for (let i = 0; i < 12; i++) {
+  const slot = residentSlot(5, i, 12, 7);
+  assert.ok(
+    Math.hypot(slot.x * 100 - regions[5].x * 100, slot.y * 100 - regions[5].y * 100) <= 3.11,
+    'Dense resident layouts remain inside the clear platform core',
+  );
+}
+for (const weather of ['calm', 'news', 'nvda', 'storm', 'tide', 'chain'])
+  for (let time = 0; time < cycleDuration; time += 0.5) {
+    const sampled = sampleAgents(agents, details, time, weather, 50);
+    const settled = sampled.filter(
+      (agent) => !agent.collaborator && agent.activity === '工作中',
+    );
+    const nearestDistrict = (agent) =>
+      regions.reduce(
+        (best, region, index) =>
+          Math.hypot(
+            agent.x * 100 - region.x * 100,
+            agent.y * 100 - region.y * 100,
+          ) <
+          Math.hypot(
+            agent.x * 100 - regions[best].x * 100,
+            agent.y * 100 - regions[best].y * 100,
+          )
+            ? index
+            : best,
+        0,
+      );
+    for (let left = 0; left < settled.length; left++)
+      for (let right = left + 1; right < settled.length; right++) {
+        if (nearestDistrict(settled[left]) !== nearestDistrict(settled[right]))
+          continue;
+        assert.ok(
+          Math.hypot(
+            (settled[left].x - settled[right].x) * 100,
+            (settled[left].y - settled[right].y) * 100,
+          ) >= 1.45,
+          'Stationary Agents in one district must not intersect',
+        );
+      }
+  }
+for (let i = 0; i < 4; i++)
+  for (let j = i + 1; j < 4; j++) {
+    const left = collaborationPose(7, i),
+      right = collaborationPose(7, j);
+    assert.ok(
+      Math.hypot((left.x - right.x) * 100, (left.y - right.y) * 100) >= 2.4,
+      'Collaborators keep enough physical clearance for tools and capability modules',
+    );
+  }
 assert.deepEqual(
   sampleAgents(agents, details, 7, 'nvda', 50),
   state,

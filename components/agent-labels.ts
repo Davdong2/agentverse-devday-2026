@@ -123,6 +123,7 @@ export function createAgentLabels() {
           composite: boolean,
           visible: boolean,
           ignix = false,
+          parentScale = 1,
         ) {
           if (current !== name || !label) {
             if (!label) sprite.material.dispose();
@@ -139,16 +140,26 @@ export function createAgentLabels() {
                 Math.max(360, viewportHeight),
             ),
           );
-          sprite.scale.set(scale, scale / label.aspect, 1);
+          const compensatedScale = scale / Math.max(0.1, parentScale);
+          sprite.scale.set(compensatedScale, compensatedScale / label.aspect, 1);
           sprite.position.set(
             0,
-            (composite ? 3.2 : 2.62) + (instance % 4) * 0.2,
+            (composite ? 3.2 : 2.62) +
+              ((instance % 4) * 0.2) / Math.max(0.1, parentScale),
             0,
           );
           sprite.visible = visible;
           badge.visible = visible && ignix;
-          badge.position.set(0.36, composite ? 2.82 : 2.1, 0);
-          badge.scale.setScalar(Math.max(0.2, Math.min(0.36, scale * 0.15)));
+          badge.position.set(
+            0.36,
+            (composite ? 2.82 : 2.1) +
+              ((instance % 4) * 0.08) / Math.max(0.1, parentScale),
+            0,
+          );
+          badge.scale.setScalar(
+            Math.max(0.2, Math.min(0.36, scale * 0.15)) /
+              Math.max(0.1, parentScale),
+          );
         },
       };
     },

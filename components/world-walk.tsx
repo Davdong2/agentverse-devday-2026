@@ -297,6 +297,20 @@ export default function WorldWalk(props: Props) {
       shadowStamp = 0,
       slowWindows = 0,
       fastWindows = 0;
+    let actorStates: ReturnType<typeof sampleAgents> = [];
+    const clearsActorSpace = (
+      nextX: number,
+      nextZ: number,
+      currentX: number,
+      currentZ: number,
+    ) =>
+      actorStates.every((actorState) => {
+        const actorX = actorState.x * 100,
+          actorZ = actorState.y * 100,
+          nextDistance = Math.hypot(nextX - actorX, nextZ - actorZ),
+          currentDistance = Math.hypot(currentX - actorX, currentZ - actorZ);
+        return nextDistance >= 0.92 || nextDistance > currentDistance;
+      });
     const warmedAt = performance.now() + 6000;
     function frame(now: number) {
       raf = requestAnimationFrame(frame);
@@ -327,12 +341,23 @@ export default function WorldWalk(props: Props) {
       const dx =
           (-Math.sin(w.yaw) * forward + Math.cos(w.yaw) * strafe) * dt * 5,
         dz = (-Math.cos(w.yaw) * forward - Math.sin(w.yaw) * strafe) * dt * 5;
-      if (walkable(w.x + dx, w.z + dz)) {
+      if (
+        walkable(w.x + dx, w.z + dz) &&
+        clearsActorSpace(w.x + dx, w.z + dz, w.x, w.z)
+      ) {
         w.x += dx;
         w.z += dz;
       } else {
-        if (walkable(w.x + dx, w.z)) w.x += dx;
-        if (walkable(w.x, w.z + dz)) w.z += dz;
+        if (
+          walkable(w.x + dx, w.z) &&
+          clearsActorSpace(w.x + dx, w.z, w.x, w.z)
+        )
+          w.x += dx;
+        if (
+          walkable(w.x, w.z + dz) &&
+          clearsActorSpace(w.x, w.z + dz, w.x, w.z)
+        )
+          w.z += dz;
       }
       camera.position.set(w.x, 1.65, w.z);
       camera.rotation.set(w.pitch, w.yaw, 0, 'YXZ');
@@ -360,6 +385,7 @@ export default function WorldWalk(props: Props) {
         phase = stageAt(time),
         progress = phaseProgress(time),
         center = regions[0];
+      actorStates = states;
       cryptoProps.setMarketSignal(p.signal);
       cryptoProps.update(time, level);
       economy.setData(p.agents.length, p.ignixIds.length, p.signal);
@@ -404,7 +430,8 @@ export default function WorldWalk(props: Props) {
           i < 4 ||
           level < 2 ||
           Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < 18;
-        actor.g.scale.setScalar(motion.composite ? 1.08 : 1);
+        const bodyScale = motion.composite ? 0.66 : 0.62;
+        actor.g.scale.setScalar(bodyScale);
         actor.label.update(
           a.name,
           Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z),
@@ -413,6 +440,7 @@ export default function WorldWalk(props: Props) {
           motion.composite,
           actor.g.visible,
           p.ignixIds.includes(a.agentId),
+          bodyScale,
         );
       });
       const environment = environmentFor(p.weather, p.signal?.change ?? 0);

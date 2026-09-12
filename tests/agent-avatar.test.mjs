@@ -36,6 +36,14 @@ assert.ok(!walkSource.includes('setPanelAtlas'));
 assert.ok(!walkSource.includes('walk-instructions'));
 assert.ok(!walkSource.includes('agentverse-walk-introduction'));
 assert.ok(
+  walkSource.includes('const bodyScale = motion.composite ? 0.66 : 0.62'),
+  'Walking-world Agents retain their card identity at a believable world scale',
+);
+assert.ok(
+  walkSource.includes('clearsActorSpace'),
+  'The observer cannot walk through an Agent body',
+);
+assert.ok(
   !fs.readFileSync('components/agent-avatar.ts', 'utf8').includes('heartPlate'),
 );
 assert.ok(

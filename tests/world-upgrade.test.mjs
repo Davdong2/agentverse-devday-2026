@@ -123,11 +123,23 @@ const midpoint = new THREE.Vector3(
   (data.getY(0) + data.getY(1)) / 2,
   (data.getZ(0) + data.getZ(1)) / 2,
 );
+const stateX = states[0].x * 100,
+  stateZ = states[0].y * 100,
+  toCoreX = regions[0].x * 100 - stateX,
+  toCoreZ = regions[0].y * 100 - stateZ,
+  toCoreLength = Math.max(0.001, Math.hypot(toCoreX, toCoreZ)),
+  handSideConnector = new THREE.Vector3(
+    stateX + (toCoreX / toCoreLength) * 0.62,
+    0.78,
+    stateZ + (toCoreZ / toCoreLength) * 0.62,
+  );
 assert.ok(
-  midpoint.distanceTo(
-    new THREE.Vector3(states[0].x * 100, 1.1, states[0].y * 100),
-  ) < 0.0001,
-  'Beam begins at the actual shared actor',
+  midpoint.distanceTo(handSideConnector) < 0.0001,
+  'Beam docks at the shared actor hand-side connector',
+);
+assert.ok(
+  midpoint.distanceTo(new THREE.Vector3(stateX, 1.1, stateZ)) > 0.3,
+  'Collaboration beam must not terminate inside the Agent torso',
 );
 for (const m of effects.ribbons)
   assert.ok([...m.geometry.attributes.position.array].every(Number.isFinite));

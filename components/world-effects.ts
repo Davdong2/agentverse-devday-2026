@@ -418,7 +418,14 @@ export function createWorldEffects(scene: THREE.Scene) {
           0.12,
           hubZ + (dz / distance) * anchorDistance,
         );
-        fiberEnd.set(agentX, 0.58, agentZ);
+        // Terminate at the floor-side interface behind the shell. Earlier the
+        // line ended at the torso center, which looked like a cable piercing
+        // the Agent when seen from the side.
+        fiberEnd.set(
+          agentX - (dx / distance) * 0.52,
+          0.16,
+          agentZ - (dz / distance) * 0.52,
+        );
         fiberOffset.set(-dz / distance, 0, dx / distance).multiplyScalar(0.045);
         fiberColor.set(regions[home].color);
         for (let strand = 0; strand < strandsPerAgent; strand++) {
@@ -470,7 +477,18 @@ export function createWorldEffects(scene: THREE.Scene) {
         const state = states[Math.floor(i / 3)];
         m.visible = working && !!state && (quality === 0 || i % 3 === 0);
         if (!m.visible) return;
-        a.set(state.x * 100, 1.1, state.y * 100);
+        const stateX = state.x * 100,
+          stateZ = state.y * 100,
+          toCoreX = cx - stateX,
+          toCoreZ = cz - stateZ,
+          toCoreLength = Math.max(0.001, Math.hypot(toCoreX, toCoreZ));
+        // Collaboration ribbons dock at the outer hand-side connector rather
+        // than travelling through the head and torso.
+        a.set(
+          stateX + (toCoreX / toCoreLength) * 0.62,
+          0.78,
+          stateZ + (toCoreZ / toCoreLength) * 0.62,
+        );
         b.set(cx, 2.6, cz);
         const strand = i % 3,
           offset = (strand - 1) * 0.16;
@@ -485,7 +503,7 @@ export function createWorldEffects(scene: THREE.Scene) {
           eye.copy(camera.position).sub(point);
           side.crossVectors(tangent, eye).normalize();
           point.addScaledVector(side, Math.sin(u * Math.PI) * offset);
-          const width = strand === 1 ? 0.15 : 0.085;
+          const width = strand === 1 ? 0.1 : 0.055;
           data.setXYZ(
             j * 2,
             point.x - side.x * width,

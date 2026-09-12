@@ -257,10 +257,10 @@ export function collaborationPose(time: number, index: number): Point {
     c = regions[0],
     homes = [regions[1], regions[6], regions[3], regions[5]];
   const slots = [
-    { x: -0.009, y: -0.006 },
-    { x: 0.009, y: -0.006 },
-    { x: -0.009, y: 0.012 },
-    { x: 0.009, y: 0.012 },
+    { x: -0.014, y: -0.011 },
+    { x: 0.014, y: -0.011 },
+    { x: -0.014, y: 0.014 },
+    { x: 0.014, y: 0.014 },
   ];
   const near = { x: c.x + slots[index].x, y: c.y + slots[index].y };
   const far = { x: c.x + slots[index].x * 3.1, y: c.y + slots[index].y * 2.7 };
@@ -274,6 +274,36 @@ export function collaborationPose(time: number, index: number): Point {
   if (t < 63) return near;
   if (t < 71) return lerp(near, far, (t - 63) / 8);
   return lerp(far, homes[index], (t - 71) / 9);
+}
+
+/**
+ * Stationary residents occupy deterministic safety rings inside a district.
+ * The outer service consoles begin around 3.9 m from a small platform center,
+ * so every resident remains inside 3.15 m and leaves the bridge mouths open.
+ */
+export function residentSlot(
+  home: number,
+  ordinal: number,
+  population: number,
+  time: number,
+): Point {
+  const center = regions[home];
+  const innerCount = Math.min(6, population);
+  const outerCount = Math.max(1, population - innerCount);
+  const outer = ordinal >= innerCount;
+  const slot = outer ? ordinal - innerCount : ordinal;
+  const count = outer ? outerCount : innerCount;
+  const radius = population === 1 ? 1.7 : outer ? 3.1 : 2.05;
+  const direction = home % 2 ? 1 : -1;
+  const angle =
+    home * 0.61 +
+    (slot / Math.max(1, count)) * Math.PI * 2 +
+    (outer ? Math.PI / 6 : 0) +
+    time * 0.008 * direction;
+  return {
+    x: center.x + (Math.cos(angle) * radius) / 100,
+    y: center.y + (Math.sin(angle) * radius * 0.82) / 100,
+  };
 }
 export function liveWeather(change: number): Weather {
   return change <= -2 ? 'storm' : change >= 2 ? 'tide' : 'calm';
@@ -348,6 +378,21 @@ export function sampleAgents(
   count = 50,
 ): AgentState[] {
   const roster = worldRoster(agents, count);
+  const homes = roster.map((a, i) => {
+    if (i < 4) return 0;
+    const visual = appearance(a, details[a.agentId]);
+    let home = regionFor(a, details[a.agentId]);
+    if (i % 13 === 0) home = 8;
+    if (i % 17 === 0) home = 3;
+    if (i % 19 === 0) home = 7;
+    if (weather === 'chain' && i % 5 === 0) home = 9;
+    return home;
+  });
+  const populations = new Map<number, number>();
+  homes.slice(4).forEach((home) =>
+    populations.set(home, (populations.get(home) ?? 0) + 1),
+  );
+  const ordinals = new Map<number, number>();
   return roster.map((a, i) => {
     const visual = appearance(a, details[a.agentId]);
     if (i < 4) {
@@ -364,16 +409,18 @@ export function sampleAgents(
         activity: stages[stageAt(time)].title,
       };
     }
-    let home = regionFor(a, details[a.agentId]);
-    if (i % 13 === 0) home = 8;
-    if (i % 17 === 0) home = 3;
-    if (i % 19 === 0) home = 7;
-    if (weather === 'chain' && i % 5 === 0) home = 9;
-    const base = regions[home],
-      theta = seeded(i + 3) * Math.PI * 2 + time * 0.04,
-      radius = 0.014 + seeded(i + 22) * 0.04;
-    let x = base.x + Math.cos(theta) * radius,
-      y = base.y + Math.sin(theta) * radius * 0.55;
+    const home = homes[i];
+    const ordinal = ordinals.get(home) ?? 0;
+    ordinals.set(home, ordinal + 1);
+    const base = regions[home];
+    const slot = residentSlot(
+      home,
+      ordinal,
+      populations.get(home) ?? 1,
+      time,
+    );
+    let x = slot.x,
+      y = slot.y;
     if (i % 4 === 0) {
       const u = (time * 0.028 + seeded(i + 91)) % 1;
       let destination = i % 8 === 0 ? regions[0] : regions[(home + 1) % 9];

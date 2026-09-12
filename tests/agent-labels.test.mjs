@@ -65,6 +65,12 @@ assert.ok(
   other.sprite.scale.x > first.sprite.scale.x,
   'Distance compensation preserves readability',
 );
+const uncompensatedLabelScale = first.sprite.scale.x;
+first.update(name, 8, 900, 56, false, true, false, 0.62);
+assert.ok(
+  first.sprite.scale.x > uncompensatedLabelScale * 1.5,
+  'Smaller world bodies keep readable nameplates through parent-scale compensation',
+);
 assert.ok(
   other.sprite.position.y - first.sprite.position.y >= 0.19,
   'Nearby names are vertically staggered during collaboration',
