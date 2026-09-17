@@ -12,7 +12,7 @@
     "test": "node --test tests/*.test.mjs",
     "check": "npm run lint:mission && npm test && npm run build",
     "lint": "oxlint",
-    "lint:mission": "oxlint components/mission-console.tsx lib/mission-planner.ts app/api/a2mcp/compose/route.ts tests/mission-planner.test.mjs",
+    "lint:mission": "oxlint components/app-provider.tsx components/mission-console.tsx lib/mission-planner.ts lib/agent-catalog.ts lib/marketplace.ts app/api/agents/route.ts app/api/a2mcp/compose/route.ts app/favicon.ico/route.ts next.config.ts proxy.ts tests/mission-planner.test.mjs",
     "format": "oxfmt"
   },
   "dependencies": {

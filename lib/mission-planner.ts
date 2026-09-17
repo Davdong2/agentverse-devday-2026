@@ -4,6 +4,9 @@ export type MissionInput = {
   goal: string;
   maxAgents?: number;
   riskMode?: 'confirm-before-action';
+  assetSymbol?: string;
+  chainId?: string;
+  contractAddress?: string;
 };
 
 export type MissionCatalog = {
@@ -31,6 +34,13 @@ export type ComposedMission = {
   goal: string;
   summary: string;
   steps: MissionStep[];
+  request: {
+    maxAgents: number;
+    riskMode: 'confirm-before-action';
+    assetSymbol?: string;
+    chainId?: string;
+    contractAddress?: string;
+  };
   provenance: {
     source: string;
     fetchedAt: string;
@@ -121,24 +131,87 @@ function serviceScore(goal: string, agent: Agent, service: Service) {
       Math.min(3, Math.log10(Math.max(1, agent.usageCount))),
     matches,
     affinity,
+    exactMatches,
+  };
+}
+
+export function normalizeMissionInput(value: unknown): MissionInput & {
+  maxAgents: number;
+  riskMode: 'confirm-before-action';
+} {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('请求必须是 JSON 对象。');
+  const input = value as Record<string, unknown>;
+  const allowed = new Set([
+    'goal',
+    'maxAgents',
+    'riskMode',
+    'assetSymbol',
+    'chainId',
+    'contractAddress',
+  ]);
+  const unknownFields = Object.keys(input).filter((key) => !allowed.has(key));
+  if (unknownFields.length)
+    throw new Error(`不支持的字段：${unknownFields.join('、')}。`);
+
+  if (typeof input.goal !== 'string') throw new Error('缺少字符串字段 goal。');
+  const goal = input.goal.trim().replace(/\s+/g, ' ');
+  if (goal.length < 4) throw new Error('目标至少需要 4 个字符。');
+  if (goal.length > 600) throw new Error('目标不能超过 600 个字符。');
+
+  const maxAgents = input.maxAgents ?? 3;
+  if (!Number.isInteger(maxAgents) || Number(maxAgents) < 1 || Number(maxAgents) > 4)
+    throw new Error('maxAgents 必须是 1 到 4 之间的整数。');
+  if (input.riskMode !== undefined && input.riskMode !== 'confirm-before-action')
+    throw new Error('当前只支持执行前确认模式。');
+
+  if (input.assetSymbol !== undefined && typeof input.assetSymbol !== 'string')
+    throw new Error('assetSymbol 必须是字符串。');
+  const assetSymbol = typeof input.assetSymbol === 'string'
+    ? input.assetSymbol.trim().toUpperCase()
+    : '';
+  if (assetSymbol && !/^[A-Z0-9._-]{1,20}$/.test(assetSymbol))
+    throw new Error('assetSymbol 只能包含字母、数字、点、短横线或下划线，最长 20 个字符。');
+
+  if (input.chainId !== undefined && typeof input.chainId !== 'string')
+    throw new Error('chainId 必须是字符串。');
+  const chainId = typeof input.chainId === 'string' ? input.chainId.trim() : '';
+  if (chainId && !/^eip155:\d{1,12}$/.test(chainId))
+    throw new Error('chainId 必须使用 CAIP-2 格式，例如 eip155:196。');
+
+  if (input.contractAddress !== undefined && typeof input.contractAddress !== 'string')
+    throw new Error('contractAddress 必须是字符串。');
+  const contractAddress = typeof input.contractAddress === 'string'
+    ? input.contractAddress.trim()
+    : '';
+  if (contractAddress && !/^0x[a-fA-F0-9]{40}$/.test(contractAddress))
+    throw new Error('contractAddress 必须是有效的 EVM 合约地址。');
+
+  return {
+    goal,
+    maxAgents: Number(maxAgents),
+    riskMode: 'confirm-before-action',
+    ...(assetSymbol ? { assetSymbol } : {}),
+    ...(chainId ? { chainId } : {}),
+    ...(contractAddress ? { contractAddress } : {}),
   };
 }
 
 export function composeMission(input: MissionInput, catalog: MissionCatalog): ComposedMission {
-  const goal = input.goal.trim().replace(/\s+/g, ' ');
-  if (goal.length < 4) throw new Error('目标至少需要 4 个字符。');
-  if (goal.length > 600) throw new Error('目标不能超过 600 个字符。');
-  if (input.riskMode && input.riskMode !== 'confirm-before-action')
-    throw new Error('当前只支持执行前确认模式。');
-
-  const maxAgents = Math.min(4, Math.max(1, Math.trunc(input.maxAgents ?? 3)));
+  const normalized = normalizeMissionInput(input);
+  const { goal, maxAgents } = normalized;
+  const scoringGoal = [
+    goal,
+    normalized.assetSymbol,
+    normalized.contractAddress ? 'X Layer token 代币 合约 风险' : '',
+  ].filter(Boolean).join(' ');
   const candidates = catalog.agents.flatMap((agent) =>
     (catalog.details[agent.agentId]?.services ?? []).map((service) => ({
       agent,
       service,
-      ...serviceScore(goal, agent, service),
+      ...serviceScore(scoringGoal, agent, service),
     })),
-  );
+  ).filter((candidate) => candidate.matches.length > 0 || candidate.exactMatches > 0);
 
   candidates.sort((a, b) =>
     b.score - a.score ||
@@ -149,7 +222,7 @@ export function composeMission(input: MissionInput, catalog: MissionCatalog): Co
 
   const selected: typeof candidates = [];
   const usedAgents = new Set<string>();
-  for (const intent of activeIntents(goal)) {
+  for (const intent of activeIntents(scoringGoal)) {
     const candidate = candidates
       .filter(
         (item) =>
@@ -157,23 +230,27 @@ export function composeMission(input: MissionInput, catalog: MissionCatalog): Co
           item.matches.some((match) => match.label === intent.label),
       )
       .sort((a, b) =>
+        b.exactMatches - a.exactMatches ||
         (b.affinity[intent.label] ?? 0) - (a.affinity[intent.label] ?? 0) ||
         b.score - a.score,
       )[0];
     if (!candidate) continue;
     selected.push(candidate);
     usedAgents.add(candidate.agent.agentId);
-    if (selected.length === maxAgents) break;
+    if (selected.length >= maxAgents) break;
   }
-  for (const candidate of candidates) {
-    if (selected.includes(candidate)) continue;
-    if (usedAgents.has(candidate.agent.agentId)) continue;
-    selected.push(candidate);
-    usedAgents.add(candidate.agent.agentId);
-    if (selected.length === maxAgents) break;
+  if (selected.length < maxAgents) {
+    for (const candidate of candidates) {
+      if (selected.includes(candidate)) continue;
+      if (usedAgents.has(candidate.agent.agentId)) continue;
+      selected.push(candidate);
+      usedAgents.add(candidate.agent.agentId);
+      if (selected.length >= maxAgents) break;
+    }
   }
 
-  if (!selected.length) throw new Error('当前资料中没有可用于编排的 OKX.AI 服务。');
+  if (!selected.length)
+    throw new Error('没有找到与当前目标足够相关的 OKX.AI 服务，请补充资产、链或任务类型。');
 
   const steps = selected.map(({ agent, service, matches }, index): MissionStep => ({
     order: index + 1,
@@ -194,6 +271,15 @@ export function composeMission(input: MissionInput, catalog: MissionCatalog): Co
     goal,
     summary: `${steps.length} 个 OKX.AI 服务组成的核对型任务计划`,
     steps,
+    request: {
+      maxAgents,
+      riskMode: normalized.riskMode,
+      ...(normalized.assetSymbol ? { assetSymbol: normalized.assetSymbol } : {}),
+      ...(normalized.chainId ? { chainId: normalized.chainId } : {}),
+      ...(normalized.contractAddress
+        ? { contractAddress: normalized.contractAddress }
+        : {}),
+    },
     provenance: {
       source: catalog.source,
       fetchedAt: catalog.fetchedAt,

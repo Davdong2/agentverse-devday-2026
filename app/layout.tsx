@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { WorldProvider } from '@/components/world-provider';
+import { AppProvider } from '@/components/app-provider';
 export const metadata: Metadata = {
   title: 'Agentverse · OKX.AI Mission Console',
   icons: { icon: '/favicon.svg' },
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <WorldProvider>{children}</WorldProvider>
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );

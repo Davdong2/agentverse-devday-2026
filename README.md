@@ -2,6 +2,15 @@
 
 Agentverse is a free A2MCP mission-composition service and working console for OKX Dev Day 2026, Build a Company. A user provides a goal; the service returns an explainable plan made from verifiable OKX.AI Agent IDs and Service IDs. It never buys, pays, signs, subscribes, or trades without a separate user-confirmed step.
 
+## Live product
+
+- Mission Console: https://agentverse-world.davdong2359.chatgpt.site/
+- Free A2MCP descriptor: https://agentverse-world.davdong2359.chatgpt.site/api/a2mcp/compose
+- Visual Agent world: https://agentverse-world.davdong2359.chatgpt.site/world
+- Public source: https://github.com/Davdong2/agentverse-devday-2026
+- Submission checklist: [SUBMISSION.md](./SUBMISSION.md)
+- 2–4 minute recording plan: [DEMO_SCRIPT.md](./DEMO_SCRIPT.md)
+
 ## Official build-period work
 
 The root commit preserves the 12 September pre-hackathon visualization as an explicit baseline. Work added from 17 September onward includes:
@@ -19,7 +28,7 @@ npm run check
 curl -i http://localhost:3000/api/a2mcp/compose
 curl -i -X POST http://localhost:3000/api/a2mcp/compose \
   -H 'content-type: application/json' \
-  --data '{"goal":"研究 BTC 市场并检查 X Layer 代币风险","maxAgents":3,"riskMode":"confirm-before-action"}'
+  --data '{"goal":"研究 BTC 市场并检查 X Layer 代币风险","assetSymbol":"BTC","chainId":"eip155:196","maxAgents":3,"riskMode":"confirm-before-action"}'
 ```
 
 See [HACKATHON.md](./HACKATHON.md) for the submission mapping and demo flow.
@@ -47,7 +56,7 @@ The header distinguishes `资料 LIVE / 缓存` from `行为 Demo`. Catalog data
 
 The overview remains Canvas. Three.js is loaded only for walking. Simple shared geometries/materials, no large textures, shadows or complex PBR. The first-person renderer adapts resolution, particles and distant non-team Agent visibility when observed frame rate is low. The four current collaborators remain visible. Hidden pages suspend world updates and rendering; GPU resources and input handlers are released on unmount. Reduced-motion preferences pause the initial simulation.
 
-Desktop 60 FPS and mobile 30 FPS are targets, not measured guarantees. This revision has not received browser visual/interaction testing or physical-device GPU profiling. Automated checks verify deterministic shared positions, all nine phase boundaries, continuous docking and separation, market thresholds, all ten walkable region centers, uninterrupted bridges, out-of-world rejection, and mapping to real profiles. TypeScript, production build and server route smoke checks are also used. Pure state-sampling timing is not renderer FPS.
+Desktop 60 FPS and mobile 30 FPS are targets, not measured guarantees. The public Mission Console and world have been interaction-tested in Chrome at the normal desktop viewport and a 390×844 responsive viewport; physical-device GPU profiling remains outstanding. Automated checks verify deterministic shared positions, all nine phase boundaries, continuous docking and separation, market thresholds, all ten walkable region centers, uninterrupted bridges, out-of-world rejection, and mapping to real profiles. TypeScript, production build and server route smoke checks are also used. Pure state-sampling timing is not renderer FPS.
 
 ## Optional scene photography
 
@@ -55,7 +64,7 @@ The photography dialog pauses the scene and exports a structured description. Th
 
 ## Runtime
 
-Vinext / React / Cloudflare Workers, Shadcn Sheet/Dialog/Tabs, Canvas and lazily loaded Three.js. The existing private Sites project is preserved. Public external descriptions are untrusted inert text. Optional WebMCP selection validates known IDs and only opens profiles.
+Vinext / React / Cloudflare Workers, Shadcn Sheet/Dialog/Tabs, Canvas and lazily loaded Three.js. The Sites deployment is public. Public external descriptions are untrusted inert text. Optional WebMCP selection validates known IDs and only opens profiles.
 
 ## Crypto task refinement
 

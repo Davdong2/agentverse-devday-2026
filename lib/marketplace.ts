@@ -84,14 +84,21 @@ export async function readPublicPage(path = '') {
   if (!res.ok) throw new Error('Marketplace HTTP '+res.status);
   const html = await res.text();
   if (html.length > 4000000) throw new Error('Response too large');
-  const match = html.match(
-    /<script\b[^>]*\bid=(?:["']appState["']|appState(?=[\s>]))[^>]*>([\s\S]*?)<\/script>/i,
-  );
-  if (!match) {
-    const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.slice(0, 120) ?? 'untitled';
-    throw new Error('Marketplace format changed: ' + title);
+  const scripts = [...html.matchAll(
+    /<script\b[^>]*\btype=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )];
+  for (const script of scripts.slice(0, 24)) {
+    try {
+      const parsed = JSON.parse(script[1]);
+      const initialProps = parsed?.appContext?.initialProps;
+      if (initialProps?.AgentMarketplaceAgentList || initialProps?.AgentDetailPage)
+        return initialProps;
+    } catch {
+      // Continue through other JSON state blocks; unrelated blocks are expected.
+    }
   }
-  return JSON.parse(match[1])?.appContext?.initialProps;
+  const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.slice(0, 120) ?? 'untitled';
+  throw new Error('Marketplace format changed: ' + title);
 }
 export function normalizeAgent(a: Record<string, unknown>): Agent {
   if (
@@ -119,12 +126,18 @@ export function normalizeAgent(a: Record<string, unknown>): Agent {
     description: a.description.slice(0, 12000),
     avatar,
     score: typeof a.score === 'string' ? a.score : undefined,
-    approvalRate: String(a.approvalRate ?? '—'),
+    approvalRate:
+      typeof a.approvalRate === 'string' || typeof a.approvalRate === 'number'
+        ? String(a.approvalRate)
+        : '—',
     usageCount: Number(a.usageCount),
     startingPrice: a.startingPrice,
     priceInterval:
       typeof a.priceInterval === 'string' ? a.priceInterval : undefined,
-    symbol: String(a.symbol ?? 'USDT'),
+    symbol:
+      typeof a.symbol === 'string' || typeof a.symbol === 'number'
+        ? String(a.symbol)
+        : 'USDT',
     categories: a.categories.map(String),
     categoryName: a.categoryName.map(String),
     onlineStatus: Number(a.onlineStatus ?? 0),
