@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { WorldProvider } from '@/components/world-provider';
 export const metadata: Metadata = {
-  title: 'Agentverse · 非人类数字文明',
+  title: 'Agentverse · OKX.AI Mission Console',
   icons: { icon: '/favicon.svg' },
   description:
-    '从 OKX.AI 真实 Agent 档案出发，观察协作、合体、交付与成长。一个持续运行的非人类数字文明。',
+    '从目标出发，组合可核对的 OKX.AI Agent 服务，并生成带 Agent ID、Service ID 与安全边界的任务计划。',
 };
 export default function RootLayout({
   children,

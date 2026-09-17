@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import ts from 'typescript';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const source = fs.readFileSync(new URL('../lib/mission-planner.ts', import.meta.url), 'utf8');
+const js = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const compiledModule = { exports: {} };
+vm.runInNewContext(`(function(module, exports){${js}\n})(module, module.exports)`, {
+  module: compiledModule,
+});
+const { composeMission } = compiledModule.exports;
+
+const agents = [
+  {
+    agentId: '1', name: 'Risk Agent', avatar: '', description: '代币合约安全',
+    approvalRate: '100%', usageCount: 20, startingPrice: '0', symbol: 'USDT',
+    categories: ['SOFTWARE_SERVICES'], categoryName: ['软件服务'], onlineStatus: 1,
+  },
+  {
+    agentId: '2', name: 'News Agent', avatar: '', description: '市场新闻和情绪研究',
+    approvalRate: '100%', usageCount: 10, startingPrice: '0', symbol: 'USDT',
+    categories: ['FINANCE'], categoryName: ['金融'], onlineStatus: 1,
+  },
+];
+const catalog = {
+  agents,
+  details: {
+    '1': { fetchedAt: '2026-09-17T00:00:00Z', total: 1, services: [{ serviceId: 11, name: 'Token 风险扫描', description: '检查合约、蜜罐和税费风险', price: '0.01', symbol: 'USDT', serviceType: 'A2MCP' }] },
+    '2': { fetchedAt: '2026-09-17T00:00:00Z', total: 1, services: [{ serviceId: 22, name: '市场新闻', description: '返回 BTC 新闻和市场情绪', price: '0', symbol: 'USDT', serviceType: 'A2MCP' }] },
+  },
+  source: 'https://www.okx.ai/zh-hans/agents',
+  fetchedAt: '2026-09-17T00:00:00Z',
+  mode: 'test',
+};
+
+test('mission planner returns deterministic, verifiable service steps', () => {
+  const result = composeMission({ goal: '研究 BTC 新闻并检查代币合约风险', maxAgents: 2 }, catalog);
+  assert.equal(result.steps.length, 2);
+  assert.equal(result.steps.map((step) => step.agentId).join(','), '2,1');
+  assert.ok(result.steps.every((step) => /^https:\/\/www\.okx\.ai\/zh-hans\/agents\/\d+$/.test(step.serviceUrl)));
+  assert.equal(result.safety.automaticPayment, false);
+  assert.equal(result.safety.automaticExecution, false);
+});
+
+test('mission planner enforces input and agent limits', () => {
+  assert.throws(() => composeMission({ goal: 'a' }, catalog), /至少需要 4 个字符/);
+  const result = composeMission({ goal: '分析市场新闻', maxAgents: 99 }, catalog);
+  assert.equal(result.steps.length, 2);
+});

@@ -1,6 +1,28 @@
-# Agentverse — 观察世界 / 进入世界
+# Agentverse — OKX.AI Mission Console
 
-A Chinese world-first website built from the supplied Agentverse brief, with public OKX.AI profile data and explicitly simulated behavior. Soft original isometric artwork, ivory geometry, pale teal atmosphere and generous negative space replace the dashboard-led home page.
+Agentverse is a free A2MCP mission-composition service and working console for OKX Dev Day 2026, Build a Company. A user provides a goal; the service returns an explainable plan made from verifiable OKX.AI Agent IDs and Service IDs. It never buys, pays, signs, subscribes, or trades without a separate user-confirmed step.
+
+## Official build-period work
+
+The root commit preserves the 12 September pre-hackathon visualization as an explicit baseline. Work added from 17 September onward includes:
+
+- A working `POST /api/a2mcp/compose` free A2MCP endpoint with a public service descriptor at `GET /api/a2mcp/compose`.
+- Deterministic OKX.AI service selection with Agent ID, Service ID, price, provenance and safety boundaries.
+- A mission-first product surface; the prior 3D world remains available at `/world` as the visualization layer.
+- Input validation, CORS for remote Agent calls, tests and reproducible verification commands.
+
+Quick self-check:
+
+```bash
+npm ci
+npm run check
+curl -i http://localhost:3000/api/a2mcp/compose
+curl -i -X POST http://localhost:3000/api/a2mcp/compose \
+  -H 'content-type: application/json' \
+  --data '{"goal":"研究 BTC 市场并检查 X Layer 代币风险","maxAgents":3,"riskMode":"confirm-before-action"}'
+```
+
+See [HACKATHON.md](./HACKATHON.md) for the submission mapping and demo flow.
 
 ## Experience
 
