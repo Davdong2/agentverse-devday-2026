@@ -56,6 +56,8 @@ assert.equal(economy.protocolPillars.length, 6);
 assert.equal(economy.banners.length, 10);
 assert.equal(economy.payloads.length, 8);
 assert.equal(economy.dataPackets.count, 36);
+assert.ok(economy.blocksPoint(46.8, 34.18));
+assert.equal(economy.blocksPoint(46.8, 43.5), false);
 assert.ok(
   ['OKX.AI', 'X LAYER', 'AGENT PAY', 'ONCHAIN OS', 'A2A', 'IGNIX'].every(
     (label) => drawn.includes(label),

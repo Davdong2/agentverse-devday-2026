@@ -2,7 +2,7 @@
 
 ## Track
 
-**Build a Company** — Agentverse is a standardized, free A2MCP service and a visual mission console.
+**Build a Company** — Agentverse is an Agent metaverse with a standardized, free A2MCP collaboration service and a working mission console.
 
 ## Working service
 

@@ -71,9 +71,9 @@ export function createInteriorCity(scene: THREE.Scene) {
   const tickerCylinder = geo(new THREE.CylinderGeometry(1, 1, 1, 96, 1, true));
   const silver = mat(
     new THREE.MeshPhongMaterial({
-      color: '#BFC9CF',
-      specular: '#FFFFFF',
-      shininess: 112,
+      color: '#A8B6BE',
+      specular: '#C9DBE5',
+      shininess: 78,
     }),
   );
   const graphite = mat(
@@ -198,6 +198,7 @@ export function createInteriorCity(scene: THREE.Scene) {
   const cz = regions[0].y * 100;
   const worldCx = 50;
   const worldCz = 52;
+  const blockers: Array<{ x: number; z: number; radius: number }> = [];
 
   function part(
     parent: THREE.Object3D,
@@ -265,7 +266,11 @@ export function createInteriorCity(scene: THREE.Scene) {
     return { canvas, context: canvas.getContext('2d')!, texture };
   }
 
-  function shorten(value: string, context: CanvasRenderingContext2D, width: number) {
+  function shorten(
+    value: string,
+    context: CanvasRenderingContext2D,
+    width: number,
+  ) {
     if (context.measureText(value).width <= width) return value;
     let result = value;
     while (result.length > 8 && context.measureText(`${result}…`).width > width)
@@ -295,9 +300,19 @@ export function createInteriorCity(scene: THREE.Scene) {
     context.fillText(title, 54, 72);
     context.font = '700 20px system-ui, sans-serif';
     const modeWidth = Math.max(94, context.measureText(mode).width + 34);
-    context.fillStyle = mode === 'LIVE' ? '#0E714F' : mode.includes('缓存') ? '#5A4926' : '#273C49';
+    context.fillStyle =
+      mode === 'LIVE'
+        ? '#0E714F'
+        : mode.includes('缓存')
+          ? '#5A4926'
+          : '#273C49';
     context.fillRect(970 - modeWidth, 34, modeWidth, 48);
-    context.fillStyle = mode === 'LIVE' ? '#86F2BE' : mode.includes('缓存') ? '#FFD078' : '#9DC7D4';
+    context.fillStyle =
+      mode === 'LIVE'
+        ? '#86F2BE'
+        : mode.includes('缓存')
+          ? '#FFD078'
+          : '#9DC7D4';
     context.textAlign = 'center';
     context.fillText(mode, 970 - modeWidth / 2, 66);
     context.textAlign = 'left';
@@ -369,7 +384,11 @@ export function createInteriorCity(scene: THREE.Scene) {
         context.fillText(price, x + 18, y + 43);
         context.fillStyle = change >= 0 ? positive : negative;
         context.font = '700 22px ui-monospace, monospace';
-        context.fillText(`${change >= 0 ? '+' : ''}${change.toFixed(2)}%`, x + 158, y + 43);
+        context.fillText(
+          `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`,
+          x + 158,
+          y + 43,
+        );
         context.font = '600 22px system-ui, sans-serif';
       });
       context.fillStyle = '#7895A0';
@@ -388,7 +407,12 @@ export function createInteriorCity(scene: THREE.Scene) {
         context.fillStyle = '#132A35';
         context.fillRect(260, y - 20, 540, 24);
         context.fillStyle = incoming ? positive : negative;
-        context.fillRect(530, y - 20, (incoming ? 1 : -1) * Math.min(250, amount * 1.2), 24);
+        context.fillRect(
+          530,
+          y - 20,
+          (incoming ? 1 : -1) * Math.min(250, amount * 1.2),
+          24,
+        );
         context.fillStyle = incoming ? positive : negative;
         context.font = '700 20px ui-monospace, monospace';
         context.fillText(`${incoming ? '+' : '-'}$${amount}M`, 834, y);
@@ -419,7 +443,8 @@ export function createInteriorCity(scene: THREE.Scene) {
         const radius = base + Math.sin(time * 0.7 + index) * 4;
         context.beginPath();
         context.arc(x, y, radius, 0, Math.PI * 2);
-        context.fillStyle = change >= 0 ? 'rgba(31, 197, 126, .72)' : 'rgba(241, 72, 91, .72)';
+        context.fillStyle =
+          change >= 0 ? 'rgba(31, 197, 126, .72)' : 'rgba(241, 72, 91, .72)';
         context.fill();
         context.strokeStyle = change >= 0 ? positive : negative;
         context.lineWidth = 4;
@@ -429,7 +454,11 @@ export function createInteriorCity(scene: THREE.Scene) {
         context.font = '700 22px system-ui, sans-serif';
         context.fillText(symbol, x, y - 4);
         context.font = '700 17px ui-monospace, monospace';
-        context.fillText(`${change >= 0 ? '+' : ''}${change.toFixed(1)}%`, x, y + 23);
+        context.fillText(
+          `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`,
+          x,
+          y + 23,
+        );
       });
       context.textAlign = 'left';
       context.fillStyle = '#7895A0';
@@ -452,7 +481,14 @@ export function createInteriorCity(scene: THREE.Scene) {
         context.strokeStyle = index === 1 ? '#FFD078' : '#4FBED8';
         context.beginPath();
         context.moveTo(node[1] + 56, node[2]);
-        context.bezierCurveTo(node[1] + 110, node[2] - 70, next[1] - 80, next[2] + 70, next[1] - 56, next[2]);
+        context.bezierCurveTo(
+          node[1] + 110,
+          node[2] - 70,
+          next[1] - 80,
+          next[2] + 70,
+          next[1] - 56,
+          next[2],
+        );
         context.stroke();
         const progress = (time * 0.18 + index * 0.27) % 1;
         const px = node[1] + (next[1] - node[1]) * progress;
@@ -485,17 +521,35 @@ export function createInteriorCity(scene: THREE.Scene) {
       return;
     }
 
-    const marketMode = signal?.mode === 'fresh' ? 'LIVE' : signal ? '缓存' : '暂无数据';
-    wallBase(context, 'OKX 市场信号', marketMode, signal && signal.change < 0 ? negative : positive);
+    const marketMode =
+      signal?.mode === 'fresh' ? 'LIVE' : signal ? '缓存' : '暂无数据';
+    wallBase(
+      context,
+      'OKX 市场信号',
+      marketMode,
+      signal && signal.change < 0 ? negative : positive,
+    );
     context.fillStyle = '#A6BBC4';
     context.font = '600 23px system-ui, sans-serif';
     context.fillText('BTC / USDT', 54, 162);
     context.fillStyle = '#F5FBFC';
     context.font = '700 74px ui-monospace, monospace';
-    context.fillText(signal ? signal.last.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—', 54, 250);
+    context.fillText(
+      signal
+        ? signal.last.toLocaleString('en-US', { maximumFractionDigits: 2 })
+        : '—',
+      54,
+      250,
+    );
     context.fillStyle = signal && signal.change < 0 ? negative : positive;
     context.font = '700 36px ui-monospace, monospace';
-    context.fillText(signal ? `${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%` : '等待现实信号', 680, 244);
+    context.fillText(
+      signal
+        ? `${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%`
+        : '等待现实信号',
+      680,
+      244,
+    );
     context.strokeStyle = signal && signal.change < 0 ? negative : positive;
     context.lineWidth = 6;
     context.beginPath();
@@ -542,9 +596,16 @@ export function createInteriorCity(scene: THREE.Scene) {
     new THREE.Color('#A6B5BD'),
     new THREE.Color('#213643'),
   ];
-  const towerMetrics: Array<{ angle: number; radius: number; width: number; depth: number; height: number }> = [];
+  const towerMetrics: Array<{
+    angle: number;
+    radius: number;
+    width: number;
+    depth: number;
+    height: number;
+  }> = [];
   for (let index = 0; index < skylineCount; index++) {
-    const angle = (index / skylineCount) * Math.PI * 2 + Math.sin(index * 7.13) * 0.018;
+    const angle =
+      (index / skylineCount) * Math.PI * 2 + Math.sin(index * 7.13) * 0.018;
     const ring = index % 3;
     const radius = 72 + ring * 13 + Math.sin(index * 2.71) * 3.8;
     const width = 2.2 + ((index * 17) % 7) * 0.42;
@@ -566,7 +627,11 @@ export function createInteriorCity(scene: THREE.Scene) {
   if (skyline.instanceColor) skyline.instanceColor.needsUpdate = true;
 
   const windowCount = 72;
-  const skylineWindows = new THREE.InstancedMesh(towerBox, skylineGlow, windowCount);
+  const skylineWindows = new THREE.InstancedMesh(
+    towerBox,
+    skylineGlow,
+    windowCount,
+  );
   skylineWindows.name = 'panoramic-city-window-ribbons';
   skylineWindows.frustumCulled = false;
   root.add(skylineWindows);
@@ -590,10 +655,15 @@ export function createInteriorCity(scene: THREE.Scene) {
     skylineWindows.setColorAt(index, lightColors[index % lightColors.length]);
   }
   skylineWindows.instanceMatrix.needsUpdate = true;
-  if (skylineWindows.instanceColor) skylineWindows.instanceColor.needsUpdate = true;
+  if (skylineWindows.instanceColor)
+    skylineWindows.instanceColor.needsUpdate = true;
 
   const spineCount = 72;
-  const skylineSpines = new THREE.InstancedMesh(towerBox, skylineGlow, spineCount);
+  const skylineSpines = new THREE.InstancedMesh(
+    towerBox,
+    skylineGlow,
+    spineCount,
+  );
   skylineSpines.name = 'panoramic-city-vertical-light-spines';
   skylineSpines.frustumCulled = false;
   root.add(skylineSpines);
@@ -609,10 +679,14 @@ export function createInteriorCity(scene: THREE.Scene) {
     skylineDummy.scale.set(0.075, tower.height * 0.62, 0.055);
     skylineDummy.updateMatrix();
     skylineSpines.setMatrixAt(index, skylineDummy.matrix);
-    skylineSpines.setColorAt(index, lightColors[(index + 1) % lightColors.length]);
+    skylineSpines.setColorAt(
+      index,
+      lightColors[(index + 1) % lightColors.length],
+    );
   }
   skylineSpines.instanceMatrix.needsUpdate = true;
-  if (skylineSpines.instanceColor) skylineSpines.instanceColor.needsUpdate = true;
+  if (skylineSpines.instanceColor)
+    skylineSpines.instanceColor.needsUpdate = true;
 
   const crownCount = 36;
   const skylineCrowns = new THREE.InstancedMesh(torus, skylineGlow, crownCount);
@@ -627,16 +701,25 @@ export function createInteriorCity(scene: THREE.Scene) {
       worldCz + Math.sin(tower.angle) * tower.radius,
     );
     skylineDummy.rotation.set(Math.PI / 2, 0, 0);
-    skylineDummy.scale.set(tower.width * 0.62, tower.width * 0.62, tower.width * 0.62);
+    skylineDummy.scale.set(
+      tower.width * 0.62,
+      tower.width * 0.62,
+      tower.width * 0.62,
+    );
     skylineDummy.updateMatrix();
     skylineCrowns.setMatrixAt(index, skylineDummy.matrix);
     skylineCrowns.setColorAt(index, lightColors[index % lightColors.length]);
   }
   skylineCrowns.instanceMatrix.needsUpdate = true;
-  if (skylineCrowns.instanceColor) skylineCrowns.instanceColor.needsUpdate = true;
+  if (skylineCrowns.instanceColor)
+    skylineCrowns.instanceColor.needsUpdate = true;
 
   const dataColumnCount = 24;
-  const dataColumns = new THREE.InstancedMesh(towerBox, skylineGlow, dataColumnCount);
+  const dataColumns = new THREE.InstancedMesh(
+    towerBox,
+    skylineGlow,
+    dataColumnCount,
+  );
   dataColumns.name = 'panoramic-xlayer-data-columns';
   dataColumns.frustumCulled = false;
   root.add(dataColumns);
@@ -703,7 +786,9 @@ export function createInteriorCity(scene: THREE.Scene) {
       index % 2 ? '#FFD078' : '#77DFFF',
       'LIVE INFRASTRUCTURE · WORLD DATA',
     );
-    const material = mat(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }));
+    const material = mat(
+      new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }),
+    );
     part(group, plane, material, 0, 0, -0.035, 5.1, 2.55, 1);
     return group;
   });
@@ -731,7 +816,17 @@ export function createInteriorCity(scene: THREE.Scene) {
     group.rotation.y = -Math.PI / 2 - angle;
     root.add(group);
     part(group, box, skylineGlass, 0, 0, 0, 11.7, 6.2, 0.42);
-    part(group, box, index % 2 ? amber : cyan, 0, -3.22, 0.12, 12.1, 0.09, 0.18);
+    part(
+      group,
+      box,
+      index % 2 ? amber : cyan,
+      0,
+      -3.22,
+      0.12,
+      12.1,
+      0.09,
+      0.18,
+    );
     for (const side of [-1, 1])
       part(group, box, silver, side * 5.55, -4.7, -0.05, 0.17, 3.2, 0.28);
     const surface = dynamicTexture(1024, 512);
@@ -752,7 +847,8 @@ export function createInteriorCity(scene: THREE.Scene) {
   // data districts without duplicating canvas painting or texture memory.
   const marketWallGroups = marketWalls.flatMap((wall, index) => {
     const duplicate = wall.group.clone(true);
-    const angle = (index / marketWallKinds.length) * Math.PI * 2 + 0.62 + Math.PI / 6;
+    const angle =
+      (index / marketWallKinds.length) * Math.PI * 2 + 0.62 + Math.PI / 6;
     const radius = 47.5;
     duplicate.name = `${wall.group.name}-relay`;
     duplicate.position.set(
@@ -832,12 +928,13 @@ export function createInteriorCity(scene: THREE.Scene) {
     part(threshold, box, graphite, side * 7.25, 5.45, 0.4, 0.4, 9.8, 0.08);
     part(threshold, box, cyan, side * 7.25, 5.45, 0.5, 0.13, 8.8, 0.035);
     part(threshold, cylinder, gold, side * 7.25, 0.11, 0, 1.0, 0.22, 1.0);
+    blockers.push({ x: cx + side * 7.25, z: cz - 15.5, radius: 1.05 });
   }
   part(threshold, box, graphite, 0, 10.45, 0, 15.0, 0.55, 0.74);
   part(threshold, box, gold, 0, 10.78, 0, 14.5, 0.08, 0.78);
   const gateTexture = screenTexture(
     'OKX.AI  ×  X LAYER',
-    'AGENT NATIVE ECONOMY',
+    'AGENT METAVERSE',
     '#7BDFFF',
     'DISCOVER · COLLABORATE · PAY · OWN',
   );
@@ -852,21 +949,63 @@ export function createInteriorCity(scene: THREE.Scene) {
     const side = index % 2 ? 1 : -1;
     const row = Math.floor(index / 2);
     group.position.set(cx + side * (10.4 + row * 1.4), 0, cz - 4.7 - row * 7.2);
+    blockers.push({ x: group.position.x, z: group.position.z, radius: 2.82 });
     group.rotation.y = side * (row ? -0.3 : -0.18);
     root.add(group);
     part(group, cylinder, graphite, 0, 0.22, 0, 2.8, 0.44, 2.8);
     part(group, cylinder, silver, 0, 0.43, 0, 2.53, 0.14, 2.53);
-    part(group, torus, color === '#FFD078' ? amber : color === '#7DE1B5' ? mint : cyan, 0, 0.55, 0, 2.17, 2.17, 2.17).rotation.x = -Math.PI / 2;
-    part(group, box, graphite, 0, 1.45, -0.72, 3.4, 1.75, 0.34).rotation.x = -0.12;
+    part(
+      group,
+      torus,
+      color === '#FFD078' ? amber : color === '#7DE1B5' ? mint : cyan,
+      0,
+      0.55,
+      0,
+      2.17,
+      2.17,
+      2.17,
+    ).rotation.x = -Math.PI / 2;
+    part(group, box, graphite, 0, 1.45, -0.72, 3.4, 1.75, 0.34).rotation.x =
+      -0.12;
     const display = screenTexture(title, subtitle, color);
     const displayMaterial = mat(
       new THREE.MeshBasicMaterial({ map: display, toneMapped: false }),
     );
-    const screen = part(group, plane, displayMaterial, 0, 1.58, -0.52, 3.08, 1.3, 1);
+    const screen = part(
+      group,
+      plane,
+      displayMaterial,
+      0,
+      1.58,
+      -0.52,
+      3.08,
+      1.3,
+      1,
+    );
     screen.rotation.x = -0.12;
     for (const terminalSide of [-1, 1]) {
-      part(group, box, silver, terminalSide * 1.45, 0.92, 0.82, 0.54, 0.92, 0.72);
-      part(group, box, color === '#FFD078' ? amber : color === '#7DE1B5' ? mint : cyan, terminalSide * 1.45, 1.08, 0.46, 0.39, 0.44, 0.035);
+      part(
+        group,
+        box,
+        silver,
+        terminalSide * 1.45,
+        0.92,
+        0.82,
+        0.54,
+        0.92,
+        0.72,
+      );
+      part(
+        group,
+        box,
+        color === '#FFD078' ? amber : color === '#7DE1B5' ? mint : cyan,
+        terminalSide * 1.45,
+        1.08,
+        0.46,
+        0.39,
+        0.44,
+        0.035,
+      );
     }
     return group;
   });
@@ -877,14 +1016,33 @@ export function createInteriorCity(scene: THREE.Scene) {
     const angle = -1.08 + index * 0.72;
     const group = new THREE.Group();
     group.name = `network-node-${title.toLowerCase().replaceAll('.', '')}`;
-    group.position.set(cx + Math.sin(angle) * 17.8, 0, cz - 18 + Math.cos(angle) * 3.4);
+    group.position.set(
+      cx + Math.sin(angle) * 17.8,
+      0,
+      cz - 18 + Math.cos(angle) * 3.4,
+    );
+    blockers.push({ x: group.position.x, z: group.position.z, radius: 1.28 });
     root.add(group);
     part(group, cylinder, graphite, 0, 0.22, 0, 1.2, 0.44, 1.2);
     part(group, cylinder, gold, 0, 0.48, 0, 0.92, 0.08, 0.92);
     part(group, box, silver, 0, 3.15, 0, 1.35, 5.25 + (index % 2), 1.1);
     part(group, box, graphite, 0, 3.2, 0.58, 1.08, 4.35, 0.08);
-    part(group, box, index % 2 ? amber : cyan, 0, 5.95 + (index % 2) * 0.5, 0, 0.92, 0.13, 0.92);
-    const display = screenTexture(title, subtitle, index % 2 ? '#FFD078' : '#77DFFF');
+    part(
+      group,
+      box,
+      index % 2 ? amber : cyan,
+      0,
+      5.95 + (index % 2) * 0.5,
+      0,
+      0.92,
+      0.13,
+      0.92,
+    );
+    const display = screenTexture(
+      title,
+      subtitle,
+      index % 2 ? '#FFD078' : '#77DFFF',
+    );
     const displayMaterial = mat(
       new THREE.MeshBasicMaterial({ map: display, toneMapped: false }),
     );
@@ -893,7 +1051,17 @@ export function createInteriorCity(scene: THREE.Scene) {
   });
 
   const overheadRings = [13.5, 18.5].map((radius, index) => {
-    const ring = part(root, torus, index ? gold : cyan, cx, 13.2 + index * 3.1, cz - 10, radius, radius, radius);
+    const ring = part(
+      root,
+      torus,
+      index ? gold : cyan,
+      cx,
+      13.2 + index * 3.1,
+      cz - 10,
+      radius,
+      radius,
+      radius,
+    );
     ring.name = `overhead-data-ring-${index + 1}`;
     ring.rotation.x = Math.PI / 2;
     return ring;
@@ -933,6 +1101,12 @@ export function createInteriorCity(scene: THREE.Scene) {
     nodeGroups,
     overheadRings,
     shuttles,
+    blockers,
+    blocksPoint(x: number, z: number, padding = 0.34) {
+      return blockers.some(
+        (item) => Math.hypot(x - item.x, z - item.z) < item.radius + padding,
+      );
+    },
     setSignal(signal?: MarketSignal | null) {
       if (signalState !== signal) dataDirty = true;
       signalState = signal;
@@ -942,17 +1116,23 @@ export function createInteriorCity(scene: THREE.Scene) {
       newsState = news;
     },
     update(time: number, quality: number) {
-      const flow = signalState ? 1 + Math.min(1.4, Math.abs(signalState.change) / 5) : 1;
+      const flow = signalState
+        ? 1 + Math.min(1.4, Math.abs(signalState.change) / 5)
+        : 1;
       skyUniforms.uTime.value = time;
       skyUniforms.uPulse.value +=
         ((signalState ? Math.min(1, Math.abs(signalState.change) / 6) : 0.35) -
           skyUniforms.uPulse.value) *
         0.025;
       skyline.count = quality === 2 ? 48 : quality === 1 ? 78 : skylineCount;
-      skylineWindows.count = quality === 2 ? 22 : quality === 1 ? 46 : windowCount;
-      skylineSpines.count = quality === 2 ? 20 : quality === 1 ? 44 : spineCount;
-      skylineCrowns.count = quality === 2 ? 10 : quality === 1 ? 24 : crownCount;
-      dataColumns.count = quality === 2 ? 8 : quality === 1 ? 16 : dataColumnCount;
+      skylineWindows.count =
+        quality === 2 ? 22 : quality === 1 ? 46 : windowCount;
+      skylineSpines.count =
+        quality === 2 ? 20 : quality === 1 ? 44 : spineCount;
+      skylineCrowns.count =
+        quality === 2 ? 10 : quality === 1 ? 24 : crownCount;
+      dataColumns.count =
+        quality === 2 ? 8 : quality === 1 ? 16 : dataColumnCount;
       cityRails.forEach((rail, index) => {
         rail.rotation.z = time * (index % 2 ? -0.0025 : 0.0018);
         rail.visible = quality < 2 || index < 2;
@@ -970,7 +1150,13 @@ export function createInteriorCity(scene: THREE.Scene) {
       tickerSurface.texture.offset.x = -((time * 0.018) % 1);
       if (dataDirty || Math.abs(time - lastWallPaint) > 0.34) {
         marketWalls.forEach((wall) => {
-          paintMarketWall(wall.kind, wall.context, time, signalState, newsState);
+          paintMarketWall(
+            wall.kind,
+            wall.context,
+            time,
+            signalState,
+            newsState,
+          );
           wall.texture.needsUpdate = true;
         });
         if (dataDirty || Math.abs(time - lastWallPaint) > 1.8)

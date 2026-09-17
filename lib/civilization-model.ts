@@ -293,17 +293,126 @@ export function residentSlot(
   const outer = ordinal >= innerCount;
   const slot = outer ? ordinal - innerCount : ordinal;
   const count = outer ? outerCount : innerCount;
-  const radius = population === 1 ? 1.7 : outer ? 3.1 : 2.05;
-  const direction = home % 2 ? 1 : -1;
-  const angle =
-    home * 0.61 +
-    (slot / Math.max(1, count)) * Math.PI * 2 +
-    (outer ? Math.PI / 6 : 0) +
-    time * 0.008 * direction;
-  return {
+  const radius = population === 1 ? 1.9 : outer ? 3.05 : 2.45;
+  // District exhibits occupy the southern half of every platform. Residents
+  // use two gently moving northern arcs so bodies, handheld tools and exhibit
+  // plinths never share the same physical space.
+  const arcProgress = count <= 1 ? 0.5 : slot / Math.max(1, count - 1);
+  const interleave = outer && count > 1 ? Math.PI / Math.max(12, count * 6) : 0;
+  const sway = Math.sin(time * 0.22 + home * 0.7 + ordinal) * 0.022;
+  const angle = arcProgress * Math.PI + interleave + sway;
+  return keepClearOfExhibits({
     x: center.x + (Math.cos(angle) * radius) / 100,
-    y: center.y + (Math.sin(angle) * radius * 0.82) / 100,
+    y: center.y + (Math.sin(angle) * radius) / 100,
+  });
+}
+
+const exhibitHalfWidth = 2.55;
+const exhibitHalfDepth = 1.28;
+const agentExhibitClearance = 0.62;
+
+function exhibitCenter(index: number) {
+  return {
+    x: regions[index].x * 100 + (index === 0 ? 5.5 : 0),
+    z: regions[index].y * 100 - 2.3,
   };
+}
+
+/** True when an Agent body and its equipment clear every physical exhibit. */
+export function isAgentClearOfExhibits(
+  point: Point,
+  clearance = agentExhibitClearance,
+) {
+  const x = point.x * 100;
+  const z = point.y * 100;
+  return regions.every((_, index) => {
+    const center = exhibitCenter(index);
+    return (
+      Math.abs(x - center.x) >= exhibitHalfWidth + clearance - 1e-6 ||
+      Math.abs(z - center.z) >= exhibitHalfDepth + clearance - 1e-6
+    );
+  });
+}
+
+/** Project a normalized world point to the closest safe exhibit edge. */
+export function keepClearOfExhibits(
+  point: Point,
+  clearance = agentExhibitClearance,
+): Point {
+  let x = point.x * 100;
+  let z = point.y * 100;
+  const halfWidth = exhibitHalfWidth + clearance;
+  const halfDepth = exhibitHalfDepth + clearance;
+  for (let index = 0; index < regions.length; index++) {
+    const center = exhibitCenter(index);
+    const dx = x - center.x;
+    const dz = z - center.z;
+    if (Math.abs(dx) >= halfWidth || Math.abs(dz) >= halfDepth) continue;
+    const horizontalExit = halfWidth - Math.abs(dx);
+    const verticalExit = halfDepth - Math.abs(dz);
+    if (horizontalExit < verticalExit)
+      x = center.x + (dx < 0 ? -halfWidth : halfWidth);
+    else z = center.z + (dz < 0 ? -halfDepth : halfDepth);
+  }
+  return { x: x / 100, y: z / 100 };
+}
+
+function destinationSlot(
+  region: number,
+  instance: number,
+  time: number,
+): Point {
+  if (region !== 0) return residentSlot(region, instance % 6, 6, time);
+  const center = regions[0];
+  const angle = Math.PI * (0.36 + (instance % 4) * 0.2);
+  return keepClearOfExhibits({
+    x: center.x + (Math.cos(angle) * 5.25) / 100,
+    y: center.y + (Math.sin(angle) * 5.25) / 100,
+  });
+}
+
+function resolveAgentOverlaps(states: AgentState[], minimumDistance = 1.48) {
+  const result = states.map((state) => ({ ...state }));
+  for (let pass = 0; pass < 5; pass++) {
+    for (let left = 0; left < result.length; left++) {
+      for (let right = left + 1; right < result.length; right++) {
+        const a = result[left];
+        const b = result[right];
+        if (a.collaborator && b.collaborator) continue;
+        let dx = (b.x - a.x) * 100;
+        let dz = (b.y - a.y) * 100;
+        let distance = Math.hypot(dx, dz);
+        if (distance >= minimumDistance) continue;
+        if (distance < 0.0001) {
+          const angle = seeded(left * 97 + right * 31) * Math.PI * 2;
+          dx = Math.cos(angle);
+          dz = Math.sin(angle);
+          distance = 1;
+        }
+        const movable = Number(!a.collaborator) + Number(!b.collaborator);
+        const correction = (minimumDistance - distance) / Math.max(1, movable);
+        const nx = dx / distance;
+        const nz = dz / distance;
+        if (!a.collaborator) {
+          const clear = keepClearOfExhibits({
+            x: a.x - (nx * correction) / 100,
+            y: a.y - (nz * correction) / 100,
+          });
+          a.x = clear.x;
+          a.y = clear.y;
+        }
+        if (!b.collaborator) {
+          const clear = keepClearOfExhibits({
+            x: b.x + (nx * correction) / 100,
+            y: b.y + (nz * correction) / 100,
+          });
+          b.x = clear.x;
+          b.y = clear.y;
+        }
+      }
+    }
+  }
+  return result;
 }
 export function liveWeather(change: number): Weather {
   return change <= -2 ? 'storm' : change >= 2 ? 'tide' : 'calm';
@@ -389,11 +498,11 @@ export function sampleAgents(
     return home;
   });
   const populations = new Map<number, number>();
-  homes.slice(4).forEach((home) =>
-    populations.set(home, (populations.get(home) ?? 0) + 1),
-  );
+  homes
+    .slice(4)
+    .forEach((home) => populations.set(home, (populations.get(home) ?? 0) + 1));
   const ordinals = new Map<number, number>();
-  return roster.map((a, i) => {
+  const states = roster.map((a, i) => {
     const visual = appearance(a, details[a.agentId]);
     if (i < 4) {
       const p = collaborationPose(time, i);
@@ -412,13 +521,7 @@ export function sampleAgents(
     const home = homes[i];
     const ordinal = ordinals.get(home) ?? 0;
     ordinals.set(home, ordinal + 1);
-    const base = regions[home];
-    const slot = residentSlot(
-      home,
-      ordinal,
-      populations.get(home) ?? 1,
-      time,
-    );
+    const slot = residentSlot(home, ordinal, populations.get(home) ?? 1, time);
     let x = slot.x,
       y = slot.y;
     if (i % 4 === 0) {
@@ -434,8 +537,19 @@ export function sampleAgents(
         destination === regions[6]
       )
         destination = regions[3];
-      x = base.x + (destination.x - base.x) * u;
-      y = base.y + (destination.y - base.y) * u - Math.sin(u * Math.PI) * 0.014;
+      const destinationIndex = regions.indexOf(destination);
+      const end = destinationSlot(destinationIndex, i, time);
+      const eased = u * u * (3 - 2 * u);
+      const dx = end.x - slot.x;
+      const dz = end.y - slot.y;
+      const distance = Math.max(0.0001, Math.hypot(dx, dz));
+      const lane = ((i % 3) - 1) * 0.008 * Math.sin(eased * Math.PI);
+      const clear = keepClearOfExhibits({
+        x: slot.x + dx * eased - (dz / distance) * lane,
+        y: slot.y + dz * eased + (dx / distance) * lane,
+      });
+      x = clear.x;
+      y = clear.y;
     }
     return {
       instance: i,
@@ -449,6 +563,7 @@ export function sampleAgents(
       activity: i % 4 === 0 ? '移动中' : '工作中',
     };
   });
+  return resolveAgentOverlaps(states);
 }
 
 export const regionConnections: [number, number][] = [

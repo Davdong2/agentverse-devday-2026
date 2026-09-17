@@ -55,9 +55,9 @@ export function createAgentEconomy(scene: THREE.Scene) {
   const packetGeometry = geo(new RoundedBoxGeometry(1, 1, 1, 2, 0.12));
   const shell = mat(
     new THREE.MeshPhongMaterial({
-      color: '#CBD3D8',
-      specular: '#FFFFFF',
-      shininess: 96,
+      color: '#AFBBC1',
+      specular: '#CBDCE5',
+      shininess: 72,
     }),
   );
   const graphite = mat(
@@ -129,6 +129,11 @@ export function createAgentEconomy(scene: THREE.Scene) {
   const cx = regions[0].x * 100;
   const cz = regions[0].y * 100;
   const coreZ = cz - 7.9;
+  const blockers: Array<{ x: number; z: number; radius: number }> = [
+    { x: cx, z: cz - 9.32, radius: 1.18 },
+    { x: cx - 7.1, z: cz - 6.7, radius: 0.86 },
+    { x: cx + 7.1, z: cz - 6.7, radius: 0.86 },
+  ];
 
   function part(
     parent: THREE.Object3D,
@@ -298,7 +303,7 @@ export function createAgentEconomy(scene: THREE.Scene) {
   });
   const heroPanel = panelTexture(
     'AGENTVERSE',
-    'X LAYER · AGENT NATIVE WORLD',
+    'AGENT METAVERSE · X LAYER',
     'OKX.AI · A2A · ONCHAIN OS · DEMO WORLD',
   );
   mountScreen(root, heroPanel, cx, 4.95, cz - 9.15, 5.4, 1.4);
@@ -342,6 +347,7 @@ export function createAgentEconomy(scene: THREE.Scene) {
       0,
       cz - 12.9 - (index % 2) * 1.15,
     );
+    blockers.push({ x: pillar.position.x, z: pillar.position.z, radius: 1.02 });
     root.add(pillar);
     part(pillar, cylinder, graphite, 0, 0.16, 0, 0.92, 0.24, 0.92);
     part(pillar, cylinder, gold, 0, 0.34, 0, 0.72, 0.08, 0.72);
@@ -506,6 +512,12 @@ export function createAgentEconomy(scene: THREE.Scene) {
     dataPackets,
     directoryPanel,
     marketPanel,
+    blockers,
+    blocksPoint(x: number, z: number, padding = 0.34) {
+      return blockers.some(
+        (item) => Math.hypot(x - item.x, z - item.z) < item.radius + padding,
+      );
+    },
     setData(
       agentCount: number,
       ignixCount: number,

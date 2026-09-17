@@ -87,6 +87,15 @@ assert.equal(world.shuttleLights.count, 24);
 assert.equal(world.consoleBodies.count, 40);
 assert.equal(world.consoleScreens.count, 40);
 assert.equal(world.consoleRails.count, 40);
+assert.ok(
+  world.blocksPoint(regions[0].x * 100, regions[0].y * 100),
+  'The central oculus blocks first-person camera movement',
+);
+assert.equal(
+  world.blocksPoint(regions[1].x * 100, regions[1].y * 100),
+  false,
+  'Open district floor remains walkable',
+);
 world.regionPlatforms.forEach((p, i) => {
   assert.equal(p.userData.region, i);
   assert.equal(

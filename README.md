@@ -1,6 +1,6 @@
-# Agentverse — OKX.AI Mission Console
+# Agentverse — OKX.AI Agent Metaverse
 
-Agentverse is a free A2MCP mission-composition service and working console for OKX Dev Day 2026, Build a Company. A user provides a goal; the service returns an explainable plan made from verifiable OKX.AI Agent IDs and Service IDs. It never buys, pays, signs, subscribes, or trades without a separate user-confirmed step.
+Agentverse is an Agent metaverse driven by real OKX.AI identities. It lets people discover Agents in a visual world, understand their relationships and capabilities, and turn a plain-language goal into an explainable collaboration plan made from verifiable Agent IDs and Service IDs. Its free A2MCP service never buys, pays, signs, subscribes, or trades without a separate user-confirmed step.
 
 ## Live product
 
@@ -17,7 +17,7 @@ The root commit preserves the 12 September pre-hackathon visualization as an exp
 
 - A working `POST /api/a2mcp/compose` free A2MCP endpoint with a public service descriptor at `GET /api/a2mcp/compose`.
 - Deterministic OKX.AI service selection with Agent ID, Service ID, price, provenance and safety boundaries.
-- A mission-first product surface; the prior 3D world remains available at `/world` as the visualization layer.
+- An Agent-metaverse world at `/world`, backed by the same identities and service records used by the working Mission Console.
 - Input validation, CORS for remote Agent calls, tests and reproducible verification commands.
 
 Quick self-check:
@@ -111,4 +111,10 @@ Ten exhibits now have different facility geometry and labelled crypto workflows:
 Camera-facing multi-strand capability ribbons, soft rising sparks, output bursts, floor ripples, distant event rings and an instanced cloud layer replace solid connection cylinders and anonymous floating blocks. Motion remains driven by shared world time. Reduced quality lowers strands, specks/clouds and detailed avatar parts. Market change drives sky/fog tint, sunlight/exposure and flow speed/length. These logical checks do not establish actual FPS or shader/browser visual quality.
 World roster now uses one actor per unique source agentId, preserving the four collaborators first and retaining legitimate same-name/different-ID records. It no longer cycles 23 identities to fill 50 bodies. Unused actor pool entries are hidden and excluded from picking through their full ancestor chain; dossier selection uses the same roster identity. Capacity remains 50 unique Agents and population text reflects actual count.
 `/api/world-news` reads CoinDesk RSS every ten minutes with R2 cache, failure cooldown and a labelled verified backup. It accepts only HTTPS CoinDesk links, rejects future and over-48-hour entries, and routes headlines through explicit keyword categories. Categories are visualization heuristics, not verified conclusions. New recent source news triggers a 45-second shared environmental response; Agent actions and transactions remain Demo. The first-person card shows BTC/USDT with a source mode and a news source link; no chain transaction is submitted.
-Validation includes one-ID/one-actor semantics, legitimate duplicate names, 50-ID capacity, walk bounds, distinct facility structure, exchange/receipt sequencing, merge/resource cleanup, news URL/date validation, market environment mapping and shared actor ribbon endpoints. Production build and local HTTP checks passed. Browser visual QA and device FPS remain unverified.
+Validation includes one-ID/one-actor semantics, legitimate duplicate names, 50-ID capacity, walk bounds, distinct facility structure, exchange/receipt sequencing, merge/resource cleanup, news URL/date validation, market environment mapping and shared actor ribbon endpoints. Production build and local HTTP checks passed. Those checks do not measure physical-device FPS.
+
+### Agent metaverse presentation and collision pass
+
+The current presentation leads with Agentverse as an Agent metaverse: real OKX.AI identities inhabit a visual world, form capability relationships and produce an explainable collaboration plan through the same free A2MCP service. The landing copy, page metadata, central world signage and submission summary now use that framing while retaining the explicit LIVE/cache and behavior-Demo boundaries.
+
+Resident and travelling Agents are projected outside every exhibit footprint, then separated from independent actors before both cameras consume the shared state. The first-person camera also blocks against architectural supports, Agent-economy screens and interior work cells instead of only the ten crypto exhibits. Tests sample six environmental modes across the complete collaboration cycle, asserting exhibit and actor clearances. A narrower field of view, lower exposure, darker alloy materials and distance-gated labels reduce visual congestion. The final desktop viewport and a 390×844 mobile viewport were inspected in Chrome; no page-origin browser errors were present.

@@ -55,6 +55,7 @@ test('walkable interior is a spatial 360-degree Agent economy city', () => {
   assert.match(source, /signalState/);
   assert.match(source, /setNews\(news\?: WorldNews \| null\)/);
   assert.match(source, /const marketWallGroups = marketWalls\.flatMap/);
+  assert.match(source, /blocksPoint\(x: number, z: number, padding = 0\.34\)/);
   assert.match(source, /wall\.group\.clone\(true\)/);
   assert.match(source, /news\?\.mode === 'fresh' \? 'LIVE'/);
   assert.match(source, /价格与涨跌来自 OKX · 曲线动画为 Demo/);

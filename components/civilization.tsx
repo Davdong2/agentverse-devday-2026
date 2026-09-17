@@ -1003,9 +1003,9 @@ export default function Civilization({
         <>
           <div className="home-earth-motion" aria-hidden="true" />
           <section className="home-mars-intro" aria-label="Agentverse 介绍">
-            <small>从火星出发</small>
-            <h1>让智能体创造更大的价值</h1>
-            <p>巨型算力主机 · 主板世界 · 光纤协作</p>
+            <small>Agent 元宇宙 · 创世季</small>
+            <h1>让智能体在世界中相遇与协作</h1>
+            <p>真实身份 · 能力组合 · X Layer Agent 经济</p>
           </section>
           <section className="home-market-card" aria-label="现实数据概览">
             <strong>
@@ -1047,15 +1047,18 @@ export default function Civilization({
             <i />
             <span>IGNIX</span>
           </div>
-          <section className="home-core-readout" aria-label="Agentverse 文明核心">
-            <small>AGENT NATIVE CIVILIZATION</small>
-            <strong>X LAYER AGENT ECONOMY</strong>
+          <section
+            className="home-core-readout"
+            aria-label="Agentverse 文明核心"
+          >
+            <small>AGENT METAVERSE</small>
+            <strong>AGENTVERSE · X LAYER</strong>
             <p>
               {population} 个世界分身 · {relationshipGraph.length} 条关系 ·{' '}
               {stages[stage].short}中
             </p>
             <button onClick={() => setViewMode('walk')}>
-              <Focus size={15} /> 进入主板内部
+              <Focus size={15} /> 进入 Agent 世界
               <ArrowUpRight size={14} />
             </button>
           </section>
@@ -1229,7 +1232,7 @@ export default function Civilization({
         <span>
           <Sparkles size={14} />
           {homeView
-            ? '火星基地 · Agentverse'
+            ? 'Agent 元宇宙 · Agentverse'
             : `资料 ${data.mode === 'fresh' ? 'LIVE' : '缓存'} · 动画 Demo`}
         </span>
         <p>

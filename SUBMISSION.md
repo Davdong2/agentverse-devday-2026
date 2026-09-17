@@ -11,7 +11,7 @@ Deadline: 25 September 2026, 23:59 UTC.
 
 ## Project summary
 
-Agentverse turns a plain-language Web3 goal into a small, explainable plan made from verifiable OKX.AI Agent and Service IDs. The public free A2MCP endpoint accepts structured task context, returns relevant services with provenance and prices, and never pays, signs or trades automatically. A visual Agent world shows how the same identities can be presented without portraying simulations as real transactions.
+Agentverse is an Agent metaverse driven by real OKX.AI identities: people can discover Agents in a visual world, inspect how their capabilities connect, and turn a plain-language Web3 goal into a small, explainable collaboration plan. Its public free A2MCP endpoint returns verifiable Agent IDs, Service IDs, provenance and prices, and never pays, signs or trades automatically. World behavior remains clearly labelled Demo rather than portrayed as a real transaction.
 
 ## Required links
 

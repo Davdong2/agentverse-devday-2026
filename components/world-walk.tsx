@@ -78,17 +78,17 @@ export default function WorldWalk(props: Props) {
     renderer.shadowMap.autoUpdate = false;
     host.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#111821');
-    scene.fog = new THREE.Fog('#3A3436', 36, 125);
+    scene.background = new THREE.Color('#08131E');
+    scene.fog = new THREE.Fog('#263744', 34, 118);
     const camera = new THREE.PerspectiveCamera(
-      56,
+      52,
       host.clientWidth / host.clientHeight,
       0.1,
       240,
     );
     camera.rotation.order = 'YXZ';
-    scene.add(new THREE.HemisphereLight('#DDF2FF', '#68452F', 1.08));
-    const sun = new THREE.DirectionalLight('#FFD9B3', 2.28);
+    scene.add(new THREE.HemisphereLight('#DDF2FF', '#4B3841', 0.9));
+    const sun = new THREE.DirectionalLight('#FFD9B3', 1.86);
     sun.position.set(-20, 35, 20);
     sun.castShadow = true;
     sun.shadow.mapSize.set(mobile ? 768 : 1536, mobile ? 768 : 1536);
@@ -104,14 +104,14 @@ export default function WorldWalk(props: Props) {
     sun.shadow.normalBias = 0.025;
     sun.shadow.radius = 2;
     scene.add(sun, sun.target);
-    const rim = new THREE.DirectionalLight('#7BDFFF', 0.96);
+    const rim = new THREE.DirectionalLight('#7BDFFF', 0.72);
     rim.position.set(15, 12, -25);
     scene.add(rim);
-    const cityGlow = new THREE.PointLight('#79DFFF', 3.4, 34, 2);
+    const cityGlow = new THREE.PointLight('#79DFFF', 2.55, 32, 2);
     cityGlow.position.set(regions[0].x * 100, 8, regions[0].y * 100 - 5);
     scene.add(cityGlow);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.93;
     const pickable: THREE.Object3D[] = [];
     const architecture = createWorldArchitecture(scene, pickable);
     const interiorCity = createInteriorCity(scene);
@@ -178,7 +178,11 @@ export default function WorldWalk(props: Props) {
     const skyColor = new THREE.Color(),
       fogColor = new THREE.Color();
     const walkable = (x: number, z: number) =>
-      canWalkAt(x, z) && !cryptoProps.blocksPoint(x, z);
+      canWalkAt(x, z) &&
+      !cryptoProps.blocksPoint(x, z) &&
+      !architecture.blocksPoint(x, z) &&
+      !economy.blocksPoint(x, z) &&
+      !interiorCity.blocksPoint(x, z);
     const keys = new Set<string>();
     let looking = false,
       lastX = 0,
@@ -309,7 +313,7 @@ export default function WorldWalk(props: Props) {
           actorZ = actorState.y * 100,
           nextDistance = Math.hypot(nextX - actorX, nextZ - actorZ),
           currentDistance = Math.hypot(currentX - actorX, currentZ - actorZ);
-        return nextDistance >= 0.92 || nextDistance > currentDistance;
+        return nextDistance >= 1.18 || nextDistance > currentDistance;
       });
     const warmedAt = performance.now() + 6000;
     function frame(now: number) {
@@ -394,7 +398,7 @@ export default function WorldWalk(props: Props) {
       interiorCity.setNews(p.news);
       interiorCity.update(time, level);
       cityGlow.visible = level < 2;
-      cityGlow.intensity = level === 0 ? 3.4 : 1.8;
+      cityGlow.intensity = level === 0 ? 2.55 : 1.35;
       actors.forEach((actor, i) => {
         if (i >= states.length) {
           actor.g.visible = false;
@@ -420,25 +424,23 @@ export default function WorldWalk(props: Props) {
           a.collaborator,
           moving,
         );
+        const actorDistance = Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z);
         actor.update(
           a.variant,
           time,
           motion,
-          Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < (level > 0 ? 12 : 22),
+          actorDistance < (level > 0 ? 12 : 22),
         );
-        actor.g.visible =
-          i < 4 ||
-          level < 2 ||
-          Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z) < 18;
+        actor.g.visible = i < 4 || level < 2 || actorDistance < 18;
         const bodyScale = motion.composite ? 0.66 : 0.62;
         actor.g.scale.setScalar(bodyScale);
         actor.label.update(
           a.name,
-          Math.hypot(a.x * 100 - w.x, a.y * 100 - w.z),
+          actorDistance,
           canvas.clientHeight,
           camera.fov,
           motion.composite,
-          actor.g.visible,
+          actor.g.visible && (i < 4 || actorDistance < 13.5),
           p.ignixIds.includes(a.agentId),
           bodyScale,
         );

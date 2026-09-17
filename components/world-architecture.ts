@@ -27,9 +27,9 @@ export function createWorldArchitecture(
   };
   const stone = mat(
     new THREE.MeshPhongMaterial({
-      color: '#C7C9C9',
-      specular: '#FFFFFF',
-      shininess: 72,
+      color: '#AEB8BE',
+      specular: '#C4D2DA',
+      shininess: 56,
     }),
   );
   stone.onBeforeCompile = (shader) => {
@@ -194,6 +194,9 @@ export function createWorldArchitecture(
   skylineCaps.instanceMatrix.needsUpdate = true;
   const regionPlatforms: THREE.Mesh[] = [];
   const pavingPoints: number[] = [];
+  const blockers: Array<{ x: number; z: number; radius: number }> = [];
+  const block = (x: number, z: number, radius: number) =>
+    blockers.push({ x, z, radius });
   const segment = (a: THREE.Vector3, b: THREE.Vector3) =>
     pavingPoints.push(...a.toArray(), ...b.toArray());
   const waterfalls: THREE.Mesh[] = [];
@@ -350,6 +353,7 @@ export function createWorldArchitecture(
         const h = n === 4 ? 2.8 + (k % 2) * 0.5 : n === 3 ? 2.3 : 1.6;
         const shelf = mesh(box, stone, px, h / 2, pz, 0.54, h, 0.58);
         shelf.rotation.y = -a;
+        block(px, pz, 0.52);
         for (let j = 0; j < 3; j++) {
           const slab = mesh(
             box,
@@ -391,6 +395,7 @@ export function createWorldArchitecture(
         for (const side of [-1, 1]) {
           mesh(box, stone, x + side * 3.8, 2.45, z - 1.2, 0.4, 4.9, 0.46);
           mesh(box, gold, x + side * 3.8, 4.8, z - 1.2, 0.46, 0.1, 0.52);
+          block(x + side * 3.8, z - 1.2, 0.45);
         }
         if (n === 8)
           for (let k = 0; k < 7; k++) {
@@ -421,6 +426,8 @@ export function createWorldArchitecture(
           );
           arch.userData.region = n;
           pickable.push(arch);
+          block(x + side * 2.9 - 0.9, z - 2.85, 0.34);
+          block(x + side * 2.9 + 0.9, z - 2.85, 0.34);
           mesh(box, gold, x + side * 2.9, 6.1, z - 2.85, 0.65, 0.075, 0.7);
         }
         mesh(box, stone, x, n === 3 ? 5.1 : 6.6, z - 2.85, 5.8, 0.26, 0.72);
@@ -430,6 +437,8 @@ export function createWorldArchitecture(
         horizon.rotation.y = 0.35;
         mesh(box, stone, x - 3.2, 1.7, z - 2.0, 0.65, 3.4, 0.9);
         mesh(box, stone, x + 3.2, 2.3, z - 2.0, 0.65, 4.6, 0.9);
+        block(x - 3.2, z - 2.0, 0.72);
+        block(x + 3.2, z - 2.0, 0.72);
       } else {
         const arch = mesh(
           archGeo,
@@ -443,6 +452,9 @@ export function createWorldArchitecture(
         );
         arch.userData.region = n;
         pickable.push(arch);
+        const legOffset = (n === 7 ? 1.8 : 1.55) * 1.52;
+        block(x - legOffset, z - 3.55, 0.4);
+        block(x + legOffset, z - 3.55, 0.4);
         const inset = mesh(
           archGeo,
           gold,
@@ -547,6 +559,7 @@ export function createWorldArchitecture(
       dummy.rotation.set(0, -angle + Math.PI / 2, 0);
       dummy.updateMatrix();
       consoleRails.setMatrixAt(consoleIndex, dummy.matrix);
+      block(x, z, n === 0 ? 0.78 : 0.62);
       consoleIndex++;
     }
   });
@@ -773,6 +786,7 @@ export function createWorldArchitecture(
   // A recessed, layered oculus anchors the floating modules in a clear working space.
   mesh(cylinder, edge, cx, -0.04, cz, 1.3, 0.1, 1.3);
   mesh(cylinder, stone, cx, 0.025, cz, 1.18, 0.07, 1.18);
+  block(cx, cz, 1.32);
   ring(cx, 0.064, cz, 1.03, gold);
   [1.3, 2.1, 3.2, 4.4].forEach((r, i) => {
     ring(cx, 0.03 + i * 0.006, cz, r, i % 2 ? gold : glow[0]);
@@ -1064,6 +1078,12 @@ export function createWorldArchitecture(
     consoleBodies,
     consoleScreens,
     consoleRails,
+    blockers,
+    blocksPoint(x: number, z: number, padding = 0.34) {
+      return blockers.some(
+        (item) => Math.hypot(x - item.x, z - item.z) < item.radius + padding,
+      );
+    },
     setSurfaceMap(texture: THREE.Texture) {
       stone.map = texture;
       stone.needsUpdate = true;

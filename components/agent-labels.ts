@@ -131,17 +131,21 @@ export function createAgentLabels() {
             label = entry(name);
             sprite.material = label.material;
           }
-          const pixelWidth = Math.min(104, label.width * 0.46);
+          const pixelWidth = Math.min(88, label.width * 0.4);
           const scale = Math.max(
-            0.58,
+            0.5,
             Math.min(
-              3.25,
+              2.72,
               (pixelWidth * 2 * Math.tan((fov * Math.PI) / 360) * distance) /
                 Math.max(360, viewportHeight),
             ),
           );
           const compensatedScale = scale / Math.max(0.1, parentScale);
-          sprite.scale.set(compensatedScale, compensatedScale / label.aspect, 1);
+          sprite.scale.set(
+            compensatedScale,
+            compensatedScale / label.aspect,
+            1,
+          );
           sprite.position.set(
             0,
             (composite ? 3.2 : 2.62) +

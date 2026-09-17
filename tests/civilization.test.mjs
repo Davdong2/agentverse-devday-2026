@@ -31,6 +31,7 @@ const {
   canWalkAt,
   regionConnections,
   residentSlot,
+  isAgentClearOfExhibits,
 } = await import(url(model));
 assert.equal(regions.length, 10);
 assert.equal(cycleDuration, 18);
@@ -126,9 +127,14 @@ const stationary = state.filter(
 );
 for (const agent of stationary) {
   const distanceToDistrict = Math.min(
-    ...regions.slice(1).map((region) =>
-      Math.hypot(agent.x * 100 - region.x * 100, agent.y * 100 - region.y * 100),
-    ),
+    ...regions
+      .slice(1)
+      .map((region) =>
+        Math.hypot(
+          agent.x * 100 - region.x * 100,
+          agent.y * 100 - region.y * 100,
+        ),
+      ),
   );
   assert.ok(
     distanceToDistrict <= 3.11,
@@ -138,13 +144,21 @@ for (const agent of stationary) {
 for (let i = 0; i < 12; i++) {
   const slot = residentSlot(5, i, 12, 7);
   assert.ok(
-    Math.hypot(slot.x * 100 - regions[5].x * 100, slot.y * 100 - regions[5].y * 100) <= 3.11,
+    Math.hypot(
+      slot.x * 100 - regions[5].x * 100,
+      slot.y * 100 - regions[5].y * 100,
+    ) <= 3.11,
     'Dense resident layouts remain inside the clear platform core',
   );
 }
 for (const weather of ['calm', 'news', 'nvda', 'storm', 'tide', 'chain'])
   for (let time = 0; time < cycleDuration; time += 0.5) {
     const sampled = sampleAgents(agents, details, time, weather, 50);
+    for (const agent of sampled.filter((item) => !item.collaborator))
+      assert.ok(
+        isAgentClearOfExhibits(agent),
+        `Resident and travelling Agents must clear every exhibit footprint: ${weather} t=${time} ${agent.agentId}`,
+      );
     const settled = sampled.filter(
       (agent) => !agent.collaborator && agent.activity === '工作中',
     );
@@ -173,6 +187,17 @@ for (const weather of ['calm', 'news', 'nvda', 'storm', 'tide', 'chain'])
             (settled[left].y - settled[right].y) * 100,
           ) >= 1.45,
           'Stationary Agents in one district must not intersect',
+        );
+      }
+    for (let left = 0; left < sampled.length; left++)
+      for (let right = left + 1; right < sampled.length; right++) {
+        if (sampled[left].collaborator && sampled[right].collaborator) continue;
+        assert.ok(
+          Math.hypot(
+            (sampled[left].x - sampled[right].x) * 100,
+            (sampled[left].y - sampled[right].y) * 100,
+          ) >= 1.36,
+          'Independent Agent bodies must not intersect while moving or working',
         );
       }
   }
