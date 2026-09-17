@@ -205,7 +205,7 @@ export function MissionConsole() {
           <Badge variant="outline" className={styles.liveBadge}>
             <Radio /> PUBLIC A2MCP
           </Badge>
-          <Link className={styles.worldLink} href="/world">
+          <Link className={styles.worldLink} href="/world" prefetch={false}>
             <span className={styles.worldLabel}>进入可视化世界</span>
             <span className={styles.mobileWorldLabel}>3D 世界</span>
             <ArrowRight />
