@@ -1,0 +1,79 @@
+{
+  "source": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+  "fetchedAt": "2026-09-07T16:31:19.463Z",
+  "mode": "stale",
+  "items": [
+    {
+      "id": "https://www.coindesk.com/business/2026/09/07/hunter-biden-is-launching-a-memecoin-named-after-his-laptop",
+      "title": "Hunter Biden debuts 'LAPTOP' memecoin targeting TRUMP holders",
+      "url": "https://www.coindesk.com/business/2026/09/07/hunter-biden-is-launching-a-memecoin-named-after-his-laptop",
+      "publishedAt": "2026-09-07T15:44:30.000Z",
+      "category": "链上动态",
+      "weather": "chain",
+      "region": 9
+    },
+    {
+      "id": "https://www.coindesk.com/policy/2026/09/07/polish-prosecutors-charge-fifth-suspect-in-a-massive-crypto-probe",
+      "title": "Polish prosecutors charge fifth suspect in a massive crypto probe",
+      "url": "https://www.coindesk.com/policy/2026/09/07/polish-prosecutors-charge-fifth-suspect-in-a-massive-crypto-probe",
+      "publishedAt": "2026-09-07T15:28:43.000Z",
+      "category": "市场资讯",
+      "weather": "news",
+      "region": 1
+    },
+    {
+      "id": "https://www.coindesk.com/business/2026/09/07/stablecoin-wallets-challenge-traditional-bank-accounts-as-main-consumer-money-hub",
+      "title": "Stablecoin wallets challenge traditional bank accounts as main consumer money hub",
+      "url": "https://www.coindesk.com/business/2026/09/07/stablecoin-wallets-challenge-traditional-bank-accounts-as-main-consumer-money-hub",
+      "publishedAt": "2026-09-07T14:12:15.000Z",
+      "category": "链上动态",
+      "weather": "chain",
+      "region": 9
+    },
+    {
+      "id": "https://www.coindesk.com/tech/2026/09/07/ethereum-commits-to-letting-users-pay-gas-fees-without-having-to-hold-eth",
+      "title": "Ethereum commits to letting users pay gas fees without having to hold ETH",
+      "url": "https://www.coindesk.com/tech/2026/09/07/ethereum-commits-to-letting-users-pay-gas-fees-without-having-to-hold-eth",
+      "publishedAt": "2026-09-07T13:54:07.000Z",
+      "category": "市场资讯",
+      "weather": "news",
+      "region": 1
+    },
+    {
+      "id": "https://www.coindesk.com/tech/2026/09/07/solana-to-triple-transaction-size-as-apps-get-room-for-more-complex-trades",
+      "title": "Solana to triple transaction size as apps get room for more complex trades",
+      "url": "https://www.coindesk.com/tech/2026/09/07/solana-to-triple-transaction-size-as-apps-get-room-for-more-complex-trades",
+      "publishedAt": "2026-09-07T12:08:11.000Z",
+      "category": "市场资讯",
+      "weather": "news",
+      "region": 1
+    },
+    {
+      "id": "https://www.coindesk.com/business/2026/09/07/dbs-and-citi-enable-instant-24-7-cross-border-tokenised-deposit-payments-on-the-swift-ledger",
+      "title": "DBS and Citi complete weekend USD payment via Swift’s Digital Ledger using tokenized deposits",
+      "url": "https://www.coindesk.com/business/2026/09/07/dbs-and-citi-enable-instant-24-7-cross-border-tokenised-deposit-payments-on-the-swift-ledger",
+      "publishedAt": "2026-09-07T12:05:32.000Z",
+      "category": "市场资讯",
+      "weather": "news",
+      "region": 1
+    },
+    {
+      "id": "https://www.coindesk.com/daybook-us/2026/09/07/bitcoin-blinks-less-than-gold-when-treasury-yields-move",
+      "title": "Bitcoin blinks less than gold when Treasury yields move",
+      "url": "https://www.coindesk.com/daybook-us/2026/09/07/bitcoin-blinks-less-than-gold-when-treasury-yields-move",
+      "publishedAt": "2026-09-07T11:15:00.000Z",
+      "category": "市场资讯",
+      "weather": "news",
+      "region": 1
+    },
+    {
+      "id": "https://www.coindesk.com/policy/2026/09/07/uk-regulator-weighs-easing-financial-prediction-market-ban-times",
+      "title": "UK regulator weighs easing financial prediction market ban: Times",
+      "url": "https://www.coindesk.com/policy/2026/09/07/uk-regulator-weighs-easing-financial-prediction-market-ban-times",
+      "publishedAt": "2026-09-07T10:42:58.000Z",
+      "category": "市场资讯",
+      "weather": "news",
+      "region": 1
+    }
+  ]
+}
