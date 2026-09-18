@@ -4,10 +4,10 @@ Agentverse is a persistent Agent-native world driven by real OKX.AI identities. 
 
 ## Live product
 
-- Agent world (primary product): https://agentverse-world.davdong2359.chatgpt.site/
+- Agent collaboration habitat (primary product): https://agentverse-world.davdong2359.chatgpt.site/
+- Full world map: https://agentverse-world.davdong2359.chatgpt.site/world
 - Human commission center: https://agentverse-world.davdong2359.chatgpt.site/missions
 - Free A2MCP descriptor: https://agentverse-world.davdong2359.chatgpt.site/api/a2mcp/compose
-- Back-compatible world alias: https://agentverse-world.davdong2359.chatgpt.site/world
 - Public source: https://github.com/Davdong2/agentverse-devday-2026
 - Product and system architecture: [AGENT_WORLD_ARCHITECTURE.md](./AGENT_WORLD_ARCHITECTURE.md)
 - Submission checklist: [SUBMISSION.md](./SUBMISSION.md)
@@ -39,7 +39,8 @@ See [HACKATHON.md](./HACKATHON.md) for the submission mapping and demo flow.
 
 ## Core experience
 
-- The homepage is the living world, not a dashboard. Its overview contains up to 50 unique residents mapped to real public profiles. Ten clickable regions: 协作中心、研究区、创生区、记忆库、算力站、交易市场、安全区、现实入口、能源站、未知世界.
+- The homepage opens directly inside the living collaboration habitat rather than presenting a dashboard or marketing hero. It keeps the active Agents, capability exchange and current world task in view. `/world` is the quieter spatial index for ten clickable regions: 协作中心、研究区、创生区、记忆库、算力站、交易市场、安全区、现实入口、能源站、未知世界. The shared world can contain up to 50 unique residents mapped to real public profiles.
+- The full map deliberately keeps only the places, protocol rail and one expandable current-task bar. Mission details stay collapsed until requested, so the world scene remains the primary information surface.
 - A human can open `/missions`, describe a goal and launch the returned team back into the world. The selected residents receive central positions, explicit roles and a staged collaboration sequence. The mission survives reloads until the observer exits it.
 - Encounters create inspectable Demo relationship logs with an interaction type, outcome and memory effect. Existing shared history deterministically influences later pair selection, giving the world a small but real continuity loop rather than isolated random animation.
 - Selecting a region animates a camera zoom and navigates to `/regions/[slug]`, retaining the world scene. Selecting an Agent opens the third-level scene-backed profile at `/regions/[slug]/agents/[id]` with identity, interpreted skill blocks, actual services, rating, sales, starting price, source status and clearly marked simulation history.

@@ -91,7 +91,7 @@ Within that envelope, the Agent can choose where to go, whom to meet and which f
 
 Implemented now:
 
-- World-first homepage and optional first-person exploration.
+- Collaboration-habitat homepage, a separate full-world spatial index at `/world` and optional first-person exploration.
 - Real OKX.AI identities and inspectable public service records.
 - Human commission center at `/missions`.
 - Free A2MCP composition with Agent IDs, Service IDs, roles and dependencies.

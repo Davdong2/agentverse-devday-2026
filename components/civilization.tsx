@@ -209,6 +209,7 @@ export default function Civilization({
     ),
     [serviceNotice, setServiceNotice] = useState('');
   const [eventOpen, setEventOpen] = useState(false),
+    [missionDetailsOpen, setMissionDetailsOpen] = useState(false),
     [help, setHelp] = useState(false),
     [photo, setPhoto] = useState(false),
     [photoConfigured, setPhotoConfigured] = useState(false),
@@ -563,7 +564,7 @@ export default function Civilization({
   const worldView = () => {
     setCam(initialCamera);
     setPanel(null);
-    if (regionIndex !== undefined) router.push('/');
+    if (regionIndex !== undefined) router.push('/world');
   };
   const zoom = (delta: number) =>
     setCam((c) => ({
@@ -1008,13 +1009,14 @@ export default function Civilization({
           </span>
         </Link>
         <nav aria-label="观察方式">
-          <button
-            className={viewMode === 'observe' ? 'active' : ''}
-            onClick={() => setViewMode('observe')}
+          <Link
+            href="/world"
+            className={homeView && viewMode === 'observe' ? 'active' : ''}
+            aria-label="打开世界地图"
           >
             <Globe2 size={16} />
-            观察世界
-          </button>
+            <span>世界地图</span>
+          </Link>
           <button
             className={viewMode === 'walk' ? 'active' : ''}
             onClick={() => {
@@ -1059,142 +1061,26 @@ export default function Civilization({
           <Info size={14} />
         </button>
       </header>
-      {activeMission && homeView && (
-        <section className="active-mission-card" aria-label="当前世界委托">
-          <header>
-            <span>
-              <Route size={15} /> 当前世界委托
-            </span>
-            <button onClick={clearActiveMission} aria-label="退出当前任务视图">
-              <X size={15} />
-            </button>
-          </header>
-          <small>REQUEST {activeMission.requestId.slice(0, 8)}</small>
-          <h2>{activeMission.goal}</h2>
-          <div className="active-mission-steps">
-            {activeMission.steps.map((step, index) => {
-              const resident = data.agents.find(
-                (item) => item.agentId === step.agentId,
-              );
-              return (
-                <button
-                  key={`${step.agentId}-${step.serviceId}`}
-                  className={index === activeMissionStep ? 'current' : ''}
-                  onClick={() => {
-                    if (resident) selectAgent(resident);
-                  }}
-                >
-                  <b>{String(index + 1).padStart(2, '0')}</b>
-                  <span>
-                    <strong>{step.agentName}</strong>
-                    <small>
-                      {step.role} · SERVICE #{step.serviceId}
-                    </small>
-                  </span>
-                  <i>
-                    {step.price === '0'
-                      ? '免费'
-                      : `${step.price} ${step.symbol}`}
-                  </i>
-                </button>
-              );
-            })}
-          </div>
-          <footer>
-            <span>
-              <ShieldCheck size={13} /> 计划预演 · 未付款或执行
-            </span>
-            <Link href="/missions">
-              调整团队 <ChevronRight size={13} />
-            </Link>
-          </footer>
-        </section>
-      )}
       {homeView && (
-        <>
-          <div className="home-earth-motion" aria-hidden="true" />
-          <section className="home-mars-intro" aria-label="Agentverse 介绍">
-            <small>持续运行的 Agent 原生世界</small>
-            <h1>一个由 Agent 居住、相遇与创造的世界</h1>
-            <p>人类观察、委托和治理 · Agent 自主生活与协作</p>
-          </section>
-          <section className="home-market-card" aria-label="现实数据概览">
-            <strong>
-              现实数据 <ArrowUpRight size={16} />
-            </strong>
-            <div>
-              <span className="market-asset bitcoin">₿</span>
-              <b>BTC</b>
-              <em className={signal && signal.change < 0 ? 'down' : ''}>
-                {signal
-                  ? `${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}%`
-                  : '等待中'}
-              </em>
-              <i className="market-spark" />
-            </div>
-            <div>
-              <span className="market-asset agents">A</span>
-              <b>OKX.AI</b>
-              <em>{data.agents.length} 个档案</em>
-              <small>{data.mode === 'fresh' ? 'LIVE' : '缓存'}</small>
-            </div>
-            <div>
-              <span className="market-asset ignix">ig</span>
-              <b>IGNIX</b>
-              <em>{Object.keys(ignix.associations).length} 个关联</em>
-              <small>已核实</small>
-            </div>
-          </section>
-          <div className="home-ecosystem-rail" aria-label="Agent 经济协议层">
-            <span>OKX.AI</span>
-            <i />
-            <span>X LAYER</span>
-            <i />
-            <span>AGENT PAY</span>
-            <i />
-            <span>ONCHAIN OS</span>
-            <i />
-            <span>A2A</span>
-            <i />
-            <span>IGNIX</span>
-          </div>
-          <section
-            className="home-core-readout"
-            aria-label="Agentverse 文明核心"
-          >
-            <small>AGENT METAVERSE</small>
-            <strong>AGENTVERSE · X LAYER</strong>
-            <p>
-              {activeMission
-                ? `${activeMission.steps.length} 个任务居民 · ${stages[stage].short}中`
-                : `${population} 个世界居民 · ${relationshipGraph.length} 条关系 · ${stages[stage].short}中`}
-            </p>
-            <button onClick={() => setViewMode('walk')}>
-              <Focus size={15} /> 进入 Agent 世界
-              <ArrowUpRight size={14} />
-            </button>
-          </section>
-          <div className="home-protocol-beacons" aria-hidden="true">
-            <span className="beacon-okx">
-              <b>OKX.AI</b>
-              <small>Agent 名录</small>
-            </span>
-            <span className="beacon-xlayer">
-              <b>X LAYER</b>
-              <small>结算网络</small>
-            </span>
-            <span className="beacon-pay">
-              <b>USDT0</b>
-              <small>Agent Pay</small>
-            </span>
-          </div>
-        </>
+        <div className="home-ecosystem-rail" aria-label="Agent 经济协议层">
+          <span>OKX.AI</span>
+          <i />
+          <span>X LAYER</span>
+          <i />
+          <span>AGENT PAY</span>
+          <i />
+          <span>ONCHAIN OS</span>
+          <i />
+          <span>A2A</span>
+          <i />
+          <span>IGNIX</span>
+        </div>
       )}
       {regionIndex !== undefined && (
         <div className="region-heading">
           <button onClick={worldView}>
             <ArrowLeft size={14} />
-            整个世界
+            世界地图
           </button>
           <h1>{regions[regionIndex].name}</h1>
           <p>{regions[regionIndex].description}</p>
@@ -1307,7 +1193,16 @@ export default function Civilization({
         </span>
       </div>
       <div className="collaboration-dock">
-        <button className="dock-title" onClick={() => focusRegion(0, false)}>
+        <button
+          className="dock-title"
+          aria-label={activeMission ? '展开当前委托' : '观察协作中心'}
+          aria-expanded={activeMission ? missionDetailsOpen : undefined}
+          onClick={() =>
+            activeMission
+              ? setMissionDetailsOpen((current) => !current)
+              : focusRegion(0, false)
+          }
+        >
           <span className="dock-symbol">
             <Network size={20} />
           </span>
@@ -1323,7 +1218,16 @@ export default function Civilization({
                 : stages[stage].title}
             </strong>
           </span>
-          <ArrowUpRight size={16} />
+          {activeMission ? (
+            <ChevronDown
+              className={
+                missionDetailsOpen ? 'dock-chevron open' : 'dock-chevron'
+              }
+              size={16}
+            />
+          ) : (
+            <ArrowUpRight size={16} />
+          )}
         </button>
         <div className="stage-track" aria-label="协作阶段">
           {(activeMission ? activeMission.steps : stages).map((item, i) => {
@@ -1371,6 +1275,73 @@ export default function Civilization({
           />
         </div>
       </div>
+      {activeMission && missionDetailsOpen && viewMode === 'observe' && (
+        <aside
+          className="active-mission-card mission-tray"
+          aria-label="当前世界委托详情"
+        >
+          <header>
+            <span>
+              <Route size={15} /> 当前世界委托
+            </span>
+            <button
+              onClick={() => setMissionDetailsOpen(false)}
+              aria-label="收起当前委托"
+            >
+              <X size={15} />
+            </button>
+          </header>
+          <small>REQUEST {activeMission.requestId.slice(0, 8)}</small>
+          <h2>{activeMission.goal}</h2>
+          <div className="active-mission-steps mission-tray-steps">
+            {activeMission.steps.map((step, index) => {
+              const resident = data.agents.find(
+                (item) => item.agentId === step.agentId,
+              );
+              return (
+                <button
+                  key={`${step.agentId}-${step.serviceId}`}
+                  className={index === activeMissionStep ? 'current' : ''}
+                  onClick={() => {
+                    if (resident) selectAgent(resident);
+                  }}
+                >
+                  <b>{String(index + 1).padStart(2, '0')}</b>
+                  <span>
+                    <strong>{step.agentName}</strong>
+                    <small>
+                      {step.role} · SERVICE #{step.serviceId}
+                    </small>
+                  </span>
+                  <i>
+                    {step.price === '0'
+                      ? '免费'
+                      : `${step.price} ${step.symbol}`}
+                  </i>
+                </button>
+              );
+            })}
+          </div>
+          <footer>
+            <span>
+              <ShieldCheck size={13} /> 计划预演 · 未付款或执行
+            </span>
+            <div>
+              <Link href="/missions">
+                调整团队 <ChevronRight size={13} />
+              </Link>
+              <button
+                onClick={() => {
+                  clearActiveMission();
+                  setMissionDetailsOpen(false);
+                }}
+              >
+                退出任务
+              </button>
+            </div>
+          </footer>
+        </aside>
+      )}
       <div className="world-caption">
         <span>
           <Sparkles size={14} />
