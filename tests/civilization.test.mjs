@@ -28,6 +28,7 @@ const {
   regionFor,
   sampleAgents,
   worldRoster,
+  includeMissionResidents,
   canWalkAt,
   regionConnections,
   residentSlot,
@@ -88,6 +89,37 @@ assert.equal(
 assert.deepEqual(
   state.slice(0, 4).map((a) => a.agentId),
   ['2083', '8355', '9626', '8136'],
+);
+const missionIds = [agents[7].agentId, agents[3].agentId, agents[12].agentId];
+const freshCatalogWithoutMission = agents.filter(
+  (agent) => !missionIds.includes(agent.agentId),
+);
+const catalogWithMission = includeMissionResidents(
+  freshCatalogWithoutMission,
+  agents,
+  missionIds,
+);
+assert.deepEqual(
+  missionIds.filter((id) =>
+    catalogWithMission.some((agent) => agent.agentId === id),
+  ),
+  missionIds,
+  'Verified mission residents survive a fresh catalog page that omits them',
+);
+assert.equal(
+  new Set(catalogWithMission.map((agent) => agent.agentId)).size,
+  catalogWithMission.length,
+  'Adding mission residents must not clone an identity already in the world',
+);
+const missionState = sampleAgents(agents, details, 7, 'calm', 50, missionIds);
+assert.deepEqual(
+  missionState.slice(0, 3).map((agent) => agent.agentId),
+  missionIds,
+  'An active mission must place its selected residents at the collaboration core',
+);
+assert.equal(
+  missionState.filter((agent) => agent.collaborator).length,
+  missionIds.length,
 );
 const sameNames = [
   ...agents,

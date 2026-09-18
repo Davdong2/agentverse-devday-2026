@@ -6,28 +6,41 @@ Deadline: 25 September 2026, 23:59 UTC.
 
 - Project: Agentverse
 - Primary track: Build a Company
-- Participation route: confirm Remote Build or Singapore finale after written finalist notice
+- Participation route: Remote Build; Singapore finale only after written finalist confirmation
 - Team name and members: owner to confirm before form submission
 
-## Project summary
+## Form-ready project summary
 
-Agentverse is an Agent metaverse driven by real OKX.AI identities: people can discover Agents in a visual world, inspect how their capabilities connect, and turn a plain-language Web3 goal into a small, explainable collaboration plan. Its public free A2MCP endpoint returns verifiable Agent IDs, Service IDs, provenance and prices, and never pays, signs or trades automatically. World behavior remains clearly labelled Demo rather than portrayed as a real transaction.
+Agentverse is a persistent Agent-native world driven by real OKX.AI identities. Agents are its inhabitants: they meet, form capability relationships and assemble temporary teams. Humans primarily observe the world and publish goals through its collaboration center. Agentverse's free A2MCP Mission Composer turns a goal into a bounded plan with verifiable Agent IDs, Service IDs, roles, dependencies, provenance and prices, then visualizes that team inside the shared world. Simulated behavior is clearly labelled Demo, and no payment, signature or trade occurs without a separate confirmed action.
 
 ## Required links
 
-- Product: https://agentverse-world.davdong2359.chatgpt.site/
+- Agent world: https://agentverse-world.davdong2359.chatgpt.site/
+- Commission center: https://agentverse-world.davdong2359.chatgpt.site/missions
 - A2MCP endpoint: https://agentverse-world.davdong2359.chatgpt.site/api/a2mcp/compose
-- Visual world: https://agentverse-world.davdong2359.chatgpt.site/world
 - Public repository: https://github.com/Davdong2/agentverse-devday-2026
-- OKX.AI service listing: add after ASP registration and review submission
+- OKX.AI ASP: Agentverse, Agent ID `13779`
+- OKX.AI service listing: add after review submission/approval
 - Demo video: add after recording the approved 2–4 minute flow
+
+## Current marketplace state
+
+- [x] Agentverse ASP identity created.
+- [x] Communication initialized.
+- [x] Free `Agentverse Mission Composer` A2MCP service registered with the public endpoint.
+- [ ] Listing review submitted.
+- [ ] Written approval received.
 
 ## Final checks
 
-- [x] The public repository contains the pre-build baseline and all build-period commits.
-- [ ] README links resolve from an unauthenticated browser.
-- [ ] The OKX.AI listing uses the same deployed endpoint as the descriptor.
-- [ ] The demo uses a valid X Layer contract address or leaves the optional address blank.
-- [ ] The video shows endpoint output, source links, safety boundary and the 3D world.
-- [ ] Team name, roster, participation route and declaration are owner-confirmed.
-- [ ] Submission receipt email is saved and answered within 24 hours if OKX asks for changes.
+- [x] The public repository contains the pre-build baseline and build-period work.
+- [x] Agent and Service IDs are visible in the mission result.
+- [x] Simulated world behavior is distinguished from LIVE/cached source data.
+- [x] The endpoint has an explicit no-payment/no-signing/no-trading boundary.
+- [ ] Deploy the current world-first build and recheck every public link in an unauthenticated browser.
+- [ ] Confirm that the OKX.AI listing uses the exact deployed descriptor endpoint.
+- [ ] Use a valid X Layer contract address in the demo or leave the optional address blank.
+- [ ] Record the world → commission → team → world mission → memory → verification flow.
+- [ ] Confirm team name, roster, participation route and declaration.
+- [ ] Submit listing review and save the submission/receipt evidence.
+- [ ] Save the Dev Day submission receipt and respond within 24 hours if OKX requests changes.

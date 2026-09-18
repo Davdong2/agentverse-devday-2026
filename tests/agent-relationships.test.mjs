@@ -53,6 +53,21 @@ assert.equal(first.source, 'profile_inference');
 assert.ok(first.reason.includes('公开资料推导'));
 assert.ok(agents.some((agent) => agent.name === first.actorNames[0]));
 assert.ok(agents.some((agent) => agent.name === first.actorNames[1]));
+assert.match(first.memoryEffect, /记住/);
+assert.match(first.outcome, /关系强度/);
+
+const missionChemistry = createRelationshipLog(
+  agents.slice(0, 4),
+  details,
+  4,
+  2000,
+  regionFor,
+  [first],
+  { requestId: 'mission-1', goal: '研究市场并核对风险' },
+);
+assert.equal(missionChemistry.source, 'mission_simulation');
+assert.equal(missionChemistry.missionId, 'mission-1');
+assert.equal(missionChemistry.goal, '研究市场并核对风险');
 
 const later = { ...first, id: first.id + '-again', at: 2000 };
 const graph = buildRelationshipGraph([later, first]);

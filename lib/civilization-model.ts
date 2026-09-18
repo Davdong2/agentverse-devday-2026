@@ -462,14 +462,40 @@ export type WorldState = {
   stage: number;
   paused: boolean;
 };
+/** Keep commissioned identities in the world even when a fresh catalog page omits them. */
+export function includeMissionResidents(
+  agents: Agent[],
+  verifiedFallback: Agent[],
+  missionIds: string[],
+): Agent[] {
+  if (!missionIds.length) return agents;
+  const combined = new Map(agents.map((agent) => [agent.agentId, agent]));
+  const fallbackById = new Map(
+    verifiedFallback.map((agent) => [agent.agentId, agent]),
+  );
+  for (const id of new Set(missionIds)) {
+    const resident = fallbackById.get(id);
+    if (!combined.has(id) && resident) combined.set(id, resident);
+  }
+  return [...combined.values()];
+}
 /** One visible body per source identity; genuine same-name identities are preserved. */
-export function worldRoster(agents: Agent[], limit = 50): Agent[] {
+export function worldRoster(
+  agents: Agent[],
+  limit = 50,
+  priorityIds: string[] = [],
+): Agent[] {
   const unique = [...new Map(agents.map((a) => [a.agentId, a])).values()];
   const used = new Set<string>();
-  const team = ['2083', '8355', '9626', '8136'].flatMap((id) => {
+  const requestedTeam = priorityIds.length
+    ? [...new Set(priorityIds)].slice(0, 4)
+    : ['2083', '8355', '9626', '8136'];
+  const team = requestedTeam.flatMap((id) => {
     const a =
       unique.find((item) => item.agentId === id && !used.has(id)) ??
-      unique.find((item) => !used.has(item.agentId));
+      (!priorityIds.length
+        ? unique.find((item) => !used.has(item.agentId))
+        : undefined);
     if (!a) return [];
     used.add(a.agentId);
     return [a];
@@ -485,11 +511,18 @@ export function sampleAgents(
   time: number,
   weather: Weather,
   count = 50,
+  priorityIds: string[] = [],
 ): AgentState[] {
-  const roster = worldRoster(agents, count);
+  const roster = worldRoster(agents, count, priorityIds);
+  const collaboratorCount = Math.min(
+    roster.length,
+    priorityIds.length
+      ? priorityIds.filter((id) => roster.some((agent) => agent.agentId === id))
+          .length
+      : 4,
+  );
   const homes = roster.map((a, i) => {
-    if (i < 4) return 0;
-    const visual = appearance(a, details[a.agentId]);
+    if (i < collaboratorCount) return 0;
     let home = regionFor(a, details[a.agentId]);
     if (i % 13 === 0) home = 8;
     if (i % 17 === 0) home = 3;
@@ -499,19 +532,19 @@ export function sampleAgents(
   });
   const populations = new Map<number, number>();
   homes
-    .slice(4)
+    .slice(collaboratorCount)
     .forEach((home) => populations.set(home, (populations.get(home) ?? 0) + 1));
   const ordinals = new Map<number, number>();
   const states = roster.map((a, i) => {
     const visual = appearance(a, details[a.agentId]);
-    if (i < 4) {
+    if (i < collaboratorCount) {
       const p = collaborationPose(time, i);
       return {
         instance: i,
         agentId: a.agentId,
         name: a.name,
-        role: [0, 5, 2, 0][i],
-        variant: teamVariants[i],
+        role: visual.role,
+        variant: priorityIds.length ? agentVariant(a) : teamVariants[i],
         x: p.x,
         y: p.y,
         collaborator: true,

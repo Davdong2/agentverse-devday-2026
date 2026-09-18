@@ -45,6 +45,7 @@ type Props = {
   onNear: (n: number) => void;
   onExit: () => void;
   activeEventRegion?: number;
+  priorityAgentIds?: string[];
 };
 export default function WorldWalk(props: Props) {
   const mount = useRef<HTMLDivElement>(null),
@@ -266,6 +267,8 @@ export default function WorldWalk(props: Props) {
             latest.current.details,
             latest.current.time,
             latest.current.weather,
+            50,
+            latest.current.priorityAgentIds,
           )[instance];
           if (a) latest.current.onAgent(a.agentId, instance);
         } else if (obj.userData.region !== undefined)
@@ -385,7 +388,14 @@ export default function WorldWalk(props: Props) {
       const time =
           p.time +
           (p.paused ? 0 : Math.min(0.11, (now - baseStamp) / 1000) * p.speed),
-        states = sampleAgents(p.agents, p.details, time, p.weather),
+        states = sampleAgents(
+          p.agents,
+          p.details,
+          time,
+          p.weather,
+          50,
+          p.priorityAgentIds,
+        ),
         phase = stageAt(time),
         progress = phaseProgress(time),
         center = regions[0];

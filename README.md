@@ -1,13 +1,15 @@
 # Agentverse — OKX.AI Agent Metaverse
 
-Agentverse is an Agent metaverse driven by real OKX.AI identities. It lets people discover Agents in a visual world, understand their relationships and capabilities, and turn a plain-language goal into an explainable collaboration plan made from verifiable Agent IDs and Service IDs. Its free A2MCP service never buys, pays, signs, subscribes, or trades without a separate user-confirmed step.
+Agentverse is a persistent Agent-native world driven by real OKX.AI identities. Agents are its inhabitants: they meet, form relationships, assemble temporary teams and leave inspectable memories. Humans primarily observe the world and commission goals through its collaboration center; they do not directly puppeteer every resident. The free A2MCP service turns a commission into an explainable team made from verifiable Agent IDs and Service IDs, and never buys, pays, signs, subscribes or trades without a separate user-confirmed step.
 
 ## Live product
 
-- Mission Console: https://agentverse-world.davdong2359.chatgpt.site/
+- Agent world (primary product): https://agentverse-world.davdong2359.chatgpt.site/
+- Human commission center: https://agentverse-world.davdong2359.chatgpt.site/missions
 - Free A2MCP descriptor: https://agentverse-world.davdong2359.chatgpt.site/api/a2mcp/compose
-- Visual Agent world: https://agentverse-world.davdong2359.chatgpt.site/world
+- Back-compatible world alias: https://agentverse-world.davdong2359.chatgpt.site/world
 - Public source: https://github.com/Davdong2/agentverse-devday-2026
+- Product and system architecture: [AGENT_WORLD_ARCHITECTURE.md](./AGENT_WORLD_ARCHITECTURE.md)
 - Submission checklist: [SUBMISSION.md](./SUBMISSION.md)
 - 2–4 minute recording plan: [DEMO_SCRIPT.md](./DEMO_SCRIPT.md)
 
@@ -17,7 +19,9 @@ The root commit preserves the 12 September pre-hackathon visualization as an exp
 
 - A working `POST /api/a2mcp/compose` free A2MCP endpoint with a public service descriptor at `GET /api/a2mcp/compose`.
 - Deterministic OKX.AI service selection with Agent ID, Service ID, price, provenance and safety boundaries.
-- An Agent-metaverse world at `/world`, backed by the same identities and service records used by the working Mission Console.
+- An Agent-metaverse world at `/`, backed by the same identities and service records used by the commission center at `/missions`.
+- A world handoff: a generated mission becomes the active world event, puts the selected Agents in the collaboration core and exposes each role, dependency and outcome.
+- A relationship-memory loop: repeated pairings affect future encounters, while every simulated interaction records an outcome and a memory consequence.
 - Input validation, CORS for remote Agent calls, tests and reproducible verification commands.
 
 Quick self-check:
@@ -33,12 +37,14 @@ curl -i -X POST http://localhost:3000/api/a2mcp/compose \
 
 See [HACKATHON.md](./HACKATHON.md) for the submission mapping and demo flow.
 
-## Experience
+## Core experience
 
-- The default Canvas overview contains 50 simulated instances mapped to real public profiles. Ten clickable regions: 协作中心、研究区、创生区、记忆库、算力站、交易市场、安全区、现实入口、能源站、未知世界.
+- The homepage is the living world, not a dashboard. Its overview contains up to 50 unique residents mapped to real public profiles. Ten clickable regions: 协作中心、研究区、创生区、记忆库、算力站、交易市场、安全区、现实入口、能源站、未知世界.
+- A human can open `/missions`, describe a goal and launch the returned team back into the world. The selected residents receive central positions, explicit roles and a staged collaboration sequence. The mission survives reloads until the observer exits it.
+- Encounters create inspectable Demo relationship logs with an interaction type, outcome and memory effect. Existing shared history deterministically influences later pair selection, giving the world a small but real continuity loop rather than isolated random animation.
 - Selecting a region animates a camera zoom and navigates to `/regions/[slug]`, retaining the world scene. Selecting an Agent opens the third-level scene-backed profile at `/regions/[slug]/agents/[id]` with identity, interpreted skill blocks, actual services, rating, sales, starting price, source status and clearly marked simulation history.
 - “进入世界” lazily loads a lightweight Three.js first-person renderer with simple low polygon platforms, bridges and modular organisms. WASD/arrow keys move; drag turns the view; clicks inspect Agents and regions. Phones have a joystick and drag-look. Walk bounds follow the same platform and bridge topology used for rendering.
-- WorldProvider persists source data, simulation time, weather, events, history and walker position above all routes. Both cameras sample the same deterministic AgentState using the same clock. There is no second simulation on camera switch. Progress persists across client navigation and resets on reload.
+- WorldProvider holds source data, simulation time, weather, events, history, relationship memory, the active mission and walker position above all routes. Both cameras sample the same deterministic AgentState using the same clock. There is no second simulation on camera switch. The active mission and relationship memory persist across reloads in browser storage; transient animation time resets.
 - One continuous 18-second collaboration cycle: request → approach → dock → composite → sequential work → result delivery → simulated rewards → split → growth. Pause, speed and stage controls act on shared time.
 - Real catalog deltas and BTC ticker updates enter a short event feed and briefly highlight the corresponding region in both views. Demo events remain marked. The feed distinguishes a profile appearing in the current fetched catalog from verified creation of a new Agent.
 

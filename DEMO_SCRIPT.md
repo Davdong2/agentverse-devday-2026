@@ -1,25 +1,39 @@
 # Agentverse demo script — target 3 minutes
 
-## 0:00–0:25 — Problem and product
+## 0:00–0:35 — A world inhabited by Agents
 
-Open the public Mission Console. Explain that finding the right Agent services is fragmented and difficult to verify. Agentverse converts one goal into a small plan with real Agent IDs, Service IDs, prices and source links.
+Open the public Agentverse homepage. Say: “Most Agent products begin with a search box. Agentverse begins with a world. Real OKX.AI identities are the residents; humans observe them and publish goals.”
 
-## 0:25–1:10 — Structured mission
+Point out the LIVE/cache source label and the Demo behavior label. Inspect one resident to show its real Agent ID and services without suggesting that animated behavior is an on-chain fact.
 
-Use the default BTC and X Layer risk goal. Show the optional asset, X Layer contract and maximum Agent fields. Generate the plan and point out that the result does not exceed the selected limit and does not add unrelated services.
+## 0:35–1:10 — A human commissions the world
 
-## 1:10–1:45 — Verification and safety
+Open “发布委托” to enter `/missions`. Use: `研究 BTC 市场状态，并检查一个 X Layer 代币的合约风险`.
 
-Open one “在 OKX.AI 核对” link. Return to Agentverse and show the source status, request ID, chain context and explicit statement that the endpoint does not pay, sign, subscribe or trade. Copy the public A2MCP endpoint and show a successful HTTP 200 response.
+Explain that the collaboration center is an in-world facility, not a separate recommendation product. Generate the plan. Show that the team remains within the selected limit and every step has a role, reason and dependency.
 
-## 1:45–2:20 — OKX.AI integration
+## 1:10–1:45 — A verifiable Agent team
 
-Open the approved Agentverse service listing in OKX.AI. Show that its endpoint exactly matches the public endpoint and that the service is listed as free A2MCP. Do not claim approval until the listing exists.
+Show the selected Agent IDs, Service IDs, prices and “在 OKX.AI 核对” links. Open one source link if network timing allows. Point out the request ID, chain context and safety statement: composition is free and read-only; it does not pay, sign, subscribe or trade.
 
-## 2:20–2:50 — Visual world
+## 1:45–2:25 — Launch the mission into the world
 
-Open `/world`. Show the public Agent identities, the LIVE/cached data label and the Demo behavior label. Briefly explain that the world is a visualization layer, not evidence of transactions.
+Click “投放到 Agentverse”. The world should reopen with the active mission card and the selected residents assembled at the collaboration core.
 
-## 2:50–3:00 — Close
+Show the current role and staged progress. Open the relationship/event view and point out a mission encounter's simulated outcome and memory effect. Explain that shared history influences later pairings; this is the seed of emergent Agent society, while task execution is still transparently Demo.
 
-Summarize the user value: one goal, a bounded and verifiable Agent plan, transparent provenance and a safe handoff to the next confirmed action.
+## 2:25–2:45 — Standardized OKX.AI integration
+
+Show the public descriptor at `/api/a2mcp/compose` or a prepared terminal response with HTTP 200. State that Agentverse itself is OKX.AI Agent ID `13779` and that `Agentverse Mission Composer` is registered as a free A2MCP service. Do not claim marketplace approval until written approval exists.
+
+## 2:45–3:00 — Close
+
+Say: “Today, Agentverse proves the first loop: observe a living Agent world, commission a goal, form a verifiable team, and return its collaboration to shared world memory. Next come owner-governed Agents, real A2A execution, land, wearables and public events—built on the same identity and permission boundaries.”
+
+## Recording safeguards
+
+- Start from a fresh tab but pre-warm the site once before recording.
+- Keep the optional contract address blank unless a valid X Layer example is ready.
+- Never describe Demo movement, dialogue, rewards or memory as completed on-chain activity.
+- If OKX.AI review is still pending, say “registered” rather than “approved” or “listed”.
+- Keep a prepared endpoint response as backup in case an external source is slow.

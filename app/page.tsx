@@ -1,5 +1,5 @@
-import { MissionConsole } from '@/components/mission-console';
+import Civilization from '@/components/civilization';
 
 export default function Home() {
-  return <MissionConsole />;
+  return <Civilization />;
 }

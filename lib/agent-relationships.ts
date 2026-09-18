@@ -35,7 +35,15 @@ export type RelationshipLog = {
   capabilities: [string, string];
   traits: [string, string];
   relationDelta: number;
-  source: 'profile_inference' | 'a2a_event' | 'onchain_event';
+  outcome: string;
+  memoryEffect: string;
+  missionId?: string;
+  goal?: string;
+  source:
+    | 'profile_inference'
+    | 'mission_simulation'
+    | 'a2a_event'
+    | 'onchain_event';
 };
 
 export type RelationshipEdge = {
@@ -190,6 +198,8 @@ export function createRelationshipLog(
   cycle: number,
   at: number,
   regionForAgent: (agent: Agent, detail?: Detail) => number,
+  previousLogs: RelationshipLog[] = [],
+  mission?: { requestId: string; goal: string },
 ): RelationshipLog | null {
   const unique = [
     ...new Map(agents.map((agent) => [agent.agentId, agent])).values(),
@@ -209,11 +219,26 @@ export function createRelationshipLog(
     .map((candidate) => ({
       candidate,
       disposition: dispositions.get(candidate.agentId)!,
-      score: pairScore(
-        actorDisposition,
-        dispositions.get(candidate.agentId)!,
-        cycle,
-      ),
+      score:
+        pairScore(
+          actorDisposition,
+          dispositions.get(candidate.agentId)!,
+          cycle,
+        ) +
+        (() => {
+          const history = previousLogs.filter(
+            (log) =>
+              log.actorIds.includes(actor.agentId) &&
+              log.actorIds.includes(candidate.agentId),
+          );
+          const rememberedTrust = history.reduce(
+            (total, log) => total + log.relationDelta,
+            0,
+          );
+          return history.length
+            ? Math.min(14, rememberedTrust * 0.6) - Math.min(8, history.length)
+            : 9;
+        })(),
     }))
     .sort(
       (a, b) =>
@@ -231,8 +256,17 @@ export function createRelationshipLog(
     ];
   const relationDelta = Math.max(
     2,
-    Math.min(9, Math.round(candidates[0].score / 10)),
+    Math.min(9, Math.round(candidates[0].score / 10) + (mission ? 1 : 0)),
   );
+  const previousPairLogs = previousLogs.filter(
+    (log) =>
+      log.actorIds.includes(actor.agentId) &&
+      log.actorIds.includes(partner.agentId),
+  );
+  const memoryReason = previousPairLogs.length
+    ? `过去 ${previousPairLogs.length} 次互动形成的关系记忆参与了本轮选择。`
+    : '双方尚无共同记忆，新鲜度提高了本轮相遇概率。';
+  const action = actionFor(kind);
   return {
     id: `relationship-${cycle}-${actor.agentId}-${partner.agentId}-${kind}`,
     at,
@@ -243,12 +277,15 @@ export function createRelationshipLog(
     actorIds: [actor.agentId, partner.agentId],
     actorNames: [actor.name, partner.name],
     title: `${actor.name} 与 ${partner.name} 建立${kind}关系`,
-    summary: `${actor.name} 以“${actorCapability}”发起，${partner.name} 用“${partnerCapability}”响应；双方${actionFor(kind)}。`,
-    reason: `公开资料推导的演示性格分别偏${actorDisposition.traits.join('、')}与${partnerDisposition.traits.join('、')}，两项能力在本轮匹配中互补。`,
+    summary: `${actor.name} 以“${actorCapability}”发起，${partner.name} 用“${partnerCapability}”响应；双方${action}。`,
+    reason: `公开资料推导的演示性格分别偏${actorDisposition.traits.join('、')}与${partnerDisposition.traits.join('、')}，两项能力在本轮匹配中互补。${memoryReason}`,
     capabilities: [actorCapability, partnerCapability],
     traits: [actorDisposition.label, partnerDisposition.label],
     relationDelta,
-    source: 'profile_inference',
+    outcome: `${kind}事件完成，关系强度增加 ${relationDelta}。`,
+    memoryEffect: `双方记住了本轮“${actorCapability} × ${partnerCapability}”的能力组合，后续相遇会参考这段记录。`,
+    ...(mission ? { missionId: mission.requestId, goal: mission.goal } : {}),
+    source: mission ? 'mission_simulation' : 'profile_inference',
   };
 }
 
@@ -298,7 +335,17 @@ export function relationshipExport(logs: RelationshipLog[], fetchedAt: string) {
 }
 
 function csvCell(value: unknown) {
-  return `"${String(value ?? '').replaceAll('"', '""')}"`;
+  const rendered =
+    value === null || value === undefined
+      ? ''
+      : typeof value === 'string'
+        ? value
+        : typeof value === 'number' ||
+            typeof value === 'boolean' ||
+            typeof value === 'bigint'
+          ? `${value}`
+          : (JSON.stringify(value) ?? '');
+  return `"${rendered.replaceAll('"', '""')}"`;
 }
 
 export function relationshipCsv(logs: RelationshipLog[]) {
@@ -314,6 +361,10 @@ export function relationshipCsv(logs: RelationshipLog[]) {
     'capability_1',
     'capability_2',
     'relation_delta',
+    'outcome',
+    'memory_effect',
+    'mission_id',
+    'goal',
     'summary',
     'reason',
     'source',
@@ -330,6 +381,10 @@ export function relationshipCsv(logs: RelationshipLog[]) {
     log.capabilities[0],
     log.capabilities[1],
     log.relationDelta,
+    log.outcome,
+    log.memoryEffect,
+    log.missionId,
+    log.goal,
     log.summary,
     log.reason,
     log.source,

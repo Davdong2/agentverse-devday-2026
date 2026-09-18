@@ -47,6 +47,7 @@ type Props = {
   viewportWidth: number;
   activeEventRegion?: number;
   regionIndex?: number;
+  priorityAgentIds?: string[];
 };
 export default function CivilizationCanvas(props: Props) {
   const el = useRef<HTMLCanvasElement>(null),
@@ -1308,6 +1309,7 @@ export default function CivilizationCanvas(props: Props) {
           t,
           p.weather,
           p.population,
+          p.priorityAgentIds,
         ),
         sources = new Map(p.agents.map((agent) => [agent.agentId, agent])),
         resident = (state: (typeof states)[number]) => {
@@ -1931,6 +1933,7 @@ export default function CivilizationCanvas(props: Props) {
         t,
         p.weather,
         p.population,
+        p.priorityAgentIds,
       );
       for (const a of states.filter((a) => !a.collaborator)) {
         const x = a.x * 1600,

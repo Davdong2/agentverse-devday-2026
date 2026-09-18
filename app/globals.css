@@ -5215,9 +5215,153 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   color: #5f6673;
 }
 .home-mars .universe-header nav button.active,
-.home-mars .universe-header nav button:hover {
+.home-mars .universe-header nav button:hover,
+.home-mars .universe-header nav a:hover {
   color: #f8f9fb;
   background: #7c8ba7;
+}
+.universe-header nav a {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  color: inherit;
+  font-size: 12px;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+.active-mission-card {
+  position: absolute;
+  z-index: 24;
+  top: 106px;
+  right: 30px;
+  width: min(390px, calc(100vw - 60px));
+  padding: 15px;
+  color: #f5f7f6;
+  background: linear-gradient(
+    145deg,
+    rgba(19, 31, 35, 0.94),
+    rgba(9, 13, 20, 0.9)
+  );
+  border: 1px solid rgba(141, 245, 193, 0.28);
+  border-radius: 15px;
+  box-shadow: 0 22px 60px rgba(4, 7, 10, 0.48);
+  backdrop-filter: blur(18px);
+}
+.active-mission-card > header,
+.active-mission-card > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.active-mission-card > header > span,
+.active-mission-card > footer > span,
+.active-mission-card > footer > a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.active-mission-card > header > span {
+  color: #8df5c1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.active-mission-card > header > button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: #aebbb7;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+.active-mission-card > small {
+  display: block;
+  margin-top: 8px;
+  color: #758a84;
+  font-size: 9px;
+  letter-spacing: 0.13em;
+}
+.active-mission-card > h2 {
+  margin: 6px 0 13px;
+  font-size: 16px;
+  font-weight: 520;
+  line-height: 1.5;
+}
+.active-mission-steps {
+  display: grid;
+  gap: 7px;
+}
+.active-mission-steps > button {
+  min-width: 0;
+  min-height: 51px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  color: #dce6e2;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 11px;
+  cursor: pointer;
+}
+.active-mission-steps > button.current {
+  background: rgba(80, 187, 137, 0.16);
+  border-color: rgba(141, 245, 193, 0.45);
+  box-shadow: inset 3px 0 #8df5c1;
+}
+.active-mission-steps > button > b {
+  color: #8df5c1;
+  font-size: 11px;
+}
+.active-mission-steps > button > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.active-mission-steps strong,
+.active-mission-steps small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.active-mission-steps strong {
+  font-size: 12px;
+}
+.active-mission-steps small {
+  color: #899b95;
+  font-size: 9px;
+}
+.active-mission-steps i {
+  color: #8df5c1;
+  font-size: 10px;
+  font-style: normal;
+}
+.active-mission-card > footer {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #92a39d;
+  font-size: 10px;
+}
+.active-mission-card > footer > a {
+  color: #d9eee5;
+  text-decoration: none;
+}
+.relationship-timeline .relationship-outcome {
+  color: #aee8cc;
+  font-weight: 600;
+}
+.mission-active.home-mars .collaboration-dock {
+  border-color: rgba(141, 245, 193, 0.32);
 }
 .home-mars .universe-header .source-light {
   color: #e2e2e3;
@@ -5542,6 +5686,13 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   .home-mars .universe-header nav button {
     padding: 8px 10px;
   }
+  .home-mars .universe-header nav a {
+    min-height: 36px;
+    padding: 8px 10px;
+  }
+  .home-mars .universe-header nav a span {
+    display: none;
+  }
   .home-mars .universe-header .source-light {
     font-size: 10px;
   }
@@ -5565,6 +5716,24 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
     left: 17px;
     width: 215px;
     padding: 10px 12px;
+  }
+  .mission-active .home-market-card {
+    display: none;
+  }
+  .active-mission-card {
+    top: 222px;
+    right: 17px;
+    left: 17px;
+    width: auto;
+    max-height: calc(100svh - 310px);
+    overflow: auto;
+    padding: 12px;
+  }
+  .active-mission-card > h2 {
+    font-size: 14px;
+  }
+  .mission-active.home-mars .collaboration-dock {
+    display: none;
   }
   .home-market-card > strong {
     padding-bottom: 8px;
@@ -5626,7 +5795,9 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   background: linear-gradient(90deg, #07101bbb, #101a26d9, #07101bbb);
   border: 1px solid #8fdfff37;
   border-radius: 999px;
-  box-shadow: 0 10px 40px #00081466, inset 0 0 28px #5edbff0a;
+  box-shadow:
+    0 10px 40px #00081466,
+    inset 0 0 28px #5edbff0a;
   backdrop-filter: blur(16px);
   pointer-events: none;
   white-space: nowrap;
@@ -5660,7 +5831,9 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   background: linear-gradient(145deg, #07121fdb, #102538ba);
   border: 1px solid #95e7ff4a;
   border-radius: 14px;
-  box-shadow: 0 18px 50px #02081076, inset 0 0 32px #72dfff0c;
+  box-shadow:
+    0 18px 50px #02081076,
+    inset 0 0 32px #72dfff0c;
   backdrop-filter: blur(12px);
 }
 .home-core-readout::before {
@@ -5670,7 +5843,13 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   right: 14%;
   bottom: -1px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #74e5ff, #ffd386, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #74e5ff,
+    #ffd386,
+    transparent
+  );
   box-shadow: 0 0 16px #79e4ff;
 }
 .home-core-readout small {
@@ -5702,7 +5881,9 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   background: linear-gradient(110deg, #eff7f6, #cfe7e6);
   border: 1px solid #fff;
   border-radius: 999px;
-  box-shadow: 0 8px 24px #02070d63, 0 0 26px #78ddff20;
+  box-shadow:
+    0 8px 24px #02070d63,
+    0 0 26px #78ddff20;
   font-size: 13px;
 }
 .home-core-readout button:hover {
@@ -5811,7 +5992,9 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   color: #e9f5f7;
   background: linear-gradient(145deg, #08131edb, #102432c9);
   border-color: #90e2f23d;
-  box-shadow: 0 14px 42px #01050a75, inset 0 0 30px #77dfff09;
+  box-shadow:
+    0 14px 42px #01050a75,
+    inset 0 0 30px #77dfff09;
   backdrop-filter: blur(16px);
 }
 .walk-mode .walk-location small,

@@ -1,6 +1,7 @@
 'use client';
 import {
   createContext,
+  useCallback,
   useEffect,
   useMemo,
   useContext,
@@ -8,15 +9,21 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import {
+  activeMissionStorageKey,
+  isMissionPlan,
+  type MissionPlan,
+} from '@/lib/mission';
 import type { WorldNews, NewsReaction } from '@/lib/world-news';
 import ignixSeed from '@/lib/ignix-snapshot.json';
 import { mergeIgnixProfiles, type IgnixData } from '@/lib/ignix';
 import snapshot from '@/lib/agents.json';
 import type { AgentData } from '@/lib/marketplace';
-import type {
-  Weather,
-  MarketSignal,
-  MemoryRecord,
+import {
+  includeMissionResidents,
+  type Weather,
+  type MarketSignal,
+  type MemoryRecord,
 } from '@/lib/civilization-model';
 import type { RelationshipLog } from '@/lib/agent-relationships';
 export type WorldEvent = {
@@ -27,6 +34,10 @@ export type WorldEvent = {
   at: number;
   sourceUrl?: string;
   publishedAt?: string;
+  summary?: string;
+  agentIds?: string[];
+  requestId?: string;
+  outcome?: string;
 };
 function useStore() {
   const [ignix, setIgnix] = useState<IgnixData>(ignixSeed as IgnixData);
@@ -80,6 +91,8 @@ function useStore() {
     [relationshipLogs, setRelationshipLogs] = useState<RelationshipLog[]>([]),
     [relationshipReady, setRelationshipReady] = useState(false),
     [viewMode, setViewMode] = useState<'observe' | 'walk'>('observe');
+  const [activeMission, setActiveMission] = useState<MissionPlan | null>(null);
+  const [missionReady, setMissionReady] = useState(false);
   const inspected = useRef<{ agentId: string; instance: number } | null>(null);
   const recorded = useRef(new Set<string>()),
     walker = useRef({ x: 46.8, z: 53.2, yaw: 0, pitch: 0.08 }),
@@ -89,17 +102,74 @@ function useStore() {
   const [newsReaction, setNewsReaction] = useState<NewsReaction | null>(null);
   const seenNews = useRef(new Set<string>());
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('agentverse.relationship.logs.v1');
-      if (stored) {
-        const parsed = JSON.parse(stored) as RelationshipLog[];
-        if (Array.isArray(parsed)) setRelationshipLogs(parsed.slice(0, 300));
+    const frame = requestAnimationFrame(() => {
+      try {
+        const stored = localStorage.getItem(activeMissionStorageKey);
+        if (stored) {
+          const parsed: unknown = JSON.parse(stored);
+          if (isMissionPlan(parsed)) setActiveMission(parsed);
+        }
+      } catch {
+        // A mission can always be created again from the collaboration center.
+      } finally {
+        setMissionReady(true);
       }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    if (!missionReady) return;
+    try {
+      if (activeMission)
+        localStorage.setItem(
+          activeMissionStorageKey,
+          JSON.stringify(activeMission),
+        );
+      else localStorage.removeItem(activeMissionStorageKey);
     } catch {
-      // A blocked or malformed local store should not stop the world.
-    } finally {
-      setRelationshipReady(true);
+      // Keep the active mission in memory when browser storage is unavailable.
     }
+  }, [activeMission, missionReady]);
+  const launchMission = useCallback((mission: MissionPlan) => {
+    setActiveMission(mission);
+    setEvents((current) =>
+      [
+        {
+          id: `mission-${mission.requestId}`,
+          title: `新委托进入协作中心 · ${mission.steps.length} 个 Agent 组队`,
+          summary: mission.goal,
+          region: 0,
+          mode: 'Demo' as const,
+          at: Date.now(),
+          requestId: mission.requestId,
+          agentIds: mission.steps.map((step) => step.agentId),
+          outcome: '协作计划已生成，等待人类确认后才会调用真实服务。',
+        },
+        ...current.filter(
+          (event) => event.id !== `mission-${mission.requestId}`,
+        ),
+      ].slice(0, 12),
+    );
+    setTime(0);
+    setEpisode((current) => current + 1);
+    setViewMode('observe');
+  }, []);
+  const clearActiveMission = useCallback(() => setActiveMission(null), []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        const stored = localStorage.getItem('agentverse.relationship.logs.v1');
+        if (stored) {
+          const parsed = JSON.parse(stored) as RelationshipLog[];
+          if (Array.isArray(parsed)) setRelationshipLogs(parsed.slice(0, 300));
+        }
+      } catch {
+        // A blocked or malformed local store should not stop the world.
+      } finally {
+        setRelationshipReady(true);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
   useEffect(() => {
     if (!relationshipReady) return;
@@ -162,17 +232,21 @@ function useStore() {
       clearInterval(timer);
     };
   }, []);
-  const displayData = useMemo(
-    () => ({
+  const displayData = useMemo(() => {
+    const sourcedAgents = mergeIgnixProfiles(
+      data.agents,
+      ignix.profiles,
+      ignix.associations,
+    );
+    return {
       ...data,
-      agents: mergeIgnixProfiles(
-        data.agents,
-        ignix.profiles,
-        ignix.associations,
+      agents: includeMissionResidents(
+        sourcedAgents,
+        (snapshot as AgentData).agents,
+        activeMission?.steps.map((step) => step.agentId) ?? [],
       ),
-    }),
-    [data, ignix],
-  );
+    };
+  }, [activeMission, data, ignix]);
   return {
     data: displayData,
     ignix,
@@ -209,6 +283,10 @@ function useStore() {
     inspected,
     lastCatalog,
     lastMarket,
+    activeMission,
+    missionReady,
+    launchMission,
+    clearActiveMission,
   };
 }
 const Context = createContext<ReturnType<typeof useStore> | null>(null);

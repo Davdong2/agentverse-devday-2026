@@ -9,6 +9,7 @@ import {
   Suspense,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useWorld } from '@/components/world-provider';
 const WorldWalk = lazy(() => import('@/components/world-walk'));
 import {
@@ -23,6 +24,7 @@ import {
   ArrowUpRight,
   ChevronRight,
   Radio,
+  Route,
   Camera,
   RefreshCw,
   ArrowLeft,
@@ -176,6 +178,9 @@ export default function Civilization({
     inspected,
     lastCatalog,
     lastMarket,
+    activeMission,
+    missionReady,
+    clearActiveMission,
   } = useWorld();
   const [refreshing, setRefreshing] = useState(false),
     [notice, setNotice] = useState(''),
@@ -245,9 +250,30 @@ export default function Civilization({
     cycle = Math.floor(time / cycleDuration);
   const agent =
     data.agents.find((a) => a.agentId === agentId) ?? data.agents[0];
-  const roster = worldRoster(data.agents);
+  const missionAgentIds =
+    activeMission?.steps.map((step) => step.agentId) ?? [];
+  const missionAgentKey = missionAgentIds.join(',');
+  const dataAgentKey = data.agents.map((item) => item.agentId).join(',');
+  const activeMissionId = activeMission?.requestId ?? '';
+  const activeMissionGoal = activeMission?.goal ?? '';
+  const roster = worldRoster(data.agents, 50, missionAgentIds);
   const population = roster.length;
-  const team = roster.slice(0, 4);
+  const team = missionAgentIds.length
+    ? roster
+        .filter((item) => missionAgentIds.includes(item.agentId))
+        .slice(0, 4)
+    : roster.slice(0, 4);
+  const missionAgents = missionAgentIds
+    .map((id) => data.agents.find((item) => item.agentId === id))
+    .filter((item): item is Agent => Boolean(item));
+  const activeMissionStep = activeMission
+    ? Math.min(
+        activeMission.steps.length - 1,
+        Math.floor(
+          ((stage + phase) / stages.length) * activeMission.steps.length,
+        ),
+      )
+    : -1;
   const relationshipGraph = useMemo(
     () => buildRelationshipGraph(relationshipLogs),
     [relationshipLogs],
@@ -405,14 +431,20 @@ export default function Civilization({
     );
   }, [stage, cycle, episode, weather, team.map((a) => a.agentId).join(',')]);
   useEffect(() => {
-    if (!relationshipReady || data.agents.length < 2) return;
+    if (!missionReady || !relationshipReady || data.agents.length < 2) return;
     const relationshipCycle = episode * 10000 + cycle;
+    const chemistryAgents = activeMission ? missionAgents : data.agents;
+    if (chemistryAgents.length < 2) return;
     const log = createRelationshipLog(
-      data.agents,
+      chemistryAgents,
       details,
       relationshipCycle,
       Date.now(),
       regionFor,
+      relationshipLogs,
+      activeMission
+        ? { requestId: activeMission.requestId, goal: activeMission.goal }
+        : undefined,
     );
     if (!log) return;
     setRelationshipLogs((current) =>
@@ -428,6 +460,10 @@ export default function Civilization({
           region: log.region,
           mode: 'Demo' as const,
           at: log.at,
+          summary: log.summary,
+          agentIds: log.actorIds,
+          requestId: log.missionId,
+          outcome: log.outcome,
         },
         ...current.filter((item) => item.id !== log.id),
       ].slice(0, 12),
@@ -435,8 +471,12 @@ export default function Civilization({
   }, [
     cycle,
     episode,
+    missionReady,
     relationshipReady,
-    data.agents.map((item) => item.agentId).join(','),
+    dataAgentKey,
+    missionAgentKey,
+    activeMissionId,
+    activeMissionGoal,
   ]);
   useEffect(() => {
     if (panel !== 'agent') return;
@@ -468,9 +508,14 @@ export default function Civilization({
   }, [agent.agentId, panel]);
   const selectAgent = useCallback(
     (a: Agent, instance?: number) => {
-      const state = sampleAgents(data.agents, details, time, weather).find(
-        (s) => s.agentId === a.agentId,
-      );
+      const state = sampleAgents(
+        data.agents,
+        details,
+        time,
+        weather,
+        50,
+        missionAgentIds,
+      ).find((s) => s.agentId === a.agentId);
       inspected.current = state
         ? { agentId: a.agentId, instance: state.instance }
         : null;
@@ -483,7 +528,15 @@ export default function Civilization({
           a.agentId,
       );
     },
-    [data.agents, router, regionIndex, time, weather, inspected],
+    [
+      data.agents,
+      router,
+      regionIndex,
+      time,
+      weather,
+      inspected,
+      missionAgentIds.join(','),
+    ],
   );
   const focusRegion = useCallback(
     (n: number, showPanel = true) => {
@@ -785,6 +838,7 @@ export default function Civilization({
       className={
         'universe-shell soft-world ' +
         (homeView ? 'home-mars ' : '') +
+        (activeMission ? 'mission-active ' : '') +
         (regionIndex !== undefined ? 'region-page ' : '') +
         (viewMode === 'walk' ? 'walk-mode ' : '') +
         (transitioning ? 'camera-transition' : '')
@@ -803,6 +857,7 @@ export default function Civilization({
             signal={signalMode === 'live' ? signal : null}
             news={news}
             activeNews={activeNews}
+            priorityAgentIds={missionAgentIds}
             walker={walker}
             inputBlocked={panel !== null}
             onAgent={(id, instance) => {
@@ -891,6 +946,7 @@ export default function Civilization({
                   (e) => e.mode === 'LIVE' && Date.now() - e.at < 45000,
                 )?.region
               }
+              priorityAgentIds={missionAgentIds}
             />
             {regions
               .filter(
@@ -945,12 +1001,12 @@ export default function Civilization({
         </div>
       )}
       <header className="universe-header">
-        <a className="universe-brand" href="/" aria-label="Agentverse 首页">
+        <Link className="universe-brand" href="/" aria-label="Agentverse 首页">
           <Orbit size={35} strokeWidth={1} />
           <span>
             AGENTVERSE<small>文明观察站 · 创世季</small>
           </span>
-        </a>
+        </Link>
         <nav aria-label="观察方式">
           <button
             className={viewMode === 'observe' ? 'active' : ''}
@@ -988,6 +1044,10 @@ export default function Civilization({
             <Network size={16} />
             <span>关系日志</span>
           </button>
+          <Link href="/missions" aria-label="向 Agent 世界发布委托">
+            <CirclePlus size={16} />
+            <span>发布委托</span>
+          </Link>
         </nav>
         <button className="source-light" onClick={() => setHelp(true)}>
           <span className="data-mode-badge">
@@ -999,13 +1059,64 @@ export default function Civilization({
           <Info size={14} />
         </button>
       </header>
+      {activeMission && homeView && (
+        <section className="active-mission-card" aria-label="当前世界委托">
+          <header>
+            <span>
+              <Route size={15} /> 当前世界委托
+            </span>
+            <button onClick={clearActiveMission} aria-label="退出当前任务视图">
+              <X size={15} />
+            </button>
+          </header>
+          <small>REQUEST {activeMission.requestId.slice(0, 8)}</small>
+          <h2>{activeMission.goal}</h2>
+          <div className="active-mission-steps">
+            {activeMission.steps.map((step, index) => {
+              const resident = data.agents.find(
+                (item) => item.agentId === step.agentId,
+              );
+              return (
+                <button
+                  key={`${step.agentId}-${step.serviceId}`}
+                  className={index === activeMissionStep ? 'current' : ''}
+                  onClick={() => {
+                    if (resident) selectAgent(resident);
+                  }}
+                >
+                  <b>{String(index + 1).padStart(2, '0')}</b>
+                  <span>
+                    <strong>{step.agentName}</strong>
+                    <small>
+                      {step.role} · SERVICE #{step.serviceId}
+                    </small>
+                  </span>
+                  <i>
+                    {step.price === '0'
+                      ? '免费'
+                      : `${step.price} ${step.symbol}`}
+                  </i>
+                </button>
+              );
+            })}
+          </div>
+          <footer>
+            <span>
+              <ShieldCheck size={13} /> 计划预演 · 未付款或执行
+            </span>
+            <Link href="/missions">
+              调整团队 <ChevronRight size={13} />
+            </Link>
+          </footer>
+        </section>
+      )}
       {homeView && (
         <>
           <div className="home-earth-motion" aria-hidden="true" />
           <section className="home-mars-intro" aria-label="Agentverse 介绍">
-            <small>Agent 元宇宙 · 创世季</small>
-            <h1>让智能体在世界中相遇与协作</h1>
-            <p>真实身份 · 能力组合 · X Layer Agent 经济</p>
+            <small>持续运行的 Agent 原生世界</small>
+            <h1>一个由 Agent 居住、相遇与创造的世界</h1>
+            <p>人类观察、委托和治理 · Agent 自主生活与协作</p>
           </section>
           <section className="home-market-card" aria-label="现实数据概览">
             <strong>
@@ -1054,8 +1165,9 @@ export default function Civilization({
             <small>AGENT METAVERSE</small>
             <strong>AGENTVERSE · X LAYER</strong>
             <p>
-              {population} 个世界分身 · {relationshipGraph.length} 条关系 ·{' '}
-              {stages[stage].short}中
+              {activeMission
+                ? `${activeMission.steps.length} 个任务居民 · ${stages[stage].short}中`
+                : `${population} 个世界居民 · ${relationshipGraph.length} 条关系 · ${stages[stage].short}中`}
             </p>
             <button onClick={() => setViewMode('walk')}>
               <Focus size={15} /> 进入 Agent 世界
@@ -1185,7 +1297,7 @@ export default function Civilization({
       </aside>
       <div className="world-summary" aria-hidden="true">
         <span>
-          <strong>{population}</strong> 演示 Agent
+          <strong>{population}</strong> 世界居民
         </span>
         <span>
           <strong>{data.agents.length}</strong> 真实档案
@@ -1200,32 +1312,63 @@ export default function Civilization({
             <Network size={20} />
           </span>
           <span>
-            <small>协作核心 · {paused ? '演示已暂停' : '演示进行中'}</small>
-            <strong>{stages[stage].title}</strong>
+            <small>
+              {activeMission
+                ? `任务协作中心 · ${paused ? '预演已暂停' : '计划预演中'}`
+                : `协作核心 · ${paused ? '演示已暂停' : '世界运行中'}`}
+            </small>
+            <strong>
+              {activeMission
+                ? `${activeMission.steps[activeMissionStep]?.role} · ${activeMission.steps[activeMissionStep]?.agentName}`
+                : stages[stage].title}
+            </strong>
           </span>
           <ArrowUpRight size={16} />
         </button>
         <div className="stage-track" aria-label="协作阶段">
-          {stages.map((s, i) => (
-            <button
-              key={s.title}
-              aria-label={`观察${s.title}`}
-              aria-current={stage === i ? 'step' : undefined}
-              className={stage === i ? 'current' : stage > i ? 'past' : ''}
-              onClick={() => setTime(cycle * cycleDuration + s.start + 0.15)}
-            >
-              <span>{i + 1}</span>
-              <small>{s.short}</small>
-            </button>
-          ))}
+          {(activeMission ? activeMission.steps : stages).map((item, i) => {
+            const isCurrent = activeMission
+              ? activeMissionStep === i
+              : stage === i;
+            const isPast = activeMission ? activeMissionStep > i : stage > i;
+            const label = 'role' in item ? item.role : item.short;
+            return (
+              <button
+                key={'agentId' in item ? item.agentId : item.title}
+                aria-label={`观察${label}`}
+                aria-current={isCurrent ? 'step' : undefined}
+                className={isCurrent ? 'current' : isPast ? 'past' : ''}
+                onClick={() =>
+                  setTime(
+                    activeMission
+                      ? cycle * cycleDuration +
+                          (i / activeMission.steps.length) * cycleDuration +
+                          0.15
+                      : cycle * cycleDuration +
+                          ('start' in item ? item.start : 0) +
+                          0.15,
+                  )
+                }
+              >
+                <span>{i + 1}</span>
+                <small>{label}</small>
+              </button>
+            );
+          })}
         </div>
         <p className="stage-explanation">
-          {stage === 4
-            ? `${skillNames[Math.min(3, Math.floor(phase * 4))]}模块正在工作`
-            : stages[stage].note}
+          {activeMission
+            ? activeMission.steps[activeMissionStep]?.reason
+            : stage === 4
+              ? `${skillNames[Math.min(3, Math.floor(phase * 4))]}模块正在工作`
+              : stages[stage].note}
         </p>
         <div className="phase-line">
-          <span style={{ width: `${((stage + phase) / 9) * 100}%` }} />
+          <span
+            style={{
+              width: `${((stage + phase) / stages.length) * 100}%`,
+            }}
+          />
         </div>
       </div>
       <div className="world-caption">
@@ -1407,7 +1550,7 @@ export default function Civilization({
                   <article key={log.id}>
                     <header>
                       <span>{log.type}</span>
-                      <b>{log.mode}</b>
+                      <b>{log.missionId ? '任务推演' : log.mode}</b>
                       <time>
                         {new Date(log.at).toLocaleString('zh-CN', {
                           timeZone: 'Asia/Shanghai',
@@ -1420,6 +1563,8 @@ export default function Civilization({
                     <h4>{log.title}</h4>
                     <p>{log.summary}</p>
                     <small>{log.reason}</small>
+                    <p className="relationship-outcome">{log.outcome}</p>
+                    <small>{log.memoryEffect}</small>
                     <div>
                       <span>{log.capabilities[0]}</span>
                       <span>{log.capabilities[1]}</span>
@@ -1644,9 +1789,14 @@ export default function Civilization({
               service={service}
               serviceNotice={serviceNotice}
               time={time}
-              state={sampleAgents(data.agents, details, time, weather).find(
-                (s) => s.agentId === agent.agentId,
-              )}
+              state={sampleAgents(
+                data.agents,
+                details,
+                time,
+                weather,
+                50,
+                missionAgentIds,
+              ).find((s) => s.agentId === agent.agentId)}
               memories={memories}
               relationships={relationshipLogs.filter((log) =>
                 log.actorIds.includes(agent.agentId),

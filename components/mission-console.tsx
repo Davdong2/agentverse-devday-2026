@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
   Bot,
   CheckCircle2,
   Copy,
   ExternalLink,
+  Globe2,
   Link2,
   Network,
   Radio,
@@ -15,46 +17,17 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
+import { useWorld } from '@/components/world-provider';
+import type { MissionPlan } from '@/lib/mission';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import styles from './mission-console.module.css';
-
-type MissionStep = {
-  order: number;
-  agentId: string;
-  agentName: string;
-  serviceId: number;
-  serviceName: string;
-  serviceType: string;
-  price: string;
-  symbol: string;
-  reason: string;
-  serviceUrl: string;
-};
-
-type MissionPlan = {
-  requestId: string;
-  goal: string;
-  createdAt: string;
-  summary: string;
-  steps: MissionStep[];
-  request: {
-    maxAgents: number;
-    riskMode: 'confirm-before-action';
-    assetSymbol?: string;
-    chainId?: string;
-    contractAddress?: string;
-  };
-  provenance: { source: string; fetchedAt: string; mode: string };
-  safety: {
-    automaticPayment: false;
-    automaticExecution: false;
-    note: string;
-  };
-};
 
 const examples = [
   '研究 BTC 市场状态，并检查一个 X Layer 代币的合约风险',
@@ -79,6 +52,8 @@ type WebMcpContext = {
 };
 
 export function MissionConsole() {
+  const router = useRouter();
+  const { activeMission, launchMission } = useWorld();
   const [goal, setGoal] = useState(examples[0]);
   const [assetSymbol, setAssetSymbol] = useState('BTC');
   const [contractAddress, setContractAddress] = useState('');
@@ -87,70 +62,97 @@ export function MissionConsole() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const contractValid = !contractAddress.trim() || /^0x[a-fA-F0-9]{40}$/.test(contractAddress.trim());
+  const contractValid =
+    !contractAddress.trim() ||
+    /^0x[a-fA-F0-9]{40}$/.test(contractAddress.trim());
 
   useEffect(() => {
-    const context = (document as Document & { modelContext?: WebMcpContext }).modelContext;
+    const context = (document as Document & { modelContext?: WebMcpContext })
+      .modelContext;
     if (!context?.registerTool) return;
     const lifecycle = new AbortController();
-    void Promise.resolve(context.registerTool({
-      name: 'compose_okx_ai_mission',
-      title: '编排 OKX.AI 任务',
-      description: '根据目标生成可核对的 OKX.AI Agent 服务计划，并在当前页面显示结果。只读，不付款、不签名、不交易。',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          goal: { type: 'string', minLength: 4, maxLength: 600 },
-          maxAgents: { type: 'integer', minimum: 1, maximum: 4, default: 3 },
-          assetSymbol: { type: 'string', pattern: '^[A-Za-z0-9._-]{1,20}$' },
-          chainId: { type: 'string', pattern: '^eip155:[0-9]{1,12}$' },
-          contractAddress: { type: 'string', pattern: '^0x[a-fA-F0-9]{40}$' },
+    void Promise.resolve(
+      context.registerTool(
+        {
+          name: 'compose_okx_ai_mission',
+          title: '编排 OKX.AI 任务',
+          description:
+            '根据目标生成可核对的 OKX.AI Agent 服务计划，并在当前页面显示结果。只读，不付款、不签名、不交易。',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              goal: { type: 'string', minLength: 4, maxLength: 600 },
+              maxAgents: {
+                type: 'integer',
+                minimum: 1,
+                maximum: 4,
+                default: 3,
+              },
+              assetSymbol: {
+                type: 'string',
+                pattern: '^[A-Za-z0-9._-]{1,20}$',
+              },
+              chainId: { type: 'string', pattern: '^eip155:[0-9]{1,12}$' },
+              contractAddress: {
+                type: 'string',
+                pattern: '^0x[a-fA-F0-9]{40}$',
+              },
+            },
+            required: ['goal'],
+            additionalProperties: false,
+          },
+          annotations: { readOnlyHint: true, untrustedContentHint: true },
+          async execute(input) {
+            if (!input || typeof input !== 'object')
+              throw new Error('需要任务目标。');
+            const value = input as {
+              goal?: unknown;
+              maxAgents?: unknown;
+              assetSymbol?: unknown;
+              chainId?: unknown;
+              contractAddress?: unknown;
+            };
+            if (typeof value.goal !== 'string' || value.goal.trim().length < 4)
+              throw new Error('goal 至少需要 4 个字符。');
+            if (
+              value.maxAgents !== undefined &&
+              !Number.isInteger(value.maxAgents)
+            )
+              throw new Error('maxAgents 必须是整数。');
+            const response = await fetch('/api/a2mcp/compose', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                goal: value.goal,
+                maxAgents: value.maxAgents ?? 3,
+                riskMode: 'confirm-before-action',
+                assetSymbol: value.assetSymbol,
+                chainId: value.chainId,
+                contractAddress: value.contractAddress,
+              }),
+            });
+            const result = (await response.json()) as MissionPlan & {
+              error?: string;
+            };
+            if (!response.ok)
+              throw new Error(result.error || '任务规划暂时不可用');
+            setGoal(value.goal);
+            setPlan(result);
+            setError('');
+            return {
+              requestId: result.requestId,
+              summary: result.summary,
+              steps: result.steps.map((step) => ({
+                agentId: step.agentId,
+                serviceId: step.serviceId,
+                serviceName: step.serviceName,
+              })),
+            };
+          },
         },
-        required: ['goal'],
-        additionalProperties: false,
-      },
-      annotations: { readOnlyHint: true, untrustedContentHint: true },
-      async execute(input) {
-        if (!input || typeof input !== 'object') throw new Error('需要任务目标。');
-        const value = input as {
-          goal?: unknown;
-          maxAgents?: unknown;
-          assetSymbol?: unknown;
-          chainId?: unknown;
-          contractAddress?: unknown;
-        };
-        if (typeof value.goal !== 'string' || value.goal.trim().length < 4)
-          throw new Error('goal 至少需要 4 个字符。');
-        if (value.maxAgents !== undefined && !Number.isInteger(value.maxAgents))
-          throw new Error('maxAgents 必须是整数。');
-        const response = await fetch('/api/a2mcp/compose', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            goal: value.goal,
-            maxAgents: value.maxAgents ?? 3,
-            riskMode: 'confirm-before-action',
-            assetSymbol: value.assetSymbol,
-            chainId: value.chainId,
-            contractAddress: value.contractAddress,
-          }),
-        });
-        const result = (await response.json()) as MissionPlan & { error?: string };
-        if (!response.ok) throw new Error(result.error || '任务规划暂时不可用');
-        setGoal(value.goal);
-        setPlan(result);
-        setError('');
-        return {
-          requestId: result.requestId,
-          summary: result.summary,
-          steps: result.steps.map((step) => ({
-            agentId: step.agentId,
-            serviceId: step.serviceId,
-            serviceName: step.serviceName,
-          })),
-        };
-      },
-    }, { signal: lifecycle.signal })).catch(() => {
+        { signal: lifecycle.signal },
+      ),
+    ).catch(() => {
       // WebMCP is an optional browser capability; the visible workflow remains available.
     });
     return () => lifecycle.abort();
@@ -172,7 +174,9 @@ export function MissionConsole() {
           contractAddress: contractAddress.trim() || undefined,
         }),
       });
-      const result = (await response.json()) as MissionPlan & { error?: string };
+      const result = (await response.json()) as MissionPlan & {
+        error?: string;
+      };
       if (!response.ok) throw new Error(result.error || '任务规划暂时不可用');
       setPlan(result);
     } catch (cause) {
@@ -193,21 +197,35 @@ export function MissionConsole() {
     }
   }
 
+  function enterWorld(mission: MissionPlan) {
+    launchMission(mission);
+    router.push('/?mission=' + encodeURIComponent(mission.requestId));
+  }
+
   return (
     <main className={styles.shell}>
       <div className={styles.backdrop} aria-hidden="true" />
       <header className={styles.header}>
-        <Link className={styles.brand} href="/" aria-label="Agentverse Mission Console 首页">
-          <span className={styles.brandMark}><Network /></span>
-          <span><strong>AGENTVERSE</strong><small>OKX.AI MISSION CONSOLE</small></span>
+        <Link
+          className={styles.brand}
+          href="/"
+          aria-label="返回 Agentverse 世界"
+        >
+          <span className={styles.brandMark}>
+            <Network />
+          </span>
+          <span>
+            <strong>AGENTVERSE</strong>
+            <small>协作中心 · MISSION COMPOSER</small>
+          </span>
         </Link>
         <div className={styles.headerStatus}>
           <Badge variant="outline" className={styles.liveBadge}>
             <Radio /> PUBLIC A2MCP
           </Badge>
-          <Link className={styles.worldLink} href="/world" prefetch={false}>
-            <span className={styles.worldLabel}>进入可视化世界</span>
-            <span className={styles.mobileWorldLabel}>3D 世界</span>
+          <Link className={styles.worldLink} href="/" prefetch={false}>
+            <span className={styles.worldLabel}>返回 Agent 世界</span>
+            <span className={styles.mobileWorldLabel}>返回世界</span>
             <ArrowRight />
           </Link>
         </div>
@@ -215,13 +233,23 @@ export function MissionConsole() {
 
       <section className={styles.workspace}>
         <div className={styles.composer}>
-          <div className={styles.eyebrow}><Sparkles /> 新任务</div>
-          <h1>把目标交给一组<br />真正可核对的 Agent</h1>
+          <div className={styles.eyebrow}>
+            <Sparkles /> 人类委托入口
+          </div>
+          <h1>
+            把目标投放到
+            <br />
+            Agent 世界
+          </h1>
           <p className={styles.intro}>
-            输入一个目标。Agentverse 会从 OKX.AI 服务资料中选择相关能力，返回带 Agent ID、Service ID、价格和来源的核对型计划。
+            你提供目标，Agentverse 从真实 OKX.AI
+            身份中组成可核对的团队。确认计划后，这些 Agent
+            会进入世界协作中心，以可视化方式预演分工与交接。
           </p>
 
-          <label className={styles.fieldLabel} htmlFor="mission-goal">你想完成什么？</label>
+          <label className={styles.fieldLabel} htmlFor="mission-goal">
+            你想完成什么？
+          </label>
           <Textarea
             id="mission-goal"
             value={goal}
@@ -243,7 +271,9 @@ export function MissionConsole() {
               />
             </label>
             <label className={styles.contractField} htmlFor="mission-contract">
-              <span>X Layer 合约地址 <small>可选</small></span>
+              <span>
+                X Layer 合约地址 <small>可选</small>
+              </span>
               <Input
                 id="mission-contract"
                 value={contractAddress}
@@ -252,7 +282,9 @@ export function MissionConsole() {
                 aria-label="X Layer 合约地址"
                 aria-invalid={!contractValid}
               />
-              {!contractValid && <small role="alert">请输入 42 位 EVM 合约地址。</small>}
+              {!contractValid && (
+                <small role="alert">请输入 42 位 EVM 合约地址。</small>
+              )}
             </label>
             <label htmlFor="mission-agent-limit">
               <span>最多使用</span>
@@ -269,7 +301,9 @@ export function MissionConsole() {
             </label>
           </div>
           <div className={styles.composerFooter}>
-            <span id="mission-safety"><ShieldCheck /> 只生成计划，不自动付款或交易</span>
+            <span id="mission-safety">
+              <ShieldCheck /> 只生成计划，不自动付款或交易
+            </span>
             <Button
               size="lg"
               className={styles.composeButton}
@@ -282,10 +316,17 @@ export function MissionConsole() {
 
           <div className={styles.endpointCard}>
             <div>
-              <span><Link2 /> 公开免费端点 · 待 OKX.AI 上架</span>
+              <span>
+                <Link2 /> AGENTVERSE #13779 · 公开免费 A2MCP
+              </span>
               <code>POST {endpointPath}</code>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={copyEndpoint}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={copyEndpoint}
+            >
               {copied ? <CheckCircle2 /> : <Copy />}
               {copied ? '已复制' : '复制端点'}
             </Button>
@@ -293,16 +334,32 @@ export function MissionConsole() {
 
           <div className={styles.examples} aria-label="任务示例">
             {examples.map((example) => (
-              <button key={example} type="button" onClick={() => setGoal(example)}>
+              <button
+                key={example}
+                type="button"
+                onClick={() => setGoal(example)}
+              >
                 {example}
               </button>
             ))}
           </div>
-          {error && <p className={styles.error} role="alert">{error}</p>}
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <aside className={styles.resultPanel} aria-live="polite">
-          {plan ? <MissionResult plan={plan} /> : <EmptyMission />}
+          {plan ? (
+            <MissionResult
+              plan={plan}
+              active={activeMission?.requestId === plan.requestId}
+              onLaunch={() => enterWorld(plan)}
+            />
+          ) : (
+            <EmptyMission />
+          )}
         </aside>
       </section>
 
@@ -318,25 +375,45 @@ function EmptyMission() {
   return (
     <div className={styles.emptyState}>
       <div className={styles.orbit} aria-hidden="true">
-        <Bot /><span /><span /><span />
+        <Bot />
+        <span />
+        <span />
+        <span />
       </div>
       <p className={styles.emptyKicker}>MISSION GRAPH</p>
       <h2>等待一个明确目标</h2>
       <p>生成后，这里会显示相关 Agent、服务顺序、价格、资料状态和安全边界。</p>
       <div className={styles.emptyChecks}>
-        <span><CheckCircle2 /> 真实 Agent ID</span>
-        <span><CheckCircle2 /> 真实 Service ID</span>
-        <span><CheckCircle2 /> 明确数据来源</span>
+        <span>
+          <CheckCircle2 /> 真实 Agent ID
+        </span>
+        <span>
+          <CheckCircle2 /> 真实 Service ID
+        </span>
+        <span>
+          <CheckCircle2 /> 明确数据来源
+        </span>
       </div>
     </div>
   );
 }
 
-function MissionResult({ plan }: { plan: MissionPlan }) {
+function MissionResult({
+  plan,
+  active,
+  onLaunch,
+}: {
+  plan: MissionPlan;
+  active: boolean;
+  onLaunch: () => void;
+}) {
   return (
     <div className={styles.result}>
       <div className={styles.resultHeading}>
-        <div><span>PLAN READY</span><h2>{plan.summary}</h2></div>
+        <div>
+          <span>PLAN READY</span>
+          <h2>{plan.summary}</h2>
+        </div>
         <Badge variant="outline" className={styles.safeBadge}>
           <ShieldCheck /> 只读计划
         </Badge>
@@ -344,8 +421,13 @@ function MissionResult({ plan }: { plan: MissionPlan }) {
 
       <div className={styles.timeline}>
         {plan.steps.map((step) => (
-          <article className={styles.step} key={`${step.agentId}-${step.serviceId}`}>
-            <div className={styles.stepNumber}>{String(step.order).padStart(2, '0')}</div>
+          <article
+            className={styles.step}
+            key={`${step.agentId}-${step.serviceId}`}
+          >
+            <div className={styles.stepNumber}>
+              {String(step.order).padStart(2, '0')}
+            </div>
             <div className={styles.stepBody}>
               <div className={styles.stepMeta}>
                 <span>AGENT #{step.agentId}</span>
@@ -355,7 +437,9 @@ function MissionResult({ plan }: { plan: MissionPlan }) {
               <strong>{step.serviceName}</strong>
               <p>{step.reason}</p>
               <div className={styles.stepFooter}>
-                <span>{step.price === '0' ? '免费' : `${step.price} ${step.symbol}`}</span>
+                <span>
+                  {step.price === '0' ? '免费' : `${step.price} ${step.symbol}`}
+                </span>
                 <a href={step.serviceUrl} target="_blank" rel="noreferrer">
                   在 OKX.AI 核对 <ExternalLink />
                 </a>
@@ -365,17 +449,53 @@ function MissionResult({ plan }: { plan: MissionPlan }) {
         ))}
       </div>
 
+      <div className={styles.launchCard}>
+        <div>
+          <Globe2 />
+          <span>
+            <strong>
+              {active ? '这支队伍已在世界中' : '让推荐 Agent 进入协作中心'}
+            </strong>
+            <small>行为是安全预演；不会自动付款、签名或交易。</small>
+          </span>
+        </div>
+        <Button type="button" onClick={onLaunch}>
+          {active ? '返回任务世界' : '投放到 Agentverse'} <ArrowRight />
+        </Button>
+      </div>
+
       <div className={styles.receipt}>
-        <div><Route /><span>编排记录</span></div>
+        <div>
+          <Route />
+          <span>编排记录</span>
+        </div>
         <dl>
-          <div><dt>Request</dt><dd>{plan.requestId}</dd></div>
-          <div><dt>资料状态</dt><dd>{sourceLabel(plan.provenance.mode)}</dd></div>
-          <div><dt>链</dt><dd>{plan.request.chainId ?? '未指定'}</dd></div>
-          <div><dt>资产</dt><dd>{plan.request.assetSymbol ?? '未指定'}</dd></div>
+          <div>
+            <dt>Request</dt>
+            <dd>{plan.requestId}</dd>
+          </div>
+          <div>
+            <dt>资料状态</dt>
+            <dd>{sourceLabel(plan.provenance.mode)}</dd>
+          </div>
+          <div>
+            <dt>链</dt>
+            <dd>{plan.request.chainId ?? '未指定'}</dd>
+          </div>
+          <div>
+            <dt>资产</dt>
+            <dd>{plan.request.assetSymbol ?? '未指定'}</dd>
+          </div>
           {plan.request.contractAddress && (
-            <div><dt>合约</dt><dd>{plan.request.contractAddress}</dd></div>
+            <div>
+              <dt>合约</dt>
+              <dd>{plan.request.contractAddress}</dd>
+            </div>
           )}
-          <div><dt>Created</dt><dd>{new Date(plan.createdAt).toLocaleString('zh-CN')}</dd></div>
+          <div>
+            <dt>Created</dt>
+            <dd>{new Date(plan.createdAt).toLocaleString('zh-CN')}</dd>
+          </div>
         </dl>
         <p>{plan.safety.note}</p>
       </div>
