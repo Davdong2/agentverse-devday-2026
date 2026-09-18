@@ -40,8 +40,12 @@ assert.ok(
   'Walking-world Agents retain their card identity at a believable world scale',
 );
 assert.ok(
-  walkSource.includes('clearsActorSpace'),
-  'The observer cannot walk through an Agent body',
+  !walkSource.includes('clearsActorSpace'),
+  'Resident bodies do not block or trap the observer-controlled Agent',
+);
+assert.ok(
+  walkSource.includes('const clearsObserverView = actorDistance >= 2.15'),
+  'A resident crossing the camera becomes a temporary non-occluding ghost',
 );
 assert.ok(
   !fs.readFileSync('components/agent-avatar.ts', 'utf8').includes('heartPlate'),
