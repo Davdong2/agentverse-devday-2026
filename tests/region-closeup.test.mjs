@@ -62,6 +62,16 @@ assert.match(canvasSource, /drawHabitatFloor\(regionIndex, t, focusX\)/);
 assert.match(canvasSource, /drawHabitatForeground\(regionIndex, t\)/);
 assert.match(canvasSource, /AGENT SERVICE NETWORK/);
 assert.match(canvasSource, /residentSlots/);
+assert.match(
+  canvasSource,
+  /return a\.instance - b\.instance/,
+  'Close-up nameplates keep a stable identity-to-slot assignment',
+);
+assert.doesNotMatch(
+  canvasSource,
+  /return distance\(a\) - distance\(b\)/,
+  'Animated distance must not reorder visible close-up identities',
+);
 
 console.log(
   'PASS: ten distinct Agent-first habitats, resident-first staging, six non-overlapping close-range actors and a 2× vector canvas.',

@@ -1034,9 +1034,9 @@ export default function Civilization({
             <Focus size={16} />
             进入世界
           </button>
-          <button aria-label="Agent 名录" onClick={() => setPanel('directory')}>
+          <button aria-label="Agent 列表" onClick={() => setPanel('directory')}>
             <Users size={16} />
-            <span>我的智能体</span>
+            <span>Agent 列表</span>
           </button>
           <button
             aria-label="Agent 关系日志"

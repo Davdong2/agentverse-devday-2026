@@ -1318,14 +1318,16 @@ export default function CivilizationCanvas(props: Props) {
             ? regionFor(source, p.details[source.agentId]) === regionIndex
             : false;
         },
-        distance = (state: (typeof states)[number]) =>
-          Math.hypot(state.x - region.x, state.y - region.y),
         orderedStates = [...states].sort((a, b) => {
           if (regionIndex === 0 && a.collaborator !== b.collaborator)
             return Number(b.collaborator) - Number(a.collaborator);
           if (resident(a) !== resident(b))
             return Number(resident(b)) - Number(resident(a));
-          return distance(a) - distance(b);
+          // Identity-to-slot assignment must not depend on animated positions.
+          // A distance sort lets two nearby residents swap rank frame to frame,
+          // which makes their nameplates visibly flash even though the canvas is
+          // rendering normally. Instance order is stable for the session.
+          return a.instance - b.instance;
         }),
         localLimit = closeupPopulationLimit(p.viewportWidth),
         localStates = orderedStates.slice(0, localLimit),
