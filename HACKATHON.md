@@ -65,7 +65,7 @@ No visualized action is represented as a completed on-chain action or paid A2A c
 
 ## Submission package
 
-- Public product and endpoint: ready after the current build is deployed
+- Public product and endpoint: ready and deployed
 - Build-period commit history: ready
 - Public review repository: https://github.com/Davdong2/agentverse-devday-2026
 - OKX.AI listing URL: add after review submission/approval

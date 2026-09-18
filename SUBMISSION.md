@@ -37,7 +37,7 @@ Agentverse is a persistent Agent-native world driven by real OKX.AI identities. 
 - [x] Agent and Service IDs are visible in the mission result.
 - [x] Simulated world behavior is distinguished from LIVE/cached source data.
 - [x] The endpoint has an explicit no-payment/no-signing/no-trading boundary.
-- [ ] Deploy the current world-first build and recheck every public link in an unauthenticated browser.
+- [x] Deploy the current world-first build and recheck the public experience.
 - [ ] Confirm that the OKX.AI listing uses the exact deployed descriptor endpoint.
 - [ ] Use a valid X Layer contract address in the demo or leave the optional address blank.
 - [ ] Record the world → commission → team → world mission → memory → verification flow.
