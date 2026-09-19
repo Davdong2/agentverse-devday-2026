@@ -19,8 +19,45 @@ const rateLimit = 60;
 const rateWindowMs = 60_000;
 const requestBuckets = new Map<string, { count: number; resetAt: number }>();
 
+const exampleRequest = {
+  goal: '研究 BTC 市场状态，并检查 X Layer 代币风险',
+  assetSymbol: 'BTC',
+  chainId: 'eip155:196',
+  maxAgents: 3,
+  riskMode: 'confirm-before-action',
+};
+
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: corsHeaders });
+}
+
+function errorJson({
+  requestId,
+  code,
+  error,
+  hint,
+  status,
+  headers = {},
+}: {
+  requestId: string;
+  code: string;
+  error: string;
+  hint: string;
+  status: number;
+  headers?: Record<string, string>;
+}) {
+  return Response.json(
+    {
+      ok: false,
+      deliveryStatus: 'failed',
+      requestId,
+      code,
+      error,
+      hint,
+      exampleRequest,
+    },
+    { status, headers: { ...corsHeaders, ...headers } },
+  );
 }
 
 async function missionCatalog(): Promise<MissionCatalog> {
@@ -99,10 +136,17 @@ export async function GET(req: Request) {
       automaticPayment: false,
       automaticExecution: false,
     },
+    delivery: {
+      success: 'HTTP 200 直接返回 JSON 任务计划，deliveryStatus 为 delivered。',
+      failure:
+        'HTTP 4xx 返回稳定 code、可读 error、修复指引 hint 和可直接重试的 exampleRequest。',
+    },
+    exampleRequest,
   });
 }
 
 export async function POST(req: Request) {
+  const requestId = crypto.randomUUID();
   const limit = consumeRateLimit(req);
   const rateHeaders = {
     'X-RateLimit-Limit': String(rateLimit),
@@ -110,23 +154,33 @@ export async function POST(req: Request) {
     'X-RateLimit-Reset': String(limit.resetSeconds),
   };
   if (!limit.allowed)
-    return Response.json(
-      { error: '请求过于频繁，请稍后再试。' },
-      {
-        status: 429,
-        headers: { ...corsHeaders, ...rateHeaders, 'Retry-After': String(limit.resetSeconds) },
-      },
-    );
+    return errorJson({
+      requestId,
+      code: 'RATE_LIMITED',
+      error: '请求过于频繁。',
+      hint: `请在 ${limit.resetSeconds} 秒后使用原参数重试。`,
+      status: 429,
+      headers: { ...rateHeaders, 'Retry-After': String(limit.resetSeconds) },
+    });
   if (!req.headers.get('content-type')?.includes('application/json'))
-    return Response.json(
-      { error: '请求必须使用 application/json。' },
-      { status: 415, headers: { ...corsHeaders, ...rateHeaders } },
-    );
+    return errorJson({
+      requestId,
+      code: 'UNSUPPORTED_MEDIA_TYPE',
+      error: '请求必须使用 application/json。',
+      hint:
+        '添加 Content-Type: application/json，并传入包含 goal 字段的 JSON 对象。',
+      status: 415,
+      headers: rateHeaders,
+    });
   if (Number(req.headers.get('content-length') ?? 0) > 8192)
-    return Response.json(
-      { error: '请求内容过大。' },
-      { status: 413, headers: { ...corsHeaders, ...rateHeaders } },
-    );
+    return errorJson({
+      requestId,
+      code: 'PAYLOAD_TOO_LARGE',
+      error: '请求内容超过 8192 字节。',
+      hint: '缩短 goal 和可选参数后重试；goal 最长 600 个字符。',
+      status: 413,
+      headers: rateHeaders,
+    });
 
   let input: ReturnType<typeof normalizeMissionInput>;
   try {
@@ -134,32 +188,52 @@ export async function POST(req: Request) {
     if (body.length > 8192) throw new Error('too_large');
     input = normalizeMissionInput(JSON.parse(body));
   } catch (error) {
-    const message = error instanceof SyntaxError
-      ? '请求 JSON 无效。'
-      : error instanceof Error && error.message !== 'too_large'
-        ? error.message
-        : '请求内容过大。';
-    return Response.json(
-      { error: message },
-      { status: error instanceof Error && error.message === 'too_large' ? 413 : 400, headers: { ...corsHeaders, ...rateHeaders } },
-    );
+    const tooLarge = error instanceof Error && error.message === 'too_large';
+    const invalidJson = error instanceof SyntaxError;
+    return errorJson({
+      requestId,
+      code: tooLarge
+        ? 'PAYLOAD_TOO_LARGE'
+        : invalidJson
+          ? 'INVALID_JSON'
+          : 'INVALID_INPUT',
+      error: tooLarge
+        ? '请求内容超过 8192 字节。'
+        : invalidJson
+          ? '请求 JSON 无效。'
+          : error instanceof Error
+            ? error.message
+            : '请求参数无效。',
+      hint: invalidJson
+        ? '检查 JSON 引号、逗号和括号，再按 exampleRequest 重试。'
+        : '对照 exampleRequest 修正字段名称、类型和取值范围后重试。',
+      status: tooLarge ? 413 : 400,
+      headers: rateHeaders,
+    });
   }
 
   try {
     const mission = composeMission(input, await missionCatalog());
     return Response.json(
       {
-        requestId: crypto.randomUUID(),
+        ok: true,
+        deliveryStatus: 'delivered',
+        requestId,
         createdAt: new Date().toISOString(),
         ...mission,
       },
       { headers: { ...corsHeaders, ...rateHeaders } },
     );
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : '任务编排失败。' },
-      { status: 400, headers: { ...corsHeaders, ...rateHeaders } },
-    );
+    return errorJson({
+      requestId,
+      code: 'NO_MATCHING_SERVICES',
+      error: error instanceof Error ? error.message : '任务编排失败。',
+      hint:
+        '在 goal 中补充任务类型（如市场研究、风险验证、链上数据、创意交付或执行准备），并可选提供 assetSymbol、chainId 或 contractAddress。',
+      status: 422,
+      headers: rateHeaders,
+    });
   }
 }
 

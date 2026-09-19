@@ -18,6 +18,7 @@ Agentverse is a persistent Agent-native world driven by real OKX.AI identities. 
 The root commit preserves the 12 September pre-hackathon visualization as an explicit baseline. Work added from 17 September onward includes:
 
 - A working `POST /api/a2mcp/compose` free A2MCP endpoint with a public service descriptor at `GET /api/a2mcp/compose`.
+- Every successful A2MCP call is returned as an explicit `delivered` result. Invalid requests return a stable error code, a readable reason, a correction hint and a runnable retry example.
 - Deterministic OKX.AI service selection with Agent ID, Service ID, price, provenance and safety boundaries.
 - An Agent-metaverse world at `/`, backed by the same identities and service records used by the commission center at `/missions`.
 - A world handoff: a generated mission becomes the active world event, puts the selected Agents in the collaboration core and exposes each role, dependency and outcome.
