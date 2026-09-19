@@ -37,6 +37,20 @@ export type RelationshipLog = {
   relationDelta: number;
   outcome: string;
   memoryEffect: string;
+  trigger?: string;
+  triggerMode?: 'LIVE' | '缓存' | 'Demo';
+  intent?: string;
+  partnerNeed?: string;
+  chemistryScore?: number;
+  chemistryFactors?: Array<{
+    key: 'capability' | 'social' | 'trust' | 'novelty' | 'context';
+    label: string;
+    score: number;
+    note: string;
+  }>;
+  relationBefore?: number;
+  relationAfter?: number;
+  decisionMode?: '结构化推演' | '模型辅助';
   missionId?: string;
   goal?: string;
   source:
@@ -151,19 +165,80 @@ export function deriveDisposition(
   };
 }
 
-function pairScore(a: AgentDisposition, b: AgentDisposition, cycle: number) {
+function pairScore(
+  a: AgentDisposition,
+  b: AgentDisposition,
+  cycle: number,
+  history: RelationshipLog[],
+  contextWeight: number,
+) {
   const overlap = a.capabilities.some((name) => b.capabilities.includes(name));
   const complement = overlap ? 7 : 24;
-  const socialFit = (a.sociability + b.sociability) / 12;
-  const trust = (a.reliability + b.reliability) / 18;
+  const socialFit = Math.round((a.sociability + b.sociability) / 14);
+  const trust = Math.round((a.reliability + b.reliability) / 16);
   const exploration = Math.abs(a.curiosity - b.caution) < 28 ? 8 : 2;
-  return (
-    complement +
-    socialFit +
-    trust +
-    exploration +
-    (hash(`${cycle}:${a.agentId}:${b.agentId}`) % 1000) / 100
+  const rememberedTrust = history.reduce(
+    (total, log) => total + log.relationDelta,
+    0,
   );
+  const memory = history.length
+    ? Math.round(
+        Math.min(14, rememberedTrust * 0.6) - Math.min(8, history.length),
+      )
+    : 9;
+  const deterministicNovelty =
+    (hash(`${cycle}:${a.agentId}:${b.agentId}`) % 600) / 100;
+  const total = Math.round(
+    complement +
+      socialFit +
+      trust +
+      exploration +
+      memory +
+      contextWeight +
+      deterministicNovelty,
+  );
+  return {
+    total: clamp(total),
+    factors: [
+      {
+        key: 'capability' as const,
+        label: '能力互补',
+        score: complement,
+        note: overlap
+          ? '双方有相近能力，适合比较方案。'
+          : '双方公开能力不同，能够组成互补链路。',
+      },
+      {
+        key: 'social' as const,
+        label: '互动倾向',
+        score: socialFit + exploration,
+        note: '演示性格中的协作、探索与审慎倾向相容。',
+      },
+      {
+        key: 'trust' as const,
+        label: '历史信任',
+        score: trust + Math.max(0, memory),
+        note: history.length
+          ? `${history.length} 次共同记忆参与了本轮选择。`
+          : '双方没有共同记忆，新鲜度为首次相遇加权。',
+      },
+      {
+        key: 'novelty' as const,
+        label: '世界新鲜度',
+        score: Math.round(deterministicNovelty),
+        note: '同一世界循环可重放，避免不可解释的纯随机配对。',
+      },
+      {
+        key: 'context' as const,
+        label: '事件相关',
+        score: contextWeight,
+        note:
+          contextWeight > 8
+            ? '当前委托或现实信号提高了本轮相遇优先级。'
+            : '当前世界状态与双方能力存在弱相关。',
+      },
+    ],
+  };
 }
 
 function relationshipType(
@@ -200,6 +275,10 @@ export function createRelationshipLog(
   regionForAgent: (agent: Agent, detail?: Detail) => number,
   previousLogs: RelationshipLog[] = [],
   mission?: { requestId: string; goal: string },
+  worldContext?: {
+    title: string;
+    mode: 'LIVE' | '缓存' | 'Demo';
+  },
 ): RelationshipLog | null {
   const unique = [
     ...new Map(agents.map((agent) => [agent.agentId, agent])).values(),
@@ -216,30 +295,26 @@ export function createRelationshipLog(
   const actorDisposition = dispositions.get(actor.agentId)!;
   const candidates = unique
     .filter((candidate) => candidate.agentId !== actor.agentId)
-    .map((candidate) => ({
-      candidate,
-      disposition: dispositions.get(candidate.agentId)!,
-      score:
-        pairScore(
-          actorDisposition,
-          dispositions.get(candidate.agentId)!,
-          cycle,
-        ) +
-        (() => {
-          const history = previousLogs.filter(
-            (log) =>
-              log.actorIds.includes(actor.agentId) &&
-              log.actorIds.includes(candidate.agentId),
-          );
-          const rememberedTrust = history.reduce(
-            (total, log) => total + log.relationDelta,
-            0,
-          );
-          return history.length
-            ? Math.min(14, rememberedTrust * 0.6) - Math.min(8, history.length)
-            : 9;
-        })(),
-    }))
+    .map((candidate) => {
+      const history = previousLogs.filter(
+        (log) =>
+          log.actorIds.includes(actor.agentId) &&
+          log.actorIds.includes(candidate.agentId),
+      );
+      const chemistry = pairScore(
+        actorDisposition,
+        dispositions.get(candidate.agentId)!,
+        cycle,
+        history,
+        mission ? 14 : worldContext?.mode === 'LIVE' ? 11 : 6,
+      );
+      return {
+        candidate,
+        disposition: dispositions.get(candidate.agentId)!,
+        score: chemistry.total,
+        factors: chemistry.factors,
+      };
+    })
     .sort(
       (a, b) =>
         b.score - a.score ||
@@ -256,7 +331,7 @@ export function createRelationshipLog(
     ];
   const relationDelta = Math.max(
     2,
-    Math.min(9, Math.round(candidates[0].score / 10) + (mission ? 1 : 0)),
+    Math.min(9, Math.round(candidates[0].score / 12) + (mission ? 1 : 0)),
   );
   const previousPairLogs = previousLogs.filter(
     (log) =>
@@ -267,6 +342,19 @@ export function createRelationshipLog(
     ? `过去 ${previousPairLogs.length} 次互动形成的关系记忆参与了本轮选择。`
     : '双方尚无共同记忆，新鲜度提高了本轮相遇概率。';
   const action = actionFor(kind);
+  const relationBefore = Math.min(
+    100,
+    previousPairLogs.reduce((total, log) => total + log.relationDelta, 0),
+  );
+  const relationAfter = Math.min(100, relationBefore + relationDelta);
+  const trigger = mission
+    ? `人类委托“${mission.goal}”进入协作中心，触发临时能力编组。`
+    : worldContext
+      ? `${worldContext.title}，触发世界中的能力匹配。`
+      : '世界循环发现一项尚未满足的能力组合。';
+  const intent = mission
+    ? `${actor.name} 希望为当前委托找到能够补充“${partnerCapability}”的伙伴。`
+    : `${actor.name} 正在寻找“${partnerCapability}”，以扩展“${actorCapability}”的处理边界。`;
   return {
     id: `relationship-${cycle}-${actor.agentId}-${partner.agentId}-${kind}`,
     at,
@@ -282,8 +370,17 @@ export function createRelationshipLog(
     capabilities: [actorCapability, partnerCapability],
     traits: [actorDisposition.label, partnerDisposition.label],
     relationDelta,
-    outcome: `${kind}事件完成，关系强度增加 ${relationDelta}。`,
-    memoryEffect: `双方记住了本轮“${actorCapability} × ${partnerCapability}”的能力组合，后续相遇会参考这段记录。`,
+    outcome: `${kind}事件完成，关系强度从 ${relationBefore} 提升到 ${relationAfter}。`,
+    memoryEffect: `双方记住了本轮“${actorCapability} × ${partnerCapability}”的能力组合；这段记忆会进入下一轮伙伴评分，而不会直接触发支付或交易。`,
+    trigger,
+    triggerMode: mission ? 'Demo' : (worldContext?.mode ?? 'Demo'),
+    intent,
+    partnerNeed: partnerCapability,
+    chemistryScore: candidates[0].score,
+    chemistryFactors: candidates[0].factors,
+    relationBefore,
+    relationAfter,
+    decisionMode: '结构化推演',
     ...(mission ? { missionId: mission.requestId, goal: mission.goal } : {}),
     source: mission ? 'mission_simulation' : 'profile_inference',
   };
@@ -320,7 +417,7 @@ export function buildRelationshipGraph(
 
 export function relationshipExport(logs: RelationshipLog[], fetchedAt: string) {
   return {
-    schema: 'agentverse.relationship-events.v1',
+    schema: 'agentverse.relationship-events.v2',
     exportedAt: new Date().toISOString(),
     dataMode: 'mixed',
     sourceProfileSnapshot: {
@@ -360,6 +457,15 @@ export function relationshipCsv(logs: RelationshipLog[]) {
     'actor_2_name',
     'capability_1',
     'capability_2',
+    'trigger',
+    'trigger_mode',
+    'intent',
+    'partner_need',
+    'chemistry_score',
+    'chemistry_factors',
+    'relation_before',
+    'relation_after',
+    'decision_mode',
     'relation_delta',
     'outcome',
     'memory_effect',
@@ -380,6 +486,15 @@ export function relationshipCsv(logs: RelationshipLog[]) {
     log.actorNames[1],
     log.capabilities[0],
     log.capabilities[1],
+    log.trigger,
+    log.triggerMode,
+    log.intent,
+    log.partnerNeed,
+    log.chemistryScore,
+    log.chemistryFactors,
+    log.relationBefore,
+    log.relationAfter,
+    log.decisionMode,
     log.relationDelta,
     log.outcome,
     log.memoryEffect,

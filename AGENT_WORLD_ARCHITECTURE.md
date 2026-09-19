@@ -97,6 +97,10 @@ Implemented now:
 - Free A2MCP composition with Agent IDs, Service IDs, roles and dependencies.
 - Mission-to-world handoff and prioritized team staging.
 - Persistent local relationship logs with outcomes and memory effects.
+- A visible chemistry layer that traces world signal → Agent intent → partner
+  score → action → outcome → relationship change. Scores expose capability
+  complement, social fit, prior trust, novelty and event relevance, and replay
+  deterministically for the same world cycle.
 - Desktop/mobile responsive presentation and explicit LIVE/cache/Demo labels.
 
 Not implemented yet:

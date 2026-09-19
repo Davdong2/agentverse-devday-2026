@@ -449,6 +449,98 @@
   font-size: 12px !important;
   line-height: 1.75 !important;
 }
+.relationship-timeline .relationship-causality {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+.relationship-causality p {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: start;
+  gap: 8px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: #09141a42;
+}
+.relationship-causality p > span {
+  overflow: visible;
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #e1c97e;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-overflow: clip;
+  white-space: normal;
+}
+.relationship-causality p > b {
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #91c5a8;
+  background: #8ec7ad16;
+  font-size: 9px;
+  font-weight: 500;
+}
+.relationship-timeline .relationship-chemistry {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #e0c77825;
+  border-radius: 9px;
+  background: #dfc3720a;
+}
+.relationship-chemistry > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.relationship-chemistry > div span {
+  overflow: visible;
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #91a9b1;
+  font-size: 10px;
+  text-overflow: clip;
+  white-space: normal;
+}
+.relationship-chemistry > div strong {
+  color: #e5cd80;
+  font-size: 18px;
+  font-weight: 500;
+}
+.relationship-chemistry > em {
+  overflow: hidden;
+  height: 3px;
+  border-radius: 999px;
+  background: #7f959722;
+}
+.relationship-chemistry > em > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #75c9b4, #e2c774);
+}
+.relationship-chemistry > section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.relationship-chemistry > section span {
+  overflow: visible;
+  max-width: none;
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: #9fb9b4;
+  background: #8ebcb216;
+  font-size: 9px;
+  text-overflow: clip;
+  white-space: normal;
+}
 .relationship-timeline > article > small {
   display: block;
   margin-top: 7px;
@@ -533,6 +625,9 @@ body:has(.soft-world) .relationship-exports button {
 }
 body:has(.soft-world) .relationship-timeline p {
   color: #718b7d;
+}
+body:has(.soft-world) .relationship-causality p {
+  background: #eef2e84d;
 }
 @media (max-width: 700px) {
   .relationship-sheet {
@@ -5818,6 +5913,130 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   background: #78e4ff;
   box-shadow: 0 0 10px #78e4ff;
 }
+.home-chemistry-card {
+  position: absolute;
+  z-index: 13;
+  top: 145px;
+  left: 28px;
+  width: min(310px, calc(100vw - 56px));
+  padding: 14px 15px 12px;
+  color: #dbe9ed;
+  text-align: left;
+  background: linear-gradient(145deg, #07131ddb, #10242dcc);
+  border: 1px solid #7ddbc14a;
+  border-radius: 14px;
+  box-shadow:
+    0 16px 50px #00091270,
+    inset 0 0 30px #77dfc408;
+  backdrop-filter: blur(15px);
+  cursor: pointer;
+}
+.home-chemistry-card:hover {
+  border-color: #91ead06e;
+  transform: translateY(-1px);
+}
+.home-chemistry-card > header,
+.home-chemistry-card > footer,
+.home-chemistry-card > div,
+.home-chemistry-card > header > span,
+.home-chemistry-card > div > span:last-child {
+  display: flex;
+  align-items: center;
+}
+.home-chemistry-card > header {
+  justify-content: space-between;
+  color: #7fddc4;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.home-chemistry-card > header > span {
+  gap: 6px;
+}
+.home-chemistry-card > header b {
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #efc999;
+  background: #deb27016;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.home-chemistry-card > strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  margin-top: 11px;
+  color: #f3f8f8;
+  font-size: 14px;
+  font-weight: 560;
+  white-space: nowrap;
+}
+.home-chemistry-card > strong i {
+  color: #edc87f;
+  font-style: normal;
+}
+.home-chemistry-card > p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 8px 0 11px;
+  color: #9fb4ba;
+  font-size: 12px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.home-chemistry-card > div {
+  justify-content: space-between;
+  gap: 12px;
+  color: #9fb5b9;
+  font-size: 10px;
+}
+.home-chemistry-card > div > span:first-child {
+  flex: 1;
+}
+.home-chemistry-card > div em {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #b8ced022;
+}
+.home-chemistry-card > div em i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6cd7ba, #f2ca7a);
+}
+.home-chemistry-card > div > span:last-child {
+  flex: 0 0 auto;
+  color: #c3d2d3;
+}
+.home-chemistry-card > footer {
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #9ab2b21a;
+  color: #7f9da3;
+  font-size: 10px;
+}
+.home-chemistry-card > footer span {
+  color: #78cbb5;
+}
+.region-page .home-chemistry-card {
+  top: 123px;
+  right: 24px;
+  left: auto;
+}
+.dossier-status .dossier-intent-row {
+  grid-column: 1 / -1;
+}
+.dossier-status .dossier-intent-row dd {
+  max-width: none;
+  line-height: 1.55;
+}
 .home-core-readout {
   position: absolute;
   z-index: 12;
@@ -6042,6 +6261,10 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   .home-core-readout strong {
     font-size: 17px;
   }
+  .home-chemistry-card {
+    top: 136px;
+    width: 270px;
+  }
 }
 @media (max-width: 700px) {
   .home-ecosystem-rail {
@@ -6063,6 +6286,19 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
     display: none;
   }
   .home-mars .collaboration-dock {
+    display: none;
+  }
+  .home-chemistry-card {
+    top: 126px;
+    left: 14px;
+    width: min(260px, calc(100vw - 28px));
+    padding: 11px 12px 10px;
+  }
+  .home-chemistry-card > p {
+    margin-block: 6px 8px;
+    -webkit-line-clamp: 1;
+  }
+  .region-page .home-chemistry-card {
     display: none;
   }
 }

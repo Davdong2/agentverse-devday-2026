@@ -39,8 +39,26 @@ for (const score of [
   assert.ok(score >= 0 && score <= 100);
 
 const regionFor = (agent) => Number(agent.agentId) % 10;
-const first = createRelationshipLog(agents, details, 3, 1000, regionFor);
-const repeated = createRelationshipLog(agents, details, 3, 1000, regionFor);
+const first = createRelationshipLog(
+  agents,
+  details,
+  3,
+  1000,
+  regionFor,
+  [],
+  undefined,
+  { title: 'BTC 现实行情进入世界', mode: 'LIVE' },
+);
+const repeated = createRelationshipLog(
+  agents,
+  details,
+  3,
+  1000,
+  regionFor,
+  [],
+  undefined,
+  { title: 'BTC 现实行情进入世界', mode: 'LIVE' },
+);
 assert.deepEqual(
   first,
   repeated,
@@ -55,6 +73,15 @@ assert.ok(agents.some((agent) => agent.name === first.actorNames[0]));
 assert.ok(agents.some((agent) => agent.name === first.actorNames[1]));
 assert.match(first.memoryEffect, /记住/);
 assert.match(first.outcome, /关系强度/);
+assert.match(first.trigger, /BTC 现实行情/);
+assert.equal(first.triggerMode, 'LIVE');
+assert.match(first.intent, /正在寻找/);
+assert.ok(first.partnerNeed);
+assert.ok(first.chemistryScore >= 0 && first.chemistryScore <= 100);
+assert.equal(first.chemistryFactors.length, 5);
+assert.equal(first.relationBefore, 0);
+assert.equal(first.relationAfter, first.relationDelta);
+assert.equal(first.decisionMode, '结构化推演');
 
 const missionChemistry = createRelationshipLog(
   agents.slice(0, 4),
@@ -68,6 +95,9 @@ const missionChemistry = createRelationshipLog(
 assert.equal(missionChemistry.source, 'mission_simulation');
 assert.equal(missionChemistry.missionId, 'mission-1');
 assert.equal(missionChemistry.goal, '研究市场并核对风险');
+assert.equal(missionChemistry.triggerMode, 'Demo');
+assert.match(missionChemistry.trigger, /人类委托/);
+assert.equal(missionChemistry.decisionMode, '结构化推演');
 
 const later = { ...first, id: first.id + '-again', at: 2000 };
 const graph = buildRelationshipGraph([later, first]);
@@ -76,11 +106,12 @@ assert.equal(graph[0].interactions, 2);
 assert.equal(graph[0].strength, first.relationDelta * 2);
 
 const exported = relationshipExport([first], fetchedAt);
-assert.equal(exported.schema, 'agentverse.relationship-events.v1');
+assert.equal(exported.schema, 'agentverse.relationship-events.v2');
 assert.equal(exported.events.length, 1);
 assert.match(exported.behaviorNotice, /Demo/);
 const csv = relationshipCsv([first]);
 assert.match(csv, /actor_1_name/);
+assert.match(csv, /chemistry_score/);
 assert.match(csv, new RegExp(first.actorNames[0]));
 assert.equal(createRelationshipLog([], details, 0, 0, regionFor), null);
 assert.equal(
@@ -88,6 +119,15 @@ assert.equal(
   null,
 );
 
+const civilization = fs.readFileSync('components/civilization.tsx', 'utf8');
+assert.match(civilization, /Agent 化学反应/);
+assert.match(civilization, /可解释事件时间线/);
+assert.match(civilization, /chemistryFactors/);
+assert.match(civilization, /relationBefore/);
+const dossier = fs.readFileSync('components/agent-dossier.tsx', 'utf8');
+assert.match(dossier, /当前意图/);
+assert.match(dossier, /正在寻找/);
+
 console.log(
-  'PASS: deterministic profile-derived relationships, transparent Demo provenance, graph aggregation and JSON/CSV exports.',
+  'PASS: deterministic, explainable Agent chemistry with transparent Demo provenance, graph aggregation, visible intent and JSON/CSV exports.',
 );

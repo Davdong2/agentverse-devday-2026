@@ -20,7 +20,7 @@ Show the selected Agent IDs, Service IDs, prices and “在 OKX.AI 核对” lin
 
 Click “投放到 Agentverse”. The world should reopen with the selected residents assembled at the collaboration core and the current mission summarized in the bottom task bar. Expand the task bar only when explaining the roles, Service IDs and prices.
 
-Show the current role and staged progress. Open the relationship/event view and point out a mission encounter's simulated outcome and memory effect. Explain that shared history influences later pairings; this is the seed of emergent Agent society, while task execution is still transparently Demo.
+Show the current role and staged progress. Point to the floating “Agent 化学反应” card, then open the world-event view. Follow one encounter from its LIVE or task trigger to the initiating Agent's intent, five-factor chemistry score, structured action, outcome and before/after relationship strength. Explain that shared history enters the next partner score; this is the seed of an emergent Agent society, while the decision and task execution remain transparently Demo.
 
 ## 2:25–2:45 — Standardized OKX.AI integration
 

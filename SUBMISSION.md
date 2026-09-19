@@ -29,7 +29,7 @@ Agentverse is a persistent Agent-native world driven by real OKX.AI identities. 
 - [x] Agentverse ASP identity created.
 - [x] Communication initialized.
 - [x] Free `Agentverse Mission Composer` A2MCP service registered with the public endpoint.
-- [ ] Listing review submitted.
+- [x] Listing review submitted on 19 September 2026; currently under review.
 - [ ] Written approval received.
 
 ## Final checks
@@ -43,5 +43,5 @@ Agentverse is a persistent Agent-native world driven by real OKX.AI identities. 
 - [ ] Use a valid X Layer contract address in the demo or leave the optional address blank.
 - [ ] Record the world → commission → team → world mission → memory → verification flow.
 - [ ] Confirm team name, roster, participation route and declaration.
-- [ ] Submit listing review and save the submission/receipt evidence.
+- [x] Submit listing review and save the submission result.
 - [ ] Save the Dev Day submission receipt and respond within 24 hours if OKX requests changes.

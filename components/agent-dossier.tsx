@@ -27,7 +27,10 @@ import {
   type MemoryRecord,
 } from '@/lib/civilization-model';
 import type { Agent, AgentData, Detail } from '@/lib/marketplace';
-import type { RelationshipLog } from '@/lib/agent-relationships';
+import {
+  deriveDisposition,
+  type RelationshipLog,
+} from '@/lib/agent-relationships';
 const icons = [
   Search,
   ChartNoAxesColumnIncreasing,
@@ -99,6 +102,11 @@ export default function AgentDossier({
     : regionFor(agent, service ?? undefined);
   const activity = state?.activity ?? '等待世界状态';
   const services = service?.services ?? [];
+  const disposition = deriveDisposition(agent, service ?? undefined);
+  const latestRelationship = relationships[0];
+  const currentIntent =
+    latestRelationship?.intent ??
+    `${agent.name} 正在观察世界，并寻找能补充“${disposition.capabilities[0]}”的伙伴。`;
   const activeStep = collab ? phaseMap[currentStage] : -1;
   const abilities = visual.modules.length
     ? visual.modules
@@ -256,6 +264,18 @@ export default function AgentDossier({
             当前状态 <span className="dossier-demo">Demo</span>
           </h3>
           <dl className="dossier-status">
+            <div className="dossier-intent-row">
+              <dt>当前意图</dt>
+              <dd>{currentIntent}</dd>
+            </div>
+            <div>
+              <dt>正在寻找</dt>
+              <dd>
+                {latestRelationship?.partnerNeed ??
+                  disposition.capabilities[1] ??
+                  '互补能力'}
+              </dd>
+            </div>
             <div>
               <dt>当前动作</dt>
               <dd>{activity}</dd>

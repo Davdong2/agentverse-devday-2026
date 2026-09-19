@@ -279,6 +279,7 @@ export default function Civilization({
     () => buildRelationshipGraph(relationshipLogs),
     [relationshipLogs],
   );
+  const latestChemistry = relationshipLogs[0];
   const appearanceData = appearance(agent, service ?? undefined);
   const teamIndex = team.findIndex((a) => a.agentId === agent.agentId);
   const regionTask = cryptoTaskState(region, time);
@@ -446,13 +447,34 @@ export default function Civilization({
       activeMission
         ? { requestId: activeMission.requestId, goal: activeMission.goal }
         : undefined,
+      {
+        title: activeNews
+          ? `${activeNews.category}“${activeNews.title}”`
+          : signalMode === 'live' && signal
+            ? `BTC 24h ${signal.change >= 0 ? '+' : ''}${signal.change.toFixed(2)}% 的现实行情`
+            : event.event,
+        mode: activeMission
+          ? 'Demo'
+          : activeNews
+            ? news?.mode === 'fresh'
+              ? 'LIVE'
+              : '缓存'
+            : signalMode === 'live' && signal
+              ? signal.mode === 'fresh'
+                ? 'LIVE'
+                : '缓存'
+              : 'Demo',
+      },
     );
     if (!log) return;
-    setRelationshipLogs((current) =>
-      current.some((item) => item.id === log.id)
-        ? current
-        : [log, ...current].slice(0, 300),
-    );
+    setRelationshipLogs((current) => {
+      const existing = current.find((item) => item.id === log.id);
+      if (existing?.chemistryScore !== undefined) return current;
+      return [log, ...current.filter((item) => item.id !== log.id)].slice(
+        0,
+        300,
+      );
+    });
     setEvents((current) =>
       [
         {
@@ -478,6 +500,11 @@ export default function Civilization({
     missionAgentKey,
     activeMissionId,
     activeMissionGoal,
+    activeNews?.id,
+    signal?.ts,
+    signalMode,
+    event.event,
+    news?.mode,
   ]);
   useEffect(() => {
     if (panel !== 'agent') return;
@@ -1076,6 +1103,50 @@ export default function Civilization({
           <span>IGNIX</span>
         </div>
       )}
+      {viewMode === 'observe' &&
+        (homeView || regionIndex === 0) &&
+        !missionDetailsOpen &&
+        latestChemistry && (
+          <button
+            className="home-chemistry-card"
+            onClick={() => setPanel('relationships')}
+            aria-label={`查看 ${latestChemistry.actorNames.join(' 与 ')} 的化学反应`}
+          >
+            <header>
+              <span>
+                <Sparkles size={14} /> Agent 化学反应
+              </span>
+              <b>行为 Demo</b>
+            </header>
+            <strong>
+              {latestChemistry.actorNames[0]}
+              <i>×</i>
+              {latestChemistry.actorNames[1]}
+            </strong>
+            <p>{latestChemistry.intent ?? latestChemistry.summary}</p>
+            <div>
+              <span>
+                匹配度 {latestChemistry.chemistryScore ?? '—'}
+                <em>
+                  <i
+                    style={{
+                      width: `${latestChemistry.chemistryScore ?? 0}%`,
+                    }}
+                  />
+                </em>
+              </span>
+              <span>
+                关系 {latestChemistry.relationBefore ?? 0}
+                <ChevronRight size={11} />
+                {latestChemistry.relationAfter ?? latestChemistry.relationDelta}
+              </span>
+            </div>
+            <footer>
+              <span>{latestChemistry.triggerMode ?? 'Demo'} 触发信号</span>
+              查看为什么相遇 <ArrowUpRight size={12} />
+            </footer>
+          </button>
+        )}
       {regionIndex !== undefined && (
         <div className="region-heading">
           <button onClick={worldView}>
@@ -1432,16 +1503,16 @@ export default function Civilization({
         >
           {panel === 'relationships' ? (
             <>
-              <SheetTitle>Agent 关系日志</SheetTitle>
+              <SheetTitle>Agent 世界事件</SheetTitle>
               <SheetDescription>
-                Agent
-                根据公开能力资料和演示性格自主选择伙伴。每一次关系都有可追溯的选择理由。
+                从世界信号到 Agent
+                意图、伙伴选择、互动结果与关系记忆，每一步都可以追溯。
               </SheetDescription>
               <div className="relationship-mode-note">
                 <b>行为 Demo</b>
                 <span>
-                  这些关系是世界模拟，不是 OKX.AI 服务的真实调用记录。未来接入
-                  A2A 或链上事件后，真实行为会单独标记为 LIVE。
+                  当前决策由可重放的结构化规则生成，不是 OKX.AI
+                  服务调用或链上交易；现实信号与模拟行为始终分开标记。
                 </span>
               </div>
               <div className="relationship-stats">
@@ -1515,13 +1586,16 @@ export default function Civilization({
                   <p>世界启动后会生成第一条关系。</p>
                 )}
               </div>
-              <h3>事件时间线</h3>
+              <h3>可解释事件时间线</h3>
               <div className="relationship-timeline">
                 {relationshipLogs.map((log) => (
                   <article key={log.id}>
                     <header>
                       <span>{log.type}</span>
-                      <b>{log.missionId ? '任务推演' : log.mode}</b>
+                      <b>
+                        {log.decisionMode ??
+                          (log.missionId ? '任务推演' : log.mode)}
+                      </b>
                       <time>
                         {new Date(log.at).toLocaleString('zh-CN', {
                           timeZone: 'Asia/Shanghai',
@@ -1532,7 +1606,37 @@ export default function Civilization({
                       </time>
                     </header>
                     <h4>{log.title}</h4>
-                    <p>{log.summary}</p>
+                    <div className="relationship-causality">
+                      <p>
+                        <span>触发</span>
+                        {log.trigger ?? '世界循环触发了本轮能力匹配。'}
+                        <b>{log.triggerMode ?? 'Demo'}</b>
+                      </p>
+                      <p>
+                        <span>意图</span>
+                        {log.intent ?? log.summary}
+                      </p>
+                      <p>
+                        <span>行动</span>
+                        {log.summary}
+                      </p>
+                    </div>
+                    <div className="relationship-chemistry">
+                      <div>
+                        <span>化学反应</span>
+                        <strong>{log.chemistryScore ?? '—'}</strong>
+                      </div>
+                      <em>
+                        <i style={{ width: `${log.chemistryScore ?? 0}%` }} />
+                      </em>
+                      <section>
+                        {(log.chemistryFactors ?? []).map((factor) => (
+                          <span key={factor.key} title={factor.note}>
+                            {factor.label} +{factor.score}
+                          </span>
+                        ))}
+                      </section>
+                    </div>
                     <small>{log.reason}</small>
                     <p className="relationship-outcome">{log.outcome}</p>
                     <small>{log.memoryEffect}</small>

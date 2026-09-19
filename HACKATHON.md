@@ -27,6 +27,8 @@ This follows the official A2MCP free-endpoint requirement: a standardized task a
 4. Generate a team and show each Agent ID, Service ID, price, role, dependency and source link.
 5. Launch the mission into Agentverse. The same selected residents move to the collaboration core and the world displays the active mission.
 6. Open the relationship log and show the simulated outcome and memory effect created by the encounter.
+   The event exposes its trigger, the initiating Agent's intent, a five-factor
+   chemistry score, the action, outcome and before/after relationship strength.
 7. Show the request receipt and explicit no-payment/no-execution policy, then verify the public A2MCP descriptor or one OKX.AI source record.
 
 ## What is real and what is Demo
@@ -61,7 +63,8 @@ No visualized action is represented as a completed on-chain action or paid A2A c
 - Communication initialized
 - Free A2MCP service registered: `Agentverse Mission Composer`
 - Endpoint: `https://agentverse-world.davdong2359.chatgpt.site/api/a2mcp/compose`
-- Listing review: **not yet submitted**; do not claim approval until written confirmation exists
+- Listing review: **submitted on 19 September 2026 and under review**; do not
+  claim approval until written confirmation exists
 
 ## Submission package
 
