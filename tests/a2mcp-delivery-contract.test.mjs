@@ -29,7 +29,7 @@ test('A2MCP failures provide stable diagnostics and a retry example', () => {
 });
 
 test('A2MCP empty POST is an explicit delivered availability probe', () => {
-  assert.match(route, /emptyPost/);
+  assert.match(route, /emptyProbe/);
   assert.match(route, /default-example/);
   assert.doesNotMatch(route, /UNSUPPORTED_MEDIA_TYPE/);
 });

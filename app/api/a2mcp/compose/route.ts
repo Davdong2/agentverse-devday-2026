@@ -133,15 +133,15 @@ export async function GET(req: Request) {
       success: 'HTTP 200 直接返回 JSON 任务计划，deliveryStatus 为 delivered。',
       failure:
         'HTTP 4xx 返回稳定 code、可读 error、修复指引 hint 和可直接重试的 exampleRequest。',
-      emptyPost:
-        '空 POST 用于可用性自检，会使用 exampleRequest 并返回 HTTP 200 示例交付。',
+      emptyProbe:
+        '空 POST、JSON {} 或空参数封装用于可用性自检，会使用 exampleRequest 并返回 HTTP 200 示例交付。',
     },
     acceptedRequestFormats: [
       'JSON 对象',
       'input/params/arguments/request/payload 参数封装',
       '纯文本 goal',
       'application/x-www-form-urlencoded',
-      '空 POST 可用性自检',
+      '空 POST、JSON {} 或空参数封装可用性自检',
     ],
     exampleRequest,
   });
@@ -220,7 +220,7 @@ export async function POST(req: Request) {
           ...(inputMeta.source === 'default-example'
             ? {
                 notice:
-                  '未收到请求参数；已使用公开 exampleRequest 完成可用性示例交付。',
+                  '未收到有效请求参数；已使用公开 exampleRequest 完成可用性示例交付。',
               }
             : {}),
         },

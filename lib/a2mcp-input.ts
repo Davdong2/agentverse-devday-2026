@@ -50,12 +50,19 @@ function normalizeEnvelope(value: unknown) {
       }
     }
   }
-  if (normalized.maxAgents === undefined)
+  if (normalized.maxAgents === undefined && unwrapped.max_agents !== undefined)
     normalized.maxAgents = unwrapped.max_agents;
-  if (normalized.assetSymbol === undefined)
+  if (
+    normalized.assetSymbol === undefined &&
+    unwrapped.asset_symbol !== undefined
+  )
     normalized.assetSymbol = unwrapped.asset_symbol;
-  if (normalized.chainId === undefined) normalized.chainId = unwrapped.chain_id;
-  if (normalized.contractAddress === undefined)
+  if (normalized.chainId === undefined && unwrapped.chain_id !== undefined)
+    normalized.chainId = unwrapped.chain_id;
+  if (
+    normalized.contractAddress === undefined &&
+    unwrapped.contract_address !== undefined
+  )
     normalized.contractAddress = unwrapped.contract_address;
 
   if (
@@ -92,9 +99,13 @@ export function parseA2mcpRequest(body: string, contentType: string | null) {
     format = 'text';
   }
 
-  return {
-    value: normalizeEnvelope(value),
-    source: 'provided' as RequestSource,
-    format,
-  };
+  const normalized = normalizeEnvelope(value);
+  if (!Object.keys(normalized).length)
+    return {
+      value: { ...defaultMissionRequest },
+      source: 'default-example' as RequestSource,
+      format,
+    };
+
+  return { value: normalized, source: 'provided' as RequestSource, format };
 }

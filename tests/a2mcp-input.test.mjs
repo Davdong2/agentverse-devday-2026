@@ -28,6 +28,18 @@ test('empty POST uses a deterministic example delivery request', () => {
   assert.equal(parsed.value.goal, '研究 BTC 市场状态，并检查 X Layer 代币风险');
 });
 
+test('OKX.AI empty JSON probes and empty envelopes use the example delivery', () => {
+  for (const body of ['{}', '{"params":{}}', '{"arguments":{}}']) {
+    const parsed = parseA2mcpRequest(body, 'application/json');
+    assert.equal(parsed.source, 'default-example');
+    assert.equal(parsed.format, 'json');
+    assert.equal(
+      parsed.value.goal,
+      '研究 BTC 市场状态，并检查 X Layer 代币风险',
+    );
+  }
+});
+
 test('common tool envelopes and goal aliases are accepted', () => {
   const wrapped = parseA2mcpRequest(
     JSON.stringify({ arguments: { query: '研究 BTC 市场', max_agents: '2' } }),
