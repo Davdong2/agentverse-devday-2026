@@ -1,6 +1,9 @@
 import snapshot from '@/lib/agents.json';
 import details from '@/lib/details.json';
-import { getAgentCatalog } from '@/lib/agent-catalog';
+import {
+  defaultMissionRequest,
+  parseA2mcpRequest,
+} from '@/lib/a2mcp-input';
 import {
   composeMission,
   normalizeMissionInput,
@@ -19,13 +22,7 @@ const rateLimit = 60;
 const rateWindowMs = 60_000;
 const requestBuckets = new Map<string, { count: number; resetAt: number }>();
 
-const exampleRequest = {
-  goal: '研究 BTC 市场状态，并检查 X Layer 代币风险',
-  assetSymbol: 'BTC',
-  chainId: 'eip155:196',
-  maxAgents: 3,
-  riskMode: 'confirm-before-action',
-};
+const exampleRequest = defaultMissionRequest;
 
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: corsHeaders });
@@ -60,18 +57,14 @@ function errorJson({
   );
 }
 
-async function missionCatalog(): Promise<MissionCatalog> {
+function missionCatalog(): MissionCatalog {
   const bundled = snapshot as AgentData;
-  const catalog = await getAgentCatalog();
-  const live = new Map<string, Agent>(
-    catalog.agents.map((agent) => [agent.agentId, agent]),
-  );
   return {
-    agents: bundled.agents.map((agent) => live.get(agent.agentId) ?? agent),
+    agents: bundled.agents as Agent[],
     details: details as Record<string, Detail>,
     source: bundled.source,
-    fetchedAt: catalog.fetchedAt,
-    mode: `${catalog.mode ?? 'snapshot'}-catalog+verified-service-snapshot`,
+    fetchedAt: bundled.fetchedAt,
+    mode: 'verified-service-snapshot',
   };
 }
 
@@ -140,7 +133,16 @@ export async function GET(req: Request) {
       success: 'HTTP 200 直接返回 JSON 任务计划，deliveryStatus 为 delivered。',
       failure:
         'HTTP 4xx 返回稳定 code、可读 error、修复指引 hint 和可直接重试的 exampleRequest。',
+      emptyPost:
+        '空 POST 用于可用性自检，会使用 exampleRequest 并返回 HTTP 200 示例交付。',
     },
+    acceptedRequestFormats: [
+      'JSON 对象',
+      'input/params/arguments/request/payload 参数封装',
+      '纯文本 goal',
+      'application/x-www-form-urlencoded',
+      '空 POST 可用性自检',
+    ],
     exampleRequest,
   });
 }
@@ -162,16 +164,6 @@ export async function POST(req: Request) {
       status: 429,
       headers: { ...rateHeaders, 'Retry-After': String(limit.resetSeconds) },
     });
-  if (!req.headers.get('content-type')?.includes('application/json'))
-    return errorJson({
-      requestId,
-      code: 'UNSUPPORTED_MEDIA_TYPE',
-      error: '请求必须使用 application/json。',
-      hint:
-        '添加 Content-Type: application/json，并传入包含 goal 字段的 JSON 对象。',
-      status: 415,
-      headers: rateHeaders,
-    });
   if (Number(req.headers.get('content-length') ?? 0) > 8192)
     return errorJson({
       requestId,
@@ -183,10 +175,12 @@ export async function POST(req: Request) {
     });
 
   let input: ReturnType<typeof normalizeMissionInput>;
+  let inputMeta: ReturnType<typeof parseA2mcpRequest>;
   try {
     const body = await req.text();
     if (body.length > 8192) throw new Error('too_large');
-    input = normalizeMissionInput(JSON.parse(body));
+    inputMeta = parseA2mcpRequest(body, req.headers.get('content-type'));
+    input = normalizeMissionInput(inputMeta.value);
   } catch (error) {
     const tooLarge = error instanceof Error && error.message === 'too_large';
     const invalidJson = error instanceof SyntaxError;
@@ -213,13 +207,23 @@ export async function POST(req: Request) {
   }
 
   try {
-    const mission = composeMission(input, await missionCatalog());
+    const mission = composeMission(input, missionCatalog());
     return Response.json(
       {
         ok: true,
         deliveryStatus: 'delivered',
         requestId,
         createdAt: new Date().toISOString(),
+        input: {
+          source: inputMeta.source,
+          format: inputMeta.format,
+          ...(inputMeta.source === 'default-example'
+            ? {
+                notice:
+                  '未收到请求参数；已使用公开 exampleRequest 完成可用性示例交付。',
+              }
+            : {}),
+        },
         ...mission,
       },
       { headers: { ...corsHeaders, ...rateHeaders } },

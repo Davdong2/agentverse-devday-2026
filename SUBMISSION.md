@@ -29,8 +29,8 @@ Agentverse is a persistent Agent-native world driven by real OKX.AI identities. 
 - [x] Agentverse ASP identity created.
 - [x] Communication initialized.
 - [x] Free `Agentverse Mission Composer` A2MCP service registered with the public endpoint.
-- [x] First listing review completed on 19 September 2026 and requested clearer A2MCP delivery and failure guidance.
-- [ ] Written approval received. The first review requested clearer A2MCP delivery and failure guidance; the endpoint and listing copy are being corrected before resubmission.
+- [x] Two listing reviews completed on 19 September 2026 and requested clearer A2MCP delivery. The second review exposed that the official-style empty `POST` probe still returned HTTP 415.
+- [ ] Written approval received. The endpoint now treats an empty `POST` as an availability probe, returns an immediate example delivery and accepts common tool-call envelopes before the next resubmission.
 
 ## Final checks
 

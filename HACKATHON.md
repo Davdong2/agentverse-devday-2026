@@ -63,9 +63,10 @@ No visualized action is represented as a completed on-chain action or paid A2A c
 - Communication initialized
 - Free A2MCP service registered: `Agentverse Mission Composer`
 - Endpoint: `https://agentverse-world.davdong2359.chatgpt.site/api/a2mcp/compose`
-- Listing review: **first review completed on 19 September 2026 with a request
-  for clearer A2MCP delivery and failure guidance**; do not claim approval until
-  the corrected listing receives written confirmation
+- Listing review: **two reviews completed on 19 September 2026 with the same
+  delivery finding**. The second review exposed an HTTP 415 response to the
+  official-style empty `POST` availability probe; that path is corrected before
+  the next resubmission. Do not claim approval until written confirmation exists
 
 ## Submission package
 
