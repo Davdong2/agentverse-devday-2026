@@ -70,23 +70,10 @@ export default function IgnixProfile({
           <code>{token.address}</code>
         </article>
       ))}
-      <div className="ignix-revenue">
-        <span>Agent 历史收入 · IGNIX 索引口径</span>
-        <strong>
-          {link.revenueUsd === null
-            ? '暂无数据'
-            : '$ ' +
-              Number(link.revenueUsd).toLocaleString('en-US', {
-                maximumFractionDigits: 6,
-              })}
-          <small>{link.revenueUsd !== null ? ' USD' : ''}</small>
-        </strong>
-        <p>
-          asp.rev 由官方索引返回；Agent Linking 文档说明收入源于 OKX AI escrow
-          结算，但该字段未列入公开 HTTP API schema，因此只作展示，不作为
-          Treasury、可提现余额或交易税收益。
-        </p>
-      </div>
+      <p className="ignix-read-note">
+        当前只展示官方索引中的代币关联。未公开定义的
+        asp.rev、Treasury、可提现余额和交易税收益均不展示。
+      </p>
       <small className="dossier-source">
         {data.stale ? '同步暂不可用 · ' : ''}核对于{' '}
         {new Date(data.fetchedAt).toLocaleString('zh-CN', {

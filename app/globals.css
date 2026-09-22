@@ -5015,25 +5015,12 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   line-height: 1.6;
   margin-top: 9px;
 }
-.ignix-revenue {
+.ignix-read-note {
   padding-top: 14px;
-}
-.ignix-revenue > span {
-  font-size: 12px;
-  color: #788d7e;
-}
-.ignix-revenue > strong {
-  display: block;
-  font-size: 24px;
-  font-weight: 550;
-  color: #345843;
-  margin: 7px 0;
-}
-.ignix-revenue p {
+  margin: 0;
   font-size: 12px;
   line-height: 1.7;
   color: #839084;
-  margin: 0;
 }
 .ignix-empty > strong {
   display: block;
@@ -6488,8 +6475,7 @@ body:has(.soft-world) .civilization-sheet.dossier-sheet {
   border: 1px solid #69dfb237;
   border-radius: 20px;
   background:
-    radial-gradient(circle at 90% 0%, #4bd19a1c, transparent 34%),
-    #0c1719;
+    radial-gradient(circle at 90% 0%, #4bd19a1c, transparent 34%), #0c1719;
 }
 .mvp-scope > header {
   display: grid;

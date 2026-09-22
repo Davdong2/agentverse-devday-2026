@@ -51,6 +51,8 @@ assert.equal(
 const profile = fs.readFileSync('components/ignix-profile.tsx', 'utf8');
 assert.ok(profile.includes('Agentverse 不代签'));
 assert.ok(profile.includes('https://ignix.bot/launch'));
+assert.equal(profile.includes('link.revenueUsd'), false);
+assert.ok(profile.includes('Treasury、可提现余额和交易税收益均不展示'));
 
 const world = fs.readFileSync('components/civilization.tsx', 'utf8');
 for (const label of [
