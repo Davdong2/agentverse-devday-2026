@@ -19,7 +19,33 @@ export default function IgnixProfile({
   agentId: string;
 }) {
   const link = data.associations[agentId];
-  if (!link?.tokens.length) return null;
+  if (!link?.tokens.length)
+    return (
+      <section className="dossier-card ignix-profile ignix-empty">
+        <h3>
+          <span>
+            <IgnixBadge /> IGNIX 经济
+          </span>
+          <small>NOT CONNECTED</small>
+        </h3>
+        <strong>官方索引暂未发现关联代币</strong>
+        <p>
+          Agentverse 不在站内模拟发币、Vault、Treasury
+          或收入。需要发行时，请进入 Ignix 官方流程并由钱包自行确认。
+        </p>
+        <a
+          className="ignix-evidence"
+          href="https://ignix.bot/launch"
+          target="_blank"
+          rel="noreferrer"
+        >
+          前往 Ignix 官方发行页 <ArrowUpRight size={12} />
+        </a>
+        <small className="dossier-source">
+          外部官方流程 · Agentverse 不代签
+        </small>
+      </section>
+    );
   return (
     <section className="dossier-card ignix-profile">
       <h3>

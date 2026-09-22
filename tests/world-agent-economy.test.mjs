@@ -59,10 +59,10 @@ assert.equal(economy.dataPackets.count, 36);
 assert.ok(economy.blocksPoint(46.8, 34.18));
 assert.equal(economy.blocksPoint(46.8, 43.5), false);
 assert.ok(
-  ['OKX.AI', 'X LAYER', 'AGENT PAY', 'ONCHAIN OS', 'A2A', 'IGNIX'].every(
+  ['OKX.AI', 'AGENTVERSE', 'MISSION', 'IGNIX', 'SOURCES', 'BEHAVIOR'].every(
     (label) => drawn.includes(label),
   ),
-  'Internal city exposes the requested Agent-economy systems',
+  'Internal city exposes only the capabilities enabled in the current MVP',
 );
 assert.ok(
   ['BTC', 'ETH', 'SOL', 'OKB', 'USDT0', 'RWA', 'MCP'].every((label) =>

@@ -11,10 +11,10 @@ const workCells = [
 ] as const;
 
 const networkNodes = [
-  ['OKX.AI', 'AGENT DISCOVERY'],
-  ['X LAYER', 'SETTLEMENT'],
-  ['AGENT PAY', 'USDT0 ESCROW'],
-  ['ONCHAIN OS', 'WALLET · SWAP'],
+  ['OKX.AI', 'PUBLIC PROFILES'],
+  ['AGENTVERSE', 'WORLD ENGINE'],
+  ['MISSION', 'COMPOSER DELIVERY'],
+  ['IGNIX', 'READ-ONLY INDEX'],
 ] as const;
 
 const stockDemo = [
@@ -760,13 +760,13 @@ export function createInteriorCity(scene: THREE.Scene) {
 
   const horizonLabels = [
     ['OKX.AI', 'AGENT DIRECTORY'],
-    ['X LAYER', 'AGENT SETTLEMENT'],
-    ['A2A PAY', 'MACHINE ECONOMY'],
-    ['BTC', 'DIGITAL RESERVE'],
-    ['ETH', 'SMART CONTRACTS'],
-    ['USDT0', 'LIQUIDITY RAIL'],
-    ['RWA', 'REAL WORLD ASSETS'],
-    ['AGENTVERSE', 'CIVILIZATION NETWORK'],
+    ['AGENTVERSE', 'WORLD ENGINE'],
+    ['MISSION', 'TASK COMPOSER'],
+    ['IGNIX', 'READ API'],
+    ['BTC', 'OKX MARKET DATA'],
+    ['SERVICES', 'PUBLIC DETAILS'],
+    ['SOURCES', 'VERIFIED BOUNDARY'],
+    ['BEHAVIOR', 'CLEARLY DEMO'],
   ].map(([title, subtitle], index) => {
     const group = new THREE.Group();
     const angle = (index / 8) * Math.PI * 2 + Math.PI / 8;
@@ -902,7 +902,7 @@ export function createInteriorCity(scene: THREE.Scene) {
       [btc, !signal || signal.change >= 0 ? '#3CE6A1' : '#FF6E7A'],
       [news?.items[0]?.title ?? '公开新闻等待进入研究区', '#8EDFFF'],
       ['NVDA +2.84% · AAPL +0.72% · TSLA -1.46%  DEMO', '#FFD078'],
-      ['X LAYER · AGENT PAY · USDT0 · RWA', '#AE9AFF'],
+      ['OKX.AI PROFILES · MISSION COMPOSER · IGNIX READ API', '#AE9AFF'],
     ] as const;
     context.font = '700 31px system-ui, sans-serif';
     let x = 34;
@@ -933,10 +933,10 @@ export function createInteriorCity(scene: THREE.Scene) {
   part(threshold, box, graphite, 0, 10.45, 0, 15.0, 0.55, 0.74);
   part(threshold, box, gold, 0, 10.78, 0, 14.5, 0.08, 0.78);
   const gateTexture = screenTexture(
-    'OKX.AI  ×  X LAYER',
-    'AGENT METAVERSE',
+    'AGENTVERSE · LIVE SOURCES',
+    'AGENT WORLD',
     '#7BDFFF',
-    'DISCOVER · COLLABORATE · PAY · OWN',
+    'DISCOVER · INSPECT · COMPOSE · VERIFY',
   );
   const gateMaterial = mat(
     new THREE.MeshBasicMaterial({ map: gateTexture, toneMapped: false }),

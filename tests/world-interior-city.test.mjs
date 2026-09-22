@@ -10,9 +10,11 @@ const source = fs.readFileSync(
 test('walkable interior is a spatial 360-degree Agent economy city', () => {
   for (const term of [
     'OKX.AI',
-    'X LAYER',
-    'AGENT PAY',
-    'ONCHAIN OS',
+    'AGENTVERSE',
+    'MISSION',
+    'IGNIX',
+    'PUBLIC PROFILES',
+    'READ-ONLY INDEX',
     'RESEARCH AGENT',
     'TRADING AGENT',
     'RISK AGENT',
@@ -25,7 +27,7 @@ test('walkable interior is a spatial 360-degree Agent economy city', () => {
     'panoramic-xlayer-data-columns',
     'panoramic-city-rail',
     'AGENTVERSE',
-    'A2A PAY',
+    'TASK COMPOSER',
     'BTC',
     'ETH',
     'USDT0',

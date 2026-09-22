@@ -1077,9 +1077,9 @@ export default function Civilization({
             <CirclePlus size={16} />
             <span>发布委托</span>
           </Link>
-          <Link href="/integrations" aria-label="查看协议能力审计">
+          <Link href="/integrations" aria-label="查看当前可用能力">
             <ShieldCheck size={16} />
-            <span>协议审计</span>
+            <span>当前能力</span>
           </Link>
         </nav>
         <button className="source-light" onClick={() => setHelp(true)}>
@@ -1093,18 +1093,18 @@ export default function Civilization({
         </button>
       </header>
       {homeView && (
-        <div className="home-ecosystem-rail" aria-label="Agent 经济协议层">
-          <span>OKX.AI</span>
+        <div className="home-ecosystem-rail" aria-label="Agentverse 当前能力">
+          <span>OKX.AI PROFILES</span>
           <i />
-          <span>X LAYER</span>
+          <span>AGENTVERSE WORLD</span>
           <i />
-          <span>AGENT PAY</span>
+          <span>MISSION COMPOSER</span>
           <i />
-          <span>ONCHAIN OS</span>
+          <span>IGNIX READ API</span>
           <i />
-          <span>A2A</span>
+          <span>REAL SOURCES</span>
           <i />
-          <span>IGNIX</span>
+          <span>BEHAVIOR DEMO</span>
         </div>
       )}
       {viewMode === 'observe' &&
@@ -1908,6 +1908,12 @@ export default function Civilization({
               {data.agents.length} 个档案来自 OKX.AI，世界中每个身份只出现一次。
               当前 {population} 个角色的协作和收益均为模拟。现实模式读取 BTC
               行情；其他事件是可切换的假设情景。
+            </p>
+            <p>
+              <strong>当前真实 MVP</strong>
+              已开放真实 Agent 资料与服务、Mission Composer 任务规划，以及 Ignix
+              官方索引只读关联。MetAgents、TapeOut、TapeSend、DeWEB、站内发币、Treasury
+              和 Revenue 暂不接入，也不会模拟成功。
             </p>
             <p>
               <strong>文明成长</strong>

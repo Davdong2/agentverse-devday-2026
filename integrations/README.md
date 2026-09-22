@@ -4,6 +4,18 @@ Audit date: **2026-09-22 (Asia/Shanghai)**
 
 This directory is the Phase 0 source of truth for Agentverse MVP 2.0. A capability is enabled only when an official document, official product surface, or reproducible onchain read establishes that it exists and defines how it may be called.
 
+## Current real MVP decision
+
+The product does not wait for unavailable protocol integrations and does not simulate them. The current release contains only:
+
+1. the Agentverse world with behavior clearly labelled `Demo`;
+2. real public OKX.AI Agent profiles and service details;
+3. the working Agentverse Mission Composer flow;
+4. read-only Ignix official-index associations when the API returns them; and
+5. an explicit handoff to the official Ignix product for any token launch.
+
+MetAgents creation/runtime, TapeOut identity, TapeSend, DeWEB, in-app Ignix writes, Treasury, and Revenue are excluded from the current product flow. They may only return after their official integration surfaces are published and verified.
+
 ## Status
 
 | Protocol  | Proposed layer        | Verified current surface                                                             | Agentverse status |

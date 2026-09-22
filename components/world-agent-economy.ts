@@ -8,12 +8,12 @@ type DataPanel = {
 };
 
 const protocolNames = [
-  ['OKX.AI', 'AGENT 名录'],
-  ['X LAYER', 'AGENT ECONOMY'],
-  ['AGENT PAY', 'USDT0 结算'],
-  ['ONCHAIN OS', '链上工具'],
-  ['A2A', '服务协作'],
-  ['IGNIX', 'TOKEN 关联'],
+  ['OKX.AI', '公开档案'],
+  ['AGENTVERSE', '世界引擎'],
+  ['MISSION', '任务规划'],
+  ['IGNIX', '只读索引'],
+  ['SOURCES', '真实性审计'],
+  ['BEHAVIOR', '明确 DEMO'],
 ] as const;
 
 const payloadNames = [
@@ -303,8 +303,8 @@ export function createAgentEconomy(scene: THREE.Scene) {
   });
   const heroPanel = panelTexture(
     'AGENTVERSE',
-    'AGENT METAVERSE · X LAYER',
-    'OKX.AI · A2A · ONCHAIN OS · DEMO WORLD',
+    'PUBLIC PROFILES · REAL SERVICES',
+    'WORLD BEHAVIOR IS CLEARLY MARKED DEMO',
   );
   mountScreen(root, heroPanel, cx, 4.95, cz - 9.15, 5.4, 1.4);
   part(root, box, graphite, cx, 2.55, cz - 9.32, 0.28, 4.65, 0.28);
@@ -338,7 +338,7 @@ export function createAgentEconomy(scene: THREE.Scene) {
   part(rightWall, box, graphite, 0, -1.45, -0.08, 0.18, 2.6, 0.18);
   part(rightWall, cylinder, gold, 0, -2.77, -0.08, 0.82, 0.12, 0.82);
 
-  // Six protocol towers turn the far side of the platform into an Agent city.
+  // Six capability towers show only surfaces enabled in the current MVP.
   const protocolPillars = protocolNames.map(([title, subtitle], index) => {
     const pillar = new THREE.Group();
     pillar.name = `protocol-pillar-${title.toLowerCase().replaceAll('.', '')}`;
@@ -367,7 +367,7 @@ export function createAgentEconomy(scene: THREE.Scene) {
     const screen = panelTexture(
       title,
       subtitle,
-      'AGENTVERSE · DEMO INFRA',
+      'CURRENT MVP · VERIFIED SCOPE',
       index % 3 === 0 ? '#78D7FF' : index % 3 === 1 ? '#70DEB6' : '#FFD17B',
       [512, 512],
     );
@@ -384,22 +384,22 @@ export function createAgentEconomy(scene: THREE.Scene) {
   // The upper compute ring carries ecosystem names as integrated illuminated
   // fascia. Panels face the center, so observers can read them while moving.
   const bannerTexts = [
-    'OKX.AI AGENTS',
-    'X LAYER',
-    'A2A SERVICES',
-    'AGENT PAY',
-    'USDT0',
-    'ONCHAIN OS',
-    'DEX · DEFI',
-    'RWA DATA',
-    'AGENT TOKENS',
-    'CO-CREATE',
+    'PUBLIC PROFILES',
+    'AGENT DIRECTORY',
+    'SERVICE DETAILS',
+    'MISSION COMPOSER',
+    'IGNIX READ API',
+    'SOURCE AUDIT',
+    'WORLD ENGINE',
+    'RELATIONSHIP DEMO',
+    'MARKET DATA',
+    'AGENTVERSE',
   ];
   const bannerTextures = bannerTexts.map((text, index) =>
     panelTexture(
       text,
-      index % 2 ? 'AGENT ECONOMY' : 'AGENT NATIVE NETWORK',
-      'DEMO WORLD',
+      index % 2 ? 'CURRENT CAPABILITY' : 'VERIFIED SURFACE',
+      'REAL DATA / CLEAR DEMO',
       index % 3 === 0 ? '#78D7FF' : index % 3 === 1 ? '#70DEB6' : '#FFD17B',
       [768, 256],
     ),
@@ -436,7 +436,7 @@ export function createAgentEconomy(scene: THREE.Scene) {
     root.add(payload);
     const face = panelTexture(
       ticker,
-      'X LAYER',
+      'WORLD OBJECT',
       'DEMO MODULE',
       color,
       [384, 384],

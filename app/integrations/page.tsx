@@ -14,15 +14,16 @@ import {
   integrationAuditDate,
   integrationCatalog,
 } from '@/lib/integrations/catalog';
+import { mvpScope } from '@/lib/mvp-scope';
 import type {
   CapabilityStatus,
   IntegrationStatus,
 } from '@/lib/integrations/types';
 
 export const metadata: Metadata = {
-  title: 'Integration Audit · Agentverse',
+  title: '当前能力 · Agentverse',
   description:
-    'MetAgents、TapeOut 与 Ignix 的官方接口、合约、权限、限制和 Agentverse 接入状态。',
+    'Agentverse 当前真实可用能力，以及 MetAgents、TapeOut 与 Ignix 的接入边界。',
 };
 
 const statusText: Record<IntegrationStatus | CapabilityStatus, string> = {
@@ -53,48 +54,79 @@ export default function IntegrationsPage() {
           <ArrowLeft size={16} /> Agentverse World
         </Link>
         <span>
-          <ShieldCheck size={15} /> Phase 0 · Integration Audit
+          <ShieldCheck size={15} /> Real MVP · Verified Capabilities
         </span>
         <time dateTime={integrationAuditDate}>{integrationAuditDate}</time>
       </header>
 
       <section className="audit-overview">
         <div>
-          <small>AGENTVERSE MVP 2.0 / SOURCE OF TRUTH</small>
-          <h1>协议能力审计</h1>
+          <small>AGENTVERSE MVP 2.0 / CURRENT SCOPE</small>
+          <h1>只做现在能完成的功能</h1>
           <p>
-            只有官方文档、官方产品或实时链上读取能够证实的能力才会启用。未公开的接口不会通过抓取私有端点或本地模拟补齐。
+            当前版本只开放真实可操作、来源可核对的路径。没有公开接口的能力直接退出产品流程，不用本地数据假装协议已经接通。
           </p>
         </div>
         <dl>
           <div>
-            <dt>协议</dt>
-            <dd>{integrationCatalog.length}</dd>
+            <dt>当前能力</dt>
+            <dd>{mvpScope.flow.length}</dd>
           </div>
           <div>
-            <dt>已接只读能力</dt>
+            <dt>已接协议读取</dt>
             <dd>{verifiedReads}</dd>
           </div>
           <div>
-            <dt>已接写入能力</dt>
+            <dt>协议写入</dt>
             <dd>{verifiedWrites}</dd>
           </div>
           <div>
-            <dt>审计写交易</dt>
+            <dt>伪造链上结果</dt>
             <dd>0</dd>
           </div>
         </dl>
       </section>
 
+      <section className="mvp-scope" aria-label="当前真实 MVP">
+        <header>
+          <small>CURRENT REAL MVP</small>
+          <h2>一条可以真的走完的路径</h2>
+          <p>
+            浏览真实 Agent 资料，查看服务，生成任务计划；如果 Ignix
+            官方索引存在关联，就读取并展示。发行操作只交给官方产品完成。
+          </p>
+        </header>
+        <div className="mvp-flow">
+          {mvpScope.flow.map((item, index) => {
+            const body = (
+              <>
+                <span>0{index + 1}</span>
+                <b>{item.label}</b>
+                <p>{item.detail}</p>
+                <small>{item.source}</small>
+                <em>{item.mode.replace('-', ' ')}</em>
+              </>
+            );
+            return item.url ? (
+              <a href={item.url} target="_blank" rel="noreferrer" key={item.id}>
+                {body}
+              </a>
+            ) : (
+              <Link href={item.route ?? '/'} key={item.id}>
+                {body}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="audit-guardrail" aria-label="审计结论">
         <FileWarning size={21} />
         <div>
-          <strong>当前 MVP 不能按原流程宣称端到端完成。</strong>
+          <strong>这些能力不进入当前 MVP。</strong>
           <p>
-            MetAgents 尚无公开的用户 Agent 创建 API；TapeOut Container
-            是电路持有者控制的链上容器，不是原生 Agent 身份；Ignix Directed
-            Vault 是发行时锁定的交易税收款地址，不等于通用 Agent Revenue
-            Router。
+            {mvpScope.excluded.map((item) => item.label).join('、')}
+            。它们会在官方接口和权限真正可验证后再单独接入，而不是靠演示数据补齐。
           </p>
         </div>
       </section>
@@ -237,12 +269,12 @@ export default function IntegrationsPage() {
       </section>
 
       <section className="audit-next">
-        <small>PHASE 1 GATE</small>
-        <h2>先做 Wallet 与可验证的数据层</h2>
+        <small>SCOPE GATE</small>
+        <h2>以后也按同一条规则扩展</h2>
         <p>
-          下一阶段可以安全实现连接 OKX Wallet / MetaMask、切换 X
-          Layer、签名和发送交易的基础层；协议写入功能继续由 adapter
-          保护，直到对应官方接口通过最小只读和测试交易验证。
+          新能力必须先通过官方资料、鉴权方式和最小测试验证，再进入产品。未接入能力继续由
+          adapter 返回明确的 NOT_CONNECTED 或 EXTERNAL_ONLY；不会生成假的 Agent
+          ID、Container、交易哈希、余额或收入。
         </p>
         <Link href="/api/integrations">
           查看机器可读能力清单 <ArrowUpRight size={15} />
