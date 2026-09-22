@@ -1,9 +1,6 @@
 import snapshot from '@/lib/agents.json';
 import details from '@/lib/details.json';
-import {
-  defaultMissionRequest,
-  parseA2mcpRequest,
-} from '@/lib/a2mcp-input';
+import { defaultMissionRequest, parseA2mcpRequest } from '@/lib/a2mcp-input';
 import {
   composeMission,
   normalizeMissionInput,
@@ -23,6 +20,7 @@ const rateWindowMs = 60_000;
 const requestBuckets = new Map<string, { count: number; resetAt: number }>();
 
 const exampleRequest = defaultMissionRequest;
+const serviceVersion = '1.1.0';
 
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: corsHeaders });
@@ -43,6 +41,15 @@ function errorJson({
   status: number;
   headers?: Record<string, string>;
 }) {
+  console.info(
+    JSON.stringify({
+      event: 'a2mcp_result',
+      serviceVersion,
+      requestId,
+      status,
+      code,
+    }),
+  );
   return Response.json(
     {
       ok: false,
@@ -52,6 +59,7 @@ function errorJson({
       error,
       hint,
       exampleRequest,
+      serviceVersion,
     },
     { status, headers: { ...corsHeaders, ...headers } },
   );
@@ -93,10 +101,14 @@ export async function GET(req: Request) {
   const endpoint = new URL('/api/a2mcp/compose', req.url).href;
   return json({
     name: 'Agentverse Mission Composer',
-    version: '1.0.0',
+    version: serviceVersion,
     protocol: 'A2MCP',
     billing: 'free',
-    description: '根据用户目标，从可核对的 OKX.AI Agent 服务中组合一条安全、只读的任务计划。',
+    deliverable: 'collaboration-plan',
+    limitations:
+      'Returns a plan from a dated service-catalog snapshot, not completed downstream research, an audit, or a trade. No downstream service is called or paid.',
+    description:
+      '根据用户目标，从可核对的 OKX.AI Agent 服务中组合一条安全、只读的任务计划。',
     endpoint,
     method: 'POST',
     inputSchema: {
@@ -208,11 +220,39 @@ export async function POST(req: Request) {
 
   try {
     const mission = composeMission(input, missionCatalog());
+    const delivery = {
+      type: 'collaboration-plan',
+      completed: true,
+      downstreamExecuted: false,
+      catalogAsOf: mission.provenance.fetchedAt,
+      notice:
+        '已完成协作计划编排。候选服务与价格来自上述日期的目录快照，调用前需重新核对。本次没有执行下游研究、审计或交易。',
+      report: [
+        `协作计划：${mission.goal}`,
+        ...mission.steps.map(
+          (step) =>
+            `${step.order}. ${step.role}：${step.agentName} / ${step.serviceName}（Agent ${step.agentId}，Service ${step.serviceId}）。${step.reason} ${step.serviceUrl}`,
+        ),
+        `目录快照时间：${mission.provenance.fetchedAt}。上述为待执行的候选步骤，本次交付为计划本身。`,
+      ].join('\n'),
+    };
+    console.info(
+      JSON.stringify({
+        event: 'a2mcp_result',
+        serviceVersion,
+        requestId,
+        status: 200,
+        source: inputMeta.source,
+        steps: mission.steps.length,
+      }),
+    );
     return Response.json(
       {
         ok: true,
         deliveryStatus: 'delivered',
         requestId,
+        serviceVersion,
+        delivery,
         createdAt: new Date().toISOString(),
         input: {
           source: inputMeta.source,
@@ -233,8 +273,7 @@ export async function POST(req: Request) {
       requestId,
       code: 'NO_MATCHING_SERVICES',
       error: error instanceof Error ? error.message : '任务编排失败。',
-      hint:
-        '在 goal 中补充任务类型（如市场研究、风险验证、链上数据、创意交付或执行准备），并可选提供 assetSymbol、chainId 或 contractAddress。',
+      hint: '在 goal 中补充任务类型（如市场研究、风险验证、链上数据、创意交付或执行准备），并可选提供 assetSymbol、chainId 或 contractAddress。',
       status: 422,
       headers: rateHeaders,
     });

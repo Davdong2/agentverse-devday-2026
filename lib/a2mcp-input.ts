@@ -37,6 +37,26 @@ function normalizeEnvelope(value: unknown) {
   if (!isRecord(unwrapped))
     throw new Error('请求必须是 JSON 对象、文本目标或受支持的参数封装。');
 
+  const aliases = [
+    'query',
+    'prompt',
+    'task',
+    'message',
+    'max_agents',
+    'asset_symbol',
+    'chain_id',
+    'contract_address',
+  ];
+  const unknown = Object.keys(unwrapped).filter(
+    (key) =>
+      !allowedKeys.includes(key as (typeof allowedKeys)[number]) &&
+      !aliases.includes(key),
+  );
+  if (unknown.length)
+    throw new Error(
+      `不支持的字段：${unknown.join('、')}。请使用 goal 提供任务目标。`,
+    );
+
   const normalized: Record<string, unknown> = {};
   for (const key of allowedKeys) {
     if (unwrapped[key] !== undefined) normalized[key] = unwrapped[key];
@@ -100,7 +120,7 @@ export function parseA2mcpRequest(body: string, contentType: string | null) {
   }
 
   const normalized = normalizeEnvelope(value);
-  if (!Object.keys(normalized).length)
+  if (isRecord(unwrap(value)) && !Object.keys(unwrap(value) as object).length)
     return {
       value: { ...defaultMissionRequest },
       source: 'default-example' as RequestSource,

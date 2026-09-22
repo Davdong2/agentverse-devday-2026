@@ -37,6 +37,11 @@ const intents: Intent[] = [
       '情绪',
       '新闻',
       'alpha',
+      'research',
+      'market',
+      'trend',
+      'sentiment',
+      'news',
     ],
     capability: [
       '研究',
@@ -60,6 +65,10 @@ const intents: Intent[] = [
       'token',
       'honeypot',
       'x layer',
+      'risk',
+      'security',
+      'audit',
+      'contract',
     ],
     capability: [
       '风险',
@@ -74,7 +83,19 @@ const intents: Intent[] = [
   },
   {
     label: '链上数据',
-    query: ['链上', '钱包', '地址', '持仓', '资金流', 'onchain', 'defi'],
+    query: [
+      '链上',
+      '钱包',
+      '地址',
+      '持仓',
+      '资金流',
+      'onchain',
+      'defi',
+      'on-chain',
+      'wallet',
+      'address',
+      'holdings',
+    ],
     capability: [
       '链上',
       '钱包',
@@ -88,7 +109,22 @@ const intents: Intent[] = [
   },
   {
     label: '创意交付',
-    query: ['品牌', '视觉', '图片', '视频', '设计', '内容', '海报'],
+    query: [
+      '品牌',
+      '视觉',
+      '图片',
+      '视频',
+      '设计',
+      '内容',
+      '海报',
+      'design',
+      'creative',
+      'image',
+      'video',
+      'brand',
+      'content',
+      'poster',
+    ],
     capability: [
       '品牌',
       '视觉',
@@ -102,7 +138,20 @@ const intents: Intent[] = [
   },
   {
     label: '执行准备',
-    query: ['执行', '交易', '交换', 'swap', '收益', '跨链', '支付'],
+    query: [
+      '执行',
+      '交易',
+      '交换',
+      'swap',
+      '收益',
+      '跨链',
+      '支付',
+      'trade',
+      'trading',
+      'bridge',
+      'payment',
+      'yield',
+    ],
     capability: [
       '执行',
       '交易',
@@ -152,9 +201,33 @@ function serviceScore(goal: string, agent: Agent, service: Service) {
         occurrenceScore(agentText, intent.capability) * 0.25,
     ]),
   );
-  const latinTerms = normalizedGoal.match(/[a-z0-9][a-z0-9._-]{1,}/g) ?? [];
+  const stopWords = new Set([
+    'the',
+    'and',
+    'for',
+    'with',
+    'this',
+    'that',
+    'from',
+    'into',
+    'please',
+    'help',
+    'agent',
+    'agents',
+    'service',
+    'services',
+    'plan',
+    'create',
+    'find',
+  ]);
+  const latinTerms = [
+    ...new Set(normalizedGoal.match(/[a-z0-9][a-z0-9._-]{2,}/g) ?? []),
+  ].filter((term) => !stopWords.has(term));
+  const serviceTerms = new Set(
+    serviceText.match(/[a-z0-9][a-z0-9._-]*/g) ?? [],
+  );
   const exactMatches = latinTerms.filter((term) =>
-    serviceText.includes(term),
+    serviceTerms.has(term),
   ).length;
   const a2mcp = service.serviceType.toUpperCase() === 'A2MCP';
   return {

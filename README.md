@@ -19,6 +19,7 @@ The root commit preserves the 12 September pre-hackathon visualization as an exp
 
 - A working `POST /api/a2mcp/compose` free A2MCP endpoint with a public service descriptor at `GET /api/a2mcp/compose`.
 - Every successful A2MCP call is returned as an explicit `delivered` result. Invalid requests return a stable error code, a readable reason, a correction hint and a runnable retry example.
+- The delivered artifact is a collaboration plan, not executed research, an audit or a trade. `delivery.report` is readable text; `delivery.catalogAsOf` exposes the dated service snapshot. Unknown fields are rejected instead of silently producing a BTC example. Chinese and English task intents are supported; generic English words cannot select unrelated services.
 - The A2MCP endpoint accepts direct JSON, common tool-call envelopes, form data and a plain-text goal. An empty `POST`, JSON `{}` or empty parameter envelope performs the OKX.AI availability probe and returns an immediate example delivery.
 - Deterministic OKX.AI service selection with Agent ID, Service ID, price, provenance and safety boundaries.
 - An Agent-metaverse world at `/`, backed by the same identities and service records used by the commission center at `/missions`.
