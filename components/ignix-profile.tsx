@@ -4,8 +4,8 @@ export function IgnixBadge() {
   return (
     <span
       className="ig-badge"
-      title="IGNIX 已关联发币"
-      aria-label="IGNIX 已关联发币"
+      title="IGNIX 官方索引返回了 Agent 关联"
+      aria-label="IGNIX 官方索引关联"
     >
       ig
     </span>
@@ -28,12 +28,16 @@ export default function IgnixProfile({
         </span>
         <small>{data.mode === 'fresh' ? 'LIVE' : '缓存'}</small>
       </h3>
-      <div className="ignix-verification">已发币 · IGNIX 身份关联</div>
+      <div className="ignix-verification">
+        已发币 · 官方索引关联（资金状态另行链上核验）
+      </div>
       {link.tokens.map((token) => (
         <article className="ignix-token" key={token.address}>
           <strong>{token.symbol}</strong>
           <span>{token.name}</span>
-          <small>{token.graduated ? '已毕业' : '曲线发行中'} · X Layer</small>
+          <small>
+            索引显示{token.graduated ? '已毕业' : '曲线发行中'} · X Layer
+          </small>
           <a href={token.url} target="_blank" rel="noreferrer">
             查看 IGNIX 代币 <ArrowUpRight size={13} />
           </a>
@@ -41,7 +45,7 @@ export default function IgnixProfile({
         </article>
       ))}
       <div className="ignix-revenue">
-        <span>托管结算收入 · IGNIX 累计口径</span>
+        <span>Agent 历史收入 · IGNIX 索引口径</span>
         <strong>
           {link.revenueUsd === null
             ? '暂无数据'
@@ -52,7 +56,9 @@ export default function IgnixProfile({
           <small>{link.revenueUsd !== null ? ' USD' : ''}</small>
         </strong>
         <p>
-          来自 OKX AI 托管结算记录的美元口径，不代表代币交易收益或可提现余额。
+          asp.rev 由官方索引返回；Agent Linking 文档说明收入源于 OKX AI escrow
+          结算，但该字段未列入公开 HTTP API schema，因此只作展示，不作为
+          Treasury、可提现余额或交易税收益。
         </p>
       </div>
       <small className="dossier-source">
@@ -67,7 +73,7 @@ export default function IgnixProfile({
         target="_blank"
         rel="noreferrer"
       >
-        查看关联依据 <ArrowUpRight size={12} />
+        查看官方索引页 <ArrowUpRight size={12} />
       </a>
     </section>
   );

@@ -4,6 +4,7 @@ import {
   retainIgnixProfiles,
   type IgnixData,
 } from '@/lib/ignix';
+import { ignixAdapter } from '@/lib/integrations/adapters';
 import { readPublicPage, normalizeAgent, type Agent } from '@/lib/marketplace';
 import { worldStore } from '@/lib/server-store';
 let cached: IgnixData | null = null,
@@ -56,11 +57,9 @@ async function sync(): Promise<IgnixData> {
       message: 'IGNIX 同步暂不可用，保留上次关联记录。',
     };
   try {
-    const response = await fetch(seed.source, {
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!response.ok) throw new Error('IGNIX upstream');
-    const associations = normalizeIgnix(await response.json());
+    const upstream = await ignixAdapter.listLaunches();
+    if (!upstream.ok) throw new Error(upstream.message);
+    const associations = normalizeIgnix(upstream.data);
     const ids = Object.keys(associations).slice(0, 24);
     const profiles: Agent[] = [];
     // These profiles are sourced separately from OKX.AI, never synthesized from token metadata.

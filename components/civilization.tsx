@@ -1077,6 +1077,10 @@ export default function Civilization({
             <CirclePlus size={16} />
             <span>发布委托</span>
           </Link>
+          <Link href="/integrations" aria-label="查看协议能力审计">
+            <ShieldCheck size={16} />
+            <span>协议审计</span>
+          </Link>
         </nav>
         <button className="source-light" onClick={() => setHelp(true)}>
           <span className="data-mode-badge">
